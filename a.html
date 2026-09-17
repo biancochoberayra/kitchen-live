@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>RestaurantFlow - Local</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#152524;
+  --ink-soft:#3d5350;
+  --paper:#eef2ef;
+  --paper-raise:#ffffff;
+  --line:#d3ddd8;
+  --brand:#1f4742;
+  --brand-2:#2f6f5e;
+  --gold:#c98a2b;
+  --gold-soft:#f2e3c6;
+  --ok:#2f7d5c;
+  --ok-bg:#deefe4;
+  --warn:#c98a2b;
+  --warn-bg:#f8ecd6;
+  --busy:#3765a3;
+  --busy-bg:#e1eaf6;
+  --danger:#b1462f;
+  --danger-bg:#f7e2db;
+  --shadow: 0 1px 2px rgba(21,37,36,.06), 0 8px 24px -12px rgba(21,37,36,.18);
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --ink:#eaf1ee;
+    --ink-soft:#a9bdb7;
+    --paper:#0f1917;
+    --paper-raise:#17231f;
+    --line:#2a3733;
+    --brand:#57a897;
+    --brand-2:#3f8a76;
+    --gold:#e3ab52;
+    --gold-soft:#3a3120;
+    --ok:#59c393;
+    --ok-bg:#123527;
+    --warn:#e3ab52;
+    --warn-bg:#3a3120;
+    --busy:#7fb0e8;
+    --busy-bg:#152a3d;
+    --danger:#e2846a;
+    --danger-bg:#3b2119;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#eaf1ee;
+  --ink-soft:#a9bdb7;
+  --paper:#0f1917;
+  --paper-raise:#17231f;
+  --line:#2a3733;
+  --brand:#57a897;
+  --brand-2:#3f8a76;
+  --gold:#e3ab52;
+  --gold-soft:#3a3120;
+  --ok:#59c393;
+  --ok-bg:#123527;
+  --warn:#e3ab52;
+  --warn-bg:#3a3120;
+  --busy:#7fb0e8;
+  --busy-bg:#152a3d;
+  --danger:#e2846a;
+  --danger-bg:#3b2119;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.brandfont{font-family:'Manrope',system-ui,sans-serif}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;background:var(--paper-raise);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-2);outline-offset:1px}
+a{color:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:var(--brand);color:#f4f8f6;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;box-shadow:var(--shadow);
+  overflow-x:auto;
+}
+.brand-mark{display:flex;align-items:center;gap:8px;white-space:nowrap;padding-right:8px;border-right:1px solid rgba(255,255,255,.25)}
+.brand-mark .dot{width:10px;height:10px;border-radius:3px;background:var(--gold);flex:none}
+.brand-mark span{font-weight:800;font-size:16px;letter-spacing:.2px}
+.navtabs{display:flex;gap:4px;flex:1;overflow-x:auto}
+.navtabs button{
+  background:transparent;border:none;color:#dfeee8;padding:8px 12px;border-radius:8px;font-weight:600;font-size:13.5px;white-space:nowrap;
+}
+.navtabs button.active{background:rgba(255,255,255,.16);color:#fff}
+.navtabs button:hover:not(.active){background:rgba(255,255,255,.08)}
+.adminbtn{
+  white-space:nowrap;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;
+  padding:7px 12px;border-radius:8px;font-weight:700;font-size:13px;
+}
+.adminbtn.on{background:var(--gold);border-color:var(--gold);color:#241a04}
+
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.card{background:var(--paper-raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.section-title{font-size:20px;font-weight:800;margin:0 0 4px}
+.section-sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:100px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.busy{background:var(--busy-bg);color:var(--busy)}
+.pill.danger{background:var(--danger-bg);color:var(--danger)}
+.pill.neutral{background:var(--paper);color:var(--ink-soft);border:1px solid var(--line)}
+
+.btn{border:none;border-radius:9px;padding:9px 14px;font-weight:700;font-size:13.5px;background:var(--brand);color:#fff}
+.btn:hover{background:var(--brand-2)}
+.btn.gold{background:var(--gold);color:#241a04}
+.btn.gold:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.iconbtn{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;font-weight:700;color:var(--ink)}
+
+.mapa-shell{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
+  repeating-linear-gradient(45deg, var(--paper) 0 12px, var(--paper-raise) 12px 24px);
+  min-height:420px;}
+.mapa-shell img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.mesa-chip{
+  position:absolute;transform:translate(-50%,-50%);
+  width:58px;height:58px;border-radius:12px;border:2px solid transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.25);
+  user-select:none;
+}
+.mesa-chip small{font-size:9px;font-weight:700;opacity:.9;text-transform:uppercase;letter-spacing:.3px}
+.mesa-chip.st-libre{background:var(--ok)}
+.mesa-chip.st-ocupada{background:var(--busy)}
+.mesa-chip.st-cuenta{background:var(--danger)}
+.mesa-chip.draggable{cursor:grab;border-color:var(--gold)}
+.mesa-chip.draggable:active{cursor:grabbing}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+.modal-bg{position:fixed;inset:0;background:rgba(10,18,17,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--paper-raise);border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal.wide{max-width:760px}
+.modal h3{margin:0 0 2px}
+.modal-close{float:right;background:var(--paper);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:16px;color:var(--ink-soft)}
+
+.field-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px}
+.field label{font-size:12px;font-weight:700;color:var(--ink-soft)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--ink-soft);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.prod-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--paper-raise);display:flex;flex-direction:column;gap:6px}
+.prod-card.inactive{opacity:.5}
+.prod-name{font-weight:800;font-size:14.5px}
+.prod-meta{font-size:12px;color:var(--ink-soft)}
+.prod-price{font-weight:800;color:var(--brand-2);font-size:15px}
+
+.stationbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px}
+.stationbar button{white-space:nowrap;border:1px solid var(--line);background:var(--paper-raise);border-radius:100px;padding:7px 14px;font-weight:700;font-size:13px;color:var(--ink)}
+.stationbar button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+.ticket{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-raise);display:flex;flex-direction:column;gap:8px}
+.ticket-head{display:flex;justify-content:space-between;align-items:baseline}
+.ticket-mesa{font-weight:800;font-size:14px}
+.ticket-time{font-size:11.5px;color:var(--ink-soft)}
+.ticket-item{font-size:13.5px;font-weight:700}
+.ticket-opts{font-size:12px;color:var(--ink-soft);margin-top:-4px}
+.ticket-obs{font-size:12px;color:var(--warn);font-style:italic}
+.ticket-actions{display:flex;gap:6px;margin-top:4px}
+
+.empty{padding:32px 18px;text-align:center;color:var(--ink-soft)}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+.mesa-item-row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.opts-editor-group{border:1px dashed var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.chip-toggle{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:100px;padding:5px 11px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--paper-raise)}
+.chip-toggle.sel{background:var(--brand);border-color:var(--brand);color:#fff}
+.badge-count{background:var(--gold-soft);color:var(--gold);border-radius:100px;padding:2px 8px;font-size:11px;font-weight:800}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:100px;font-size:13.5px;font-weight:600;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+
+@media (max-width:640px){
+  .brand-mark span{font-size:14px}
+  .wrap{padding:14px 10px 50px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand-mark"><span class="dot"></span><span class="brandfont">RestaurantFlow</span></div>
+  <div class="navtabs" id="navtabs"></div>
+  <button class="adminbtn" id="adminToggle">Modo admin</button>
+</div>
+
+<div class="wrap" id="app"></div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+const VIEWS = [
+  {id:'mapa', label:'Mapa · Mozo'},
+  {id:'cocina', label:'Cocina'},
+  {id:'productos', label:'Productos'},
+  {id:'caja', label:'Caja'},
+  {id:'cierre', label:'Cierre'},
+  {id:'config', label:'Config'},
+];
+const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
+const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
+
+let state = {
+  view: 'mapa',
+  adminMode: false,
+  config: null,
+  mesas: [],
+  productos: [],
+  pedidos: [],
+  loaded: {config:false, mesas:false, productos:false, pedidos:false},
+  ui: {
+    stationTab: null,
+    cierreDate: todayStr(),
+    placingMesa: false,
+  }
+};
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dateOf(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtMoney(n){
+  n = Number(n)||0;
+  return '$' + n.toLocaleString('es-AR',{minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function uidLocal(){ return Math.random().toString(36).slice(2,10); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const el = document.createElement('div');
+  el.className='toast'; el.textContent = msg;
+  document.getElementById('toastRoot').appendChild(el);
+  setTimeout(()=>el.remove(), 2600);
+}
+
+/* ---------------- LOCALSTORAGE DB MOCK ---------------- */
+// Este bloque reemplaza la necesidad de usar una base de datos externa.
+const DB_KEY = 'restaurantFlowLocalDB';
+let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
+
+function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[] };
+function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
+
+const dbCap = {
+  doc: (path) => {
+    const [col, id] = path.split('/');
+    return {
+      onSnapshot: (cb) => {
+        const fire = () => {
+          if (dbData[col] && dbData[col][id]) cb({ exists: true, data: dbData[col][id], id });
+          else cb({ exists: false, id });
+        };
+        dbListeners[col].push(fire);
+        setTimeout(fire, 0);
+      },
+      set: async (data) => {
+        if(!dbData[col]) dbData[col] = {};
+        dbData[col][id] = data;
+        saveDB(); triggerDB(col);
+      },
+      update: async (data) => {
+        if(!dbData[col] || !dbData[col][id]) throw new Error('Not found');
+        dbData[col][id] = { ...dbData[col][id], ...data };
+        saveDB(); triggerDB(col);
+      },
+      delete: async () => {
+        if(dbData[col]) delete dbData[col][id];
+        saveDB(); triggerDB(col);
+      }
+    };
+  },
+  collection: (col) => {
+    let sortField = null;
+    let sortDir = 'asc';
+    const coll = {
+      orderBy: (field, dir) => { sortField = field; sortDir = dir; return coll; },
+      onSnapshot: (cb) => {
+        const fire = () => {
+          let docs = Object.keys(dbData[col]||{}).map(id => ({ id, data: dbData[col][id] }));
+          if (sortField) {
+            docs.sort((a,b) => {
+              let valA = a.data[sortField];
+              let valB = b.data[sortField];
+              if(typeof valA === 'string') return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+              return sortDir === 'asc' ? (valA||0) - (valB||0) : (valB||0) - (valA||0);
+            });
+          }
+          cb({ docs });
+        };
+        dbListeners[col].push(fire);
+        setTimeout(fire, 0);
+      },
+      add: async (data) => {
+        const id = uidLocal();
+        if(!dbData[col]) dbData[col] = {};
+        dbData[col][id] = data;
+        saveDB(); triggerDB(col);
+        return { id };
+      }
+    };
+    return coll;
+  }
+};
+
+const assetsCap = {
+  upload: (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve({ id: uidLocal(), url: e.target.result });
+    reader.onerror = () => reject(new Error('Error leyendo archivo'));
+    reader.readAsDataURL(file); // Convierte la imagen a Base64 para guardarla offline
+  })
+};
+
+/* ---------------- BOOT ---------------- */
+async function boot(){
+  renderNav();
+  render();
+
+  // Suscribirse a los cambios de la base de datos local
+  dbCap.doc('config/main').onSnapshot(async snap=>{
+    if(!snap.exists){
+      state.config = {numMesas:0, cocineros:2, estaciones:[{id:'general', nombre:'General'}], adminPin:'1234', mapaAssetId:null, mapaUrl:null};
+      state.loaded.config = true;
+      try{ await dbCap.doc('config/main').set(state.config); }catch(e){}
+    } else {
+      state.config = snap.data;
+      state.loaded.config = true;
+    }
+    render();
+  });
+
+  dbCap.collection('mesas').orderBy('numero','asc').onSnapshot(snap=>{
+    state.mesas = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.mesas = true;
+    render();
+  });
+
+  dbCap.collection('productos').onSnapshot(snap=>{
+    state.productos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.productos = true;
+    render();
+  });
+
+  dbCap.collection('pedidos').onSnapshot(snap=>{
+    state.pedidos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.pedidos = true;
+    render();
+  });
+}
+
+/* ---------------- NAV / ADMIN ---------------- */
+function renderNav(){
+  const nav = document.getElementById('navtabs');
+  nav.innerHTML = VIEWS.map(v=>`<button data-view="${v.id}" class="${state.view===v.id?'active':''}">${v.label}</button>`).join('');
+  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ state.view=b.dataset.view; state.ui.placingMesa=false; renderNav(); render(); }));
+  const at = document.getElementById('adminToggle');
+  at.textContent = state.adminMode ? 'Admin activo' : 'Modo admin';
+  at.className = 'adminbtn' + (state.adminMode?' on':'');
+}
+document.getElementById('adminToggle').addEventListener('click', ()=>{
+  if(state.adminMode){ state.adminMode=false; renderNav(); render(); return; }
+  const pin = prompt('PIN de administrador:');
+  if(pin==null) return;
+  const real = (state.config && state.config.adminPin) || '1234';
+  if(pin===real){ state.adminMode=true; toast('Modo administrador activado'); }
+  else toast('PIN incorrecto');
+  renderNav(); render();
+});
+function requireAdmin(){
+  if(state.adminMode) return true;
+  toast('Esta acción requiere modo administrador');
+  return false;
+}
+
+/* ---------------- MODAL ---------------- */
+function openModal(html, opts={}){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-bg" id="modalBg"><div class="modal ${opts.wide?'wide':''}">
+    <button class="modal-close" id="modalCloseBtn">✕</button>
+    ${html}
+  </div></div>`;
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeModal(); });
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* ---------------- RENDER ROOT ---------------- */
+function render(){
+  renderNav();
+  const app = document.getElementById('app');
+  if(!state.loaded.config){ app.innerHTML = '<div class="empty">Cargando RestaurantFlow…</div>'; return; }
+  if(state.view==='mapa') return renderMapa(app);
+  if(state.view==='cocina') return renderCocina(app);
+  if(state.view==='productos') return renderProductos(app);
+  if(state.view==='caja') return renderCaja(app);
+  if(state.view==='cierre') return renderCierre(app);
+  if(state.view==='config') return renderConfig(app);
+}
+
+/* ================= MAPA / MOZO ================= */
+function renderMapa(app){
+  const cfg = state.config;
+  app.innerHTML = `
+    <h2 class="section-title">Salón</h2>
+    <p class="section-sub">Tocá una mesa para abrirla, tomar el pedido o cerrar la cuenta.${state.adminMode?' Modo admin: hacé clic en el plano para agregar una mesa, o arrastrá una mesa para reubicarla.':''}</p>
+    <div class="card" style="padding:14px">
+      <div class="mapa-shell" id="mapaShell">
+        ${cfg.mapaUrl? `<img src="${cfg.mapaUrl}" alt="Plano del restaurante">` : ''}
+        ${state.mesas.map(m=>mesaChipHtml(m)).join('')}
+        ${state.mesas.length===0 ? `<div class="empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><b>Todavía no hay mesas</b>${state.adminMode? 'Hacé clic en cualquier parte del plano para agregar la primera mesa.':'Pedile a un administrador que configure las mesas.'}</div>`:''}
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i> Libre</span>
+        <span><i style="background:var(--busy)"></i> Ocupada</span>
+        <span><i style="background:var(--danger)"></i> Cuenta pedida</span>
+        ${!cfg.mapaUrl?'<span style="margin-left:auto">Sin plano cargado — cargá una imagen en Config.</span>':''}
+      </div>
+    </div>
+  `;
+  const shell = document.getElementById('mapaShell');
+  shell.addEventListener('click', (e)=>{
+    if(!state.adminMode) return;
+    if(e.target.closest('.mesa-chip')) return;
+    addMesaAt(e, shell);
+  });
+  state.mesas.forEach(m=>{
+    const el = shell.querySelector(`[data-mesa-id="${m.id}"]`);
+    if(!el) return;
+    if(state.adminMode){
+      makeDraggable(el, shell, m);
+      el.addEventListener('click', (e)=>{ if(el.dataset.dragged==='1'){ el.dataset.dragged='0'; return;} openMesaAdminMenu(m); });
+    } else {
+      el.addEventListener('click', ()=> openMesaPanel(m));
+    }
+  });
+}
+function mesaChipHtml(m){
+  const cls = m.estado==='libre'?'st-libre': m.estado==='cuenta_pedida'?'st-cuenta':'st-ocupada';
+  return `<div class="mesa-chip ${cls} ${state.adminMode?'draggable':''}" data-mesa-id="${m.id}" style="left:${m.x}%;top:${m.y}%">
+    <div>${esc(m.numero)}</div><small>${m.estado==='libre'?'Libre':m.estado==='cuenta_pedida'?'Cuenta':'Ocupada'}</small>
+  </div>`;
+}
+function makeDraggable(el, shell, mesa){
+  let dragging=false, rect;
+  el.addEventListener('pointerdown', (e)=>{
+    dragging=true; el.setPointerCapture(e.pointerId); rect = shell.getBoundingClientRect(); el.dataset.dragged='0';
+  });
+  el.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    el.dataset.dragged='1';
+    let x = ((e.clientX-rect.left)/rect.width)*100;
+    let y = ((e.clientY-rect.top)/rect.height)*100;
+    x = Math.max(2,Math.min(98,x)); y = Math.max(2,Math.min(96,y));
+    el.style.left = x+'%'; el.style.top = y+'%';
+  });
+  el.addEventListener('pointerup', async (e)=>{
+    dragging=false;
+    if(el.dataset.dragged==='1'){
+      const x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+      try{ await dbCap.doc('mesas/'+mesa.id).update({x,y}); }catch(err){ toast('No se pudo mover la mesa'); }
+    }
+  });
+}
+async function addMesaAt(e, shell){
+  const rect = shell.getBoundingClientRect();
+  let x = ((e.clientX-rect.left)/rect.width)*100;
+  let y = ((e.clientY-rect.top)/rect.height)*100;
+  x = Math.max(4,Math.min(96,x)); y = Math.max(4,Math.min(94,y));
+  const nextNum = (state.mesas.reduce((mx,m)=>Math.max(mx, Number(m.numero)||0),0)) + 1;
+  try{
+    await dbCap.collection('mesas').add({numero:nextNum, x, y, estado:'libre', pedidoId:null});
+    await dbCap.doc('config/main').update({numMesas: state.mesas.length+1});
+    toast('Mesa '+nextNum+' agregada');
+  }catch(err){ toast('No se pudo crear la mesa'); }
+}
+function openMesaAdminMenu(m){
+  openModal(`
+    <h3>Mesa ${esc(m.numero)}</h3>
+    <p class="section-sub">Estado actual: ${m.estado==='libre'?'Libre':m.estado==='cuenta_pedida'?'Cuenta pedida':'Ocupada'}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" id="mAdminOpen">Abrir pedido</button>
+      <button class="btn danger" id="mAdminDel" ${m.estado!=='libre'?'disabled':''}>Eliminar mesa</button>
+    </div>
+    ${m.estado!=='libre'?'<p class="section-sub" style="margin-top:8px">Solo se pueden eliminar mesas libres.</p>':''}
+  `);
+  document.getElementById('mAdminOpen').onclick = ()=>{ closeModal(); openMesaPanel(m); };
+  document.getElementById('mAdminDel').onclick = async ()=>{
+    if(m.estado!=='libre') return;
+    if(!confirm('¿Eliminar la mesa '+m.numero+'?')) return;
+    try{ await dbCap.doc('mesas/'+m.id).delete(); closeModal(); toast('Mesa eliminada'); }catch(e){ toast('No se pudo eliminar'); }
+  };
+}
+
+/* ---- mesa order panel (mozo) ---- */
+function openMesaPanel(m){
+  if(m.estado==='libre'){
+    openModal(`
+      <h3>Abrir mesa ${esc(m.numero)}</h3>
+      <p class="section-sub">Ingresá los datos iniciales para tomar el pedido.</p>
+      <div class="field-row">
+        <div class="field"><label>Personas</label><input type="number" min="1" value="2" id="fPersonas"></div>
+        <div class="field"><label>Tenedores</label><input type="number" min="1" value="2" id="fTenedores"></div>
+      </div>
+      <button class="btn" id="btnAbrir">Abrir mesa y tomar pedido</button>
+    `);
+    document.getElementById('btnAbrir').onclick = async ()=>{
+      const personas = parseInt(document.getElementById('fPersonas').value)||1;
+      const tenedores = parseInt(document.getElementById('fTenedores').value)||1;
+      try{
+        const ped = await dbCap.collection('pedidos').add({
+          mesaId:m.id, mesaNumero:m.numero, personas, tenedores, items:[], estado:'abierto',
+          creado: Date.now(), total:0
+        });
+        await dbCap.doc('mesas/'+m.id).update({estado:'ocupada', pedidoId: ped.id});
+        closeModal();
+        const freshMesa = {...m, estado:'ocupada', pedidoId: ped.id};
+        setTimeout(()=>openMesaPanel(freshMesa), 250);
+      }catch(err){ toast('No se pudo abrir la mesa'); }
+    };
+    return;
+  }
+  const pedido = state.pedidos.find(p=>p.id===m.pedidoId);
+  if(!pedido){ toast('No se encontró el pedido de esta mesa'); return; }
+  renderMesaOrderModal(m, pedido);
+}
+function renderMesaOrderModal(m, pedido){
+  const items = pedido.items||[];
+  const total = items.reduce((s,it)=>s+(it.precio*it.cantidad),0);
+  openModal(`
+    <h3>Mesa ${esc(m.numero)} ${m.estado==='cuenta_pedida'?'<span class="pill danger">Cuenta pedida</span>':''}</h3>
+    <p class="section-sub">${pedido.personas} personas · ${pedido.tenedores} tenedores · abierta ${fmtTime(pedido.creado)}hs</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+      ${items.length===0? '<div class="empty">Sin ítems todavía. Agregá productos a la comanda.</div>' :
+        items.map(it=>mesaItemRow(it)).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px">
+      <b>Total</b><b style="font-size:17px;color:var(--brand-2)">${fmtMoney(total)}</b>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="btnAddItem">+ Agregar producto</button>
+      ${m.estado!=='cuenta_pedida'?`<button class="btn ghost" id="btnPedirCuenta">Pedir cuenta</button>`:''}
+      ${m.estado==='cuenta_pedida'?`<button class="btn gold" id="btnCobrar">Cobrar y cerrar</button>`:''}
+    </div>
+  `, {wide:true});
+  document.getElementById('btnAddItem').onclick = ()=> openAddItemModal(m, pedido);
+  const bpc = document.getElementById('btnPedirCuenta');
+  if(bpc) bpc.onclick = async ()=>{
+    try{ await dbCap.doc('mesas/'+m.id).update({estado:'cuenta_pedida'}); closeModal(); toast('Cuenta pedida'); }
+    catch(e){ toast('Error al pedir la cuenta'); }
+  };
+  const bco = document.getElementById('btnCobrar');
+  if(bco) bco.onclick = ()=> openCobrarModal(m, pedido, total);
+
+  // entregar / avanzar item buttons
+  document.querySelectorAll('[data-entregar]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const itemId = btn.dataset.entregar;
+      const newItems = items.map(it=> it.id===itemId? {...it, estado:'entregado'} : it);
+      try{ await dbCap.doc('pedidos/'+pedido.id).update({items:newItems}); }
+      catch(e){ toast('No se pudo actualizar'); }
+    };
+  });
+  document.querySelectorAll('[data-quitar]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const itemId = btn.dataset.quitar;
+      if(!confirm('¿Quitar este ítem de la comanda?')) return;
+      const removed = items.find(it=>it.id===itemId);
+      const newItems = items.filter(it=>it.id!==itemId);
+      try{
+        await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
+        if(removed){ await restoreStock(removed.productoId, removed.cantidad); }
+        renderMesaOrderModal(m, {...pedido, items:newItems});
+      }catch(e){ toast('No se pudo quitar el ítem'); }
+    };
+  });
+}
+function mesaItemRow(it){
+  const stColor = it.estado==='entregado'?'neutral':it.estado==='listo'?'ok':it.estado==='preparando'?'warn':'busy';
+  return `<div class="mesa-item-row">
+    <div>
+      <div class="ticket-item">${it.cantidad}× ${esc(it.nombre)}</div>
+      ${it.opcionesTexto? `<div class="ticket-opts">${esc(it.opcionesTexto)}</div>`:''}
+      ${it.observaciones? `<div class="ticket-obs">"${esc(it.observaciones)}"</div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <span class="pill ${stColor}">${ESTADO_LABEL[it.estado]}</span>
+      <div style="display:flex;gap:4px">
+        ${it.estado==='listo'?`<button class="btn sm" data-entregar="${it.id}">Entregar</button>`:''}
+        ${it.estado==='pendiente'?`<button class="btn sm danger" data-quitar="${it.id}">Quitar</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+async function restoreStock(productoId, cantidad){
+  const prod = state.productos.find(p=>p.id===productoId);
+  if(!prod || prod.stockDiario==null) return;
+  const nuevo = Math.min(prod.stockDiario, (prod.stockRestante||0)+cantidad);
+  try{ await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo}); }catch(e){}
+}
+
+/* ---- add item to comanda (with product options) ---- */
+function openAddItemModal(m, pedido){
+  const activos = state.productos.filter(p=>p.activo!==false);
+  const cats = [...new Set(activos.map(p=>p.categoria||'General'))];
+  openModal(`
+    <h3>Agregar producto — Mesa ${esc(m.numero)}</h3>
+    <div class="field"><label>Buscar / categoría</label>
+      <select id="fCat"><option value="">Todas las categorías</option>${cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select>
+    </div>
+    <div id="prodPickList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:44vh;overflow-y:auto">
+      ${activos.map(p=>productPickRow(p)).join('') || '<div class="empty">No hay productos activos. Cargalos desde la sección Productos.</div>'}
+    </div>
+  `, {wide:true});
+  document.getElementById('fCat').onchange = (e)=>{
+    const val = e.target.value;
+    document.getElementById('prodPickList').innerHTML = activos.filter(p=>!val||(p.categoria||'General')===val).map(p=>productPickRow(p)).join('');
+    bindPickRows();
+  };
+  bindPickRows();
+  function bindPickRows(){
+    document.querySelectorAll('[data-pick]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const prod = state.productos.find(p=>p.id===btn.dataset.pick);
+        openConfigureItemModal(m, pedido, prod);
+      };
+    });
+  }
+}
+function productPickRow(p){
+  const sinStock = p.stockDiario!=null && (p.stockRestante||0)<=0;
+  return `<div class="mesa-item-row">
+    <div><div class="ticket-item">${esc(p.nombre)}</div><div class="prod-meta">${esc(p.categoria||'General')} · ${fmtMoney(p.precio)}${p.stockDiario!=null?' · stock: '+(p.stockRestante||0):''}</div></div>
+    <button class="btn sm" data-pick="${p.id}" ${sinStock?'disabled':''}>${sinStock?'Sin stock':'Elegir'}</button>
+  </div>`;
+}
+function openConfigureItemModal(m, pedido, prod){
+  const grupos = prod.grupos||[];
+  openModal(`
+    <h3>${esc(prod.nombre)}</h3>
+    <p class="section-sub">${fmtMoney(prod.precio)} · ${esc(prod.categoria||'General')}</p>
+    ${grupos.map(g=>`
+      <div class="opts-editor-group">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">${esc(g.nombre)} ${g.obligatoria?'<span class="pill warn">Obligatorio</span>':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" data-group="${g.id}" data-multi="${g.tipo==='multiple'?'1':'0'}">
+          ${(g.opciones||[]).map(o=>`<div class="chip-toggle" data-opt="${o.id}" data-price="${o.precioExtra||0}">${esc(o.nombre)}${o.precioExtra?` (+${fmtMoney(o.precioExtra)})`:''}</div>`).join('')}
+        </div>
+      </div>
+    `).join('')}
+    <div class="field-row" style="margin-top:6px">
+      <div class="field"><label>Cantidad</label><input type="number" min="1" value="1" id="fCant"></div>
+    </div>
+    <div class="field"><label>Observaciones</label><textarea id="fObs" rows="2" placeholder="Ej: sin sal, cocción a punto..."></textarea></div>
+    <button class="btn" id="btnConfirmAdd" style="margin-top:10px">Agregar a la comanda</button>
+  `, {wide:true});
+  document.querySelectorAll('[data-group] .chip-toggle').forEach(chip=>{
+    chip.onclick = ()=>{
+      const group = chip.parentElement;
+      const multi = group.dataset.multi==='1';
+      if(!multi){ group.querySelectorAll('.chip-toggle').forEach(c=>c.classList.remove('sel')); }
+      chip.classList.toggle('sel');
+    };
+  });
+  document.getElementById('btnConfirmAdd').onclick = async ()=>{
+    const cantidad = parseInt(document.getElementById('fCant').value)||1;
+    const observaciones = document.getElementById('fObs').value.trim();
+    let extra = 0; const optTextParts=[];
+    let missingRequired = false;
+    grupos.forEach(g=>{
+      const groupEl = document.querySelector(`[data-group="${g.id}"]`);
+      const sels = [...groupEl.querySelectorAll('.chip-toggle.sel')];
+      if(g.obligatoria && sels.length===0) missingRequired = true;
+      if(sels.length){
+        optTextParts.push(g.nombre+': '+sels.map(s=>s.textContent.replace(/\s*\(\+.*\)$/,'')).join(', '));
+        sels.forEach(s=> extra += parseFloat(s.dataset.price)||0);
+      }
+    });
+    if(missingRequired){ toast('Completá las opciones obligatorias'); return; }
+    if(prod.stockDiario!=null && (prod.stockRestante||0) < cantidad){ toast('Stock insuficiente'); return; }
+    const item = {
+      id: uidLocal(), productoId: prod.id, nombre: prod.nombre, cantidad,
+      precio: (prod.precio||0)+extra, opcionesTexto: optTextParts.join(' · '),
+      observaciones, estado:'pendiente', estacionId: prod.estacionId||'general', creado: Date.now()
+    };
+    try{
+      const newItems = [...(pedido.items||[]), item];
+      await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
+      if(prod.stockDiario!=null){
+        await dbCap.doc('productos/'+prod.id).update({stockRestante: Math.max(0,(prod.stockRestante||0)-cantidad)});
+      }
+      toast('Producto agregado a la comanda');
+      closeModal();
+      setTimeout(()=>{
+        const freshM = state.mesas.find(x=>x.id===m.id)||m;
+        renderMesaOrderModal(freshM, {...pedido, items:newItems});
+      }, 150);
+    }catch(err){ toast('No se pudo agregar el producto'); }
+  };
+}
+
+/* ---- cobrar ---- */
+function openCobrarModal(m, pedido, total){
+  openModal(`
+    <h3>Cobrar mesa ${esc(m.numero)}</h3>
+    <p class="section-sub">Carga manual del pago. Total de la comanda: <b>${fmtMoney(total)}</b></p>
+    <div class="field-row">
+      <div class="field"><label>Monto cobrado</label><input type="number" min="0" value="${total}" id="fMonto"></div>
+      <div class="field"><label>Medio de pago</label><select id="fMedio"><option>Efectivo</option><option>Tarjeta débito</option><option>Tarjeta crédito</option><option>Transferencia</option><option>Otro</option></select></div>
+    </div>
+    <button class="btn gold" id="btnConfirmarCobro">Confirmar cobro y cerrar mesa</button>
+  `);
+  document.getElementById('btnConfirmarCobro').onclick = async ()=>{
+    const monto = parseFloat(document.getElementById('fMonto').value)||0;
+    const medio = document.getElementById('fMedio').value;
+    try{
+      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cerrado', total: monto, medioPago: medio, cerrado: Date.now()});
+      await dbCap.doc('mesas/'+m.id).update({estado:'libre', pedidoId:null});
+      closeModal();
+      toast('Mesa cobrada y cerrada');
+    }catch(e){ toast('No se pudo cerrar la cuenta'); }
+  };
+}
+
+/* ================= COCINA ================= */
+function renderCocina(app){
+  const estaciones = (state.config.estaciones||[]);
+  if(!state.ui.stationTab && estaciones[0]) state.ui.stationTab = estaciones[0].id;
+  const abiertos = state.pedidos.filter(p=>p.estado==='abierto');
+  const allItems = [];
+  abiertos.forEach(p=>{
+    (p.items||[]).forEach(it=>{
+      if(it.estado!=='entregado') allItems.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id});
+    });
+  });
+  const filtered = allItems.filter(it=>(it.estacionId||'general')===state.ui.stationTab).sort((a,b)=>a.creado-b.creado);
+
+  app.innerHTML = `
+    <h2 class="section-title">Cocina</h2>
+    <p class="section-sub">${state.config.cocineros||0} cocinero(s) en turno · ${estaciones.length} estación(es)</p>
+    <div class="stationbar">
+      ${estaciones.map(e=>`<button data-st="${e.id}" class="${state.ui.stationTab===e.id?'active':''}">${esc(e.nombre)} <span class="badge-count">${allItems.filter(it=>(it.estacionId||'general')===e.id).length}</span></button>`).join('')}
+    </div>
+    <div class="grid-cards" id="ticketGrid">
+      ${filtered.length===0? '<div class="empty" style="grid-column:1/-1"><b>Sin comandas pendientes</b>Los pedidos de esta estación aparecerán acá en tiempo real.</div>' :
+        filtered.map(it=>ticketCardHtml(it)).join('')}
+    </div>
+  `;
+  document.querySelectorAll('.stationbar button').forEach(b=>b.onclick=()=>{ state.ui.stationTab=b.dataset.st; render(); });
+  document.querySelectorAll('[data-advance]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const [pedidoId,itemId] = btn.dataset.advance.split('|');
+      const pedido = state.pedidos.find(p=>p.id===pedidoId);
+      if(!pedido) return;
+      const idx = ESTADOS_ITEM.indexOf((pedido.items.find(i=>i.id===itemId)||{}).estado);
+      const nextEstado = ESTADOS_ITEM[Math.min(idx+1, ESTADOS_ITEM.length-2)]; // kitchen won't set 'entregado'
+      const newItems = pedido.items.map(it=> it.id===itemId? {...it, estado:nextEstado}: it);
+      try{ await dbCap.doc('pedidos/'+pedidoId).update({items:newItems}); }catch(e){ toast('Error al actualizar'); }
+    };
+  });
+}
+function ticketCardHtml(it){
+  const stColor = it.estado==='listo'?'ok':it.estado==='preparando'?'warn':'busy';
+  const canAdvance = it.estado!=='listo';
+  return `<div class="ticket">
+    <div class="ticket-head"><span class="ticket-mesa">Mesa ${esc(it.mesaNumero)}</span><span class="ticket-time">${fmtTime(it.creado)}</span></div>
+    <div class="ticket-item">${it.cantidad}× ${esc(it.nombre)}</div>
+    ${it.opcionesTexto?`<div class="ticket-opts">${esc(it.opcionesTexto)}</div>`:''}
+    ${it.observaciones?`<div class="ticket-obs">"${esc(it.observaciones)}"</div>`:''}
+    <span class="pill ${stColor}" style="align-self:flex-start">${ESTADO_LABEL[it.estado]}</span>
+    <div class="ticket-actions">
+      ${canAdvance?`<button class="btn sm" data-advance="${it.pedidoId}|${it.id}">${it.estado==='pendiente'?'Empezar a preparar':'Marcar listo'}</button>`:'<span class="pill neutral">Esperando al mozo</span>'}
+    </div>
+  </div>`;
+}
+
+/* ================= PRODUCTOS ================= */
+function renderProductos(app){
+  const cats = [...new Set(state.productos.map(p=>p.categoria||'General'))];
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Productos</h2><p class="section-sub">Visible para todo el equipo. Precios y edición: solo administrador.</p></div>
+      ${state.adminMode? '<button class="btn" id="btnNuevoProd">+ Nuevo producto</button>':''}
+    </div>
+    ${cats.length===0? '<div class="card empty"><b>Todavía no hay productos</b>'+(state.adminMode?'Creá el primero con el botón de arriba.':'Un administrador debe cargarlos.')+'</div>':
+    cats.map(cat=>`
+      <h3 style="margin:18px 0 8px;font-size:15px">${esc(cat)}</h3>
+      <div class="grid-cards">
+        ${state.productos.filter(p=>(p.categoria||'General')===cat).map(p=>prodCardHtml(p)).join('')}
+      </div>
+    `).join('')}
+  `;
+  const bn = document.getElementById('btnNuevoProd');
+  if(bn) bn.onclick = ()=> openProductEditor(null);
+  document.querySelectorAll('[data-editprod]').forEach(b=>b.onclick=()=>openProductEditor(state.productos.find(p=>p.id===b.dataset.editprod)));
+}
+function prodCardHtml(p){
+  return `<div class="prod-card ${p.activo===false?'inactive':''}">
+    <div class="prod-name">${esc(p.nombre)}</div>
+    <div class="prod-price">${fmtMoney(p.precio)}</div>
+    <div class="prod-meta">Estación: ${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</div>
+    ${p.stockDiario!=null?`<div class="prod-meta">Stock: ${p.stockRestante||0} / ${p.stockDiario}</div>`:'<div class="prod-meta">Sin control de stock</div>'}
+    ${(p.grupos&&p.grupos.length)?`<div class="prod-meta">${p.grupos.length} grupo(s) de opciones</div>`:''}
+    ${state.adminMode?`<button class="btn sm ghost" data-editprod="${p.id}" style="margin-top:4px">Editar</button>`:''}
+    ${p.activo===false?'<span class="pill neutral">Inactivo</span>':''}
+  </div>`;
+}
+function openProductEditor(prod){
+  if(!requireAdmin()) return;
+  const isNew = !prod;
+  prod = prod || {nombre:'', categoria:'', precio:0, estacionId:(state.config.estaciones[0]||{}).id||'general', stockDiario:null, activo:true, grupos:[]};
+  const grupos = JSON.parse(JSON.stringify(prod.grupos||[]));
+  function gruposHtml(){
+    return grupos.map((g,gi)=>`
+      <div class="opts-editor-group" data-gi="${gi}">
+        <div class="field-row">
+          <div class="field"><label>Nombre del grupo</label><input class="g-nombre" value="${esc(g.nombre)}" placeholder="Ej: Salsa"></div>
+          <div class="field"><label>Tipo</label><select class="g-tipo"><option value="unica" ${g.tipo==='unica'?'selected':''}>Elección única</option><option value="multiple" ${g.tipo==='multiple'?'selected':''}>Múltiple</option></select></div>
+          <div class="field" style="max-width:110px"><label>Obligatorio</label><select class="g-oblig"><option value="0" ${!g.obligatoria?'selected':''}>No</option><option value="1" ${g.obligatoria?'selected':''}>Sí</option></select></div>
+        </div>
+        <div class="opciones-list">
+          ${(g.opciones||[]).map((o,oi)=>`<div class="field-row" data-oi="${oi}" style="align-items:flex-end">
+            <div class="field"><label>Opción</label><input class="o-nombre" value="${esc(o.nombre)}"></div>
+            <div class="field" style="max-width:110px"><label>Extra $</label><input type="number" class="o-precio" value="${o.precioExtra||0}"></div>
+            <button class="iconbtn" data-delopt="${gi}|${oi}">✕</button>
+          </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn sm ghost" data-addopt="${gi}">+ opción</button>
+          <button class="btn sm danger" data-delgroup="${gi}">Eliminar grupo</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  openModal(`
+    <h3>${isNew?'Nuevo producto':'Editar producto'}</h3>
+    <div class="field-row">
+      <div class="field"><label>Nombre</label><input id="pNombre" value="${esc(prod.nombre)}"></div>
+      <div class="field"><label>Categoría</label><input id="pCategoria" value="${esc(prod.categoria)}" placeholder="Ej: Platos principales"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Precio</label><input id="pPrecio" type="number" min="0" value="${prod.precio}"></div>
+      <div class="field"><label>Estación de cocina</label><select id="pEstacion">${state.config.estaciones.map(e=>`<option value="${e.id}" ${e.id===prod.estacionId?'selected':''}>${esc(e.nombre)}</option>`).join('')}</select></div>
+      <div class="field"><label>Stock diario</label><input id="pStock" type="number" min="0" value="${prod.stockDiario==null?'':prod.stockDiario}" placeholder="vacío = sin control"></div>
+      <div class="field"><label>Activo</label><select id="pActivo"><option value="1" ${prod.activo!==false?'selected':''}>Sí</option><option value="0" ${prod.activo===false?'selected':''}>No</option></select></div>
+    </div>
+    <h3 style="font-size:14px;margin-top:14px">Opciones del producto</h3>
+    <p class="section-sub">Ej: grupo "Salsa" (elección única) o "Extras" (múltiple). Las observaciones libres ya están disponibles siempre al pedir.</p>
+    <div id="gruposWrap">${gruposHtml()}</div>
+    <button class="btn sm ghost" id="btnAddGroup">+ Agregar grupo de opciones</button>
+    <div style="display:flex;justify-content:space-between;margin-top:16px">
+      ${!isNew?`<button class="btn danger" id="btnDelProd">Eliminar producto</button>`:'<span></span>'}
+      <button class="btn" id="btnSaveProd">Guardar</button>
+    </div>
+  `, {wide:true});
+
+  function readGruposFromDOM(){
+    document.querySelectorAll('#gruposWrap [data-gi]').forEach(gEl=>{
+      const gi = parseInt(gEl.dataset.gi);
+      grupos[gi].nombre = gEl.querySelector('.g-nombre').value;
+      grupos[gi].tipo = gEl.querySelector('.g-tipo').value;
+      grupos[gi].obligatoria = gEl.querySelector('.g-oblig').value==='1';
+      gEl.querySelectorAll('[data-oi]').forEach(oEl=>{
+        const oi = parseInt(oEl.dataset.oi);
+        grupos[gi].opciones[oi].nombre = oEl.querySelector('.o-nombre').value;
+        grupos[gi].opciones[oi].precioExtra = parseFloat(oEl.querySelector('.o-precio').value)||0;
+      });
+    });
+  }
+  function rebindGroupEditor(){
+    document.getElementById('gruposWrap').innerHTML = gruposHtml();
+    document.getElementById('btnAddGroup').onclick = ()=>{
+      readGruposFromDOM();
+      grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, opciones:[]});
+      rebindGroupEditor();
+    };
+    document.querySelectorAll('[data-addopt]').forEach(b=>b.onclick=()=>{
+      readGruposFromDOM();
+      const gi = parseInt(b.dataset.addopt);
+      grupos[gi].opciones.push({id:uidLocal(), nombre:'Opción', precioExtra:0});
+      rebindGroupEditor();
+    });
+    document.querySelectorAll('[data-delopt]').forEach(b=>b.onclick=()=>{
+      readGruposFromDOM();
+      const [gi,oi] = b.dataset.delopt.split('|').map(Number);
+      grupos[gi].opciones.splice(oi,1);
+      rebindGroupEditor();
+    });
+    document.querySelectorAll('[data-delgroup]').forEach(b=>b.onclick=()=>{
+      readGruposFromDOM();
+      grupos.splice(parseInt(b.dataset.delgroup),1);
+      rebindGroupEditor();
+    });
+  }
+  document.getElementById('btnAddGroup').onclick = ()=>{
+    grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, opciones:[]});
+    rebindGroupEditor();
+  };
+  document.querySelectorAll('[data-addopt]').forEach(b=>b.onclick=()=>{
+    const gi = parseInt(b.dataset.addopt);
+    grupos[gi].opciones.push({id:uidLocal(), nombre:'Opción', precioExtra:0});
+    rebindGroupEditor();
+  });
+  document.querySelectorAll('[data-delgroup]').forEach(b=>b.onclick=()=>{
+    grupos.splice(parseInt(b.dataset.delgroup),1);
+    rebindGroupEditor();
+  });
+
+  const delBtn = document.getElementById('btnDelProd');
+  if(delBtn) delBtn.onclick = async ()=>{
+    if(!confirm('¿Eliminar este producto?')) return;
+    try{ await dbCap.doc('productos/'+prod.id).delete(); closeModal(); toast('Producto eliminado'); }catch(e){ toast('Error al eliminar'); }
+  };
+  document.getElementById('btnSaveProd').onclick = async ()=>{
+    readGruposFromDOM();
+    const nombre = document.getElementById('pNombre').value.trim();
+    if(!nombre){ toast('El nombre es obligatorio'); return; }
+    const precio = parseFloat(document.getElementById('pPrecio').value)||0;
+    const stockRaw = document.getElementById('pStock').value;
+    const stockDiario = stockRaw===''? null : parseInt(stockRaw);
+    const data = {
+      nombre, categoria: document.getElementById('pCategoria').value.trim()||'General',
+      precio, estacionId: document.getElementById('pEstacion').value,
+      stockDiario, activo: document.getElementById('pActivo').value==='1',
+      grupos
+    };
+    try{
+      if(isNew){
+        data.stockRestante = stockDiario;
+        await dbCap.collection('productos').add(data);
+      } else {
+        if(stockDiario!=null && (prod.stockRestante==null || prod.stockDiario!==stockDiario)) data.stockRestante = stockDiario;
+        await dbCap.doc('productos/'+prod.id).update(data);
+      }
+      closeModal(); toast('Producto guardado');
+    }catch(e){ toast('No se pudo guardar el producto'); }
+  };
+}
+
+/* ================= CAJA ================= */
+function renderCaja(app){
+  const pendientes = state.mesas.filter(m=>m.estado!=='libre').map(m=>{
+    const pedido = state.pedidos.find(p=>p.id===m.pedidoId);
+    const total = pedido? (pedido.items||[]).reduce((s,it)=>s+it.precio*it.cantidad,0):0;
+    return {mesa:m, pedido, total};
+  });
+  app.innerHTML = `
+    <h2 class="section-title">Caja</h2>
+    <p class="section-sub">Carga manual de pagos por mesa. Cerrar una cuenta libera la mesa.</p>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Mesa</th><th>Estado</th><th>Ítems</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+          ${pendientes.length===0? '<tr><td colspan="5"><div class="empty">No hay mesas abiertas.</div></td></tr>':
+            pendientes.map(row=>`<tr>
+              <td><b>Mesa ${esc(row.mesa.numero)}</b></td>
+              <td><span class="pill ${row.mesa.estado==='cuenta_pedida'?'danger':'busy'}">${row.mesa.estado==='cuenta_pedida'?'Cuenta pedida':'Ocupada'}</span></td>
+              <td>${row.pedido? (row.pedido.items||[]).length : 0}</td>
+              <td>${fmtMoney(row.total)}</td>
+              <td><button class="btn sm gold" data-cobrar="${row.mesa.id}">Cobrar</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.querySelectorAll('[data-cobrar]').forEach(b=>b.onclick=()=>{
+    const row = pendientes.find(r=>r.mesa.id===b.dataset.cobrar);
+    if(row && row.pedido) openCobrarModal(row.mesa, row.pedido, row.total);
+  });
+}
+
+/* ================= CIERRE ================= */
+function renderCierre(app){
+  const fecha = state.ui.cierreDate;
+  const cerrados = state.pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===fecha);
+  const totalVentas = cerrados.reduce((s,p)=>s+(p.total||0),0);
+  const totalPersonas = cerrados.reduce((s,p)=>s+(p.personas||0),0);
+  const totalTenedores = cerrados.reduce((s,p)=>s+(p.tenedores||0),0);
+  const productoAgg = {};
+  cerrados.forEach(p=>(p.items||[]).forEach(it=>{
+    productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad;
+  }));
+  const aggList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
+
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
+      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, productos vendidos, personas y cubiertos.</p></div>
+      <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
+    </div>
+    <div class="grid-cards" style="margin:14px 0">
+      <div class="card" style="padding:14px"><div class="prod-meta">Ventas totales</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentas)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Mesas cerradas</div><div class="prod-price" style="font-size:20px">${cerrados.length}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Personas atendidas</div><div class="prod-price" style="font-size:20px">${totalPersonas}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Tenedores usados</div><div class="prod-price" style="font-size:20px">${totalTenedores}</div></div>
+    </div>
+    <h3 style="font-size:15px">Productos vendidos</h3>
+    <div class="card" style="overflow-x:auto;margin-bottom:18px">
+      <table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>
+        ${aggList.length===0?'<tr><td colspan="2"><div class="empty">Sin ventas cerradas para esta fecha.</div></td></tr>':
+          aggList.map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <h3 style="font-size:15px">Detalle por mesa</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${cerrados.length===0?'<div class="card empty">Sin cierres registrados.</div>':
+        cerrados.map(p=>`<div class="card" style="padding:12px 14px">
+          <div style="display:flex;justify-content:space-between"><b>Mesa ${esc(p.mesaNumero)}</b><span>${fmtMoney(p.total)} · ${esc(p.medioPago||'—')}</span></div>
+          <div class="prod-meta">${p.personas} personas · ${p.tenedores} tenedores · cerrada ${fmtTime(p.cerrado)}hs</div>
+          <div class="prod-meta" style="margin-top:6px">${(p.items||[]).map(it=>it.cantidad+'× '+esc(it.nombre)).join(', ')}</div>
+        </div>`).join('')}
+    </div>
+    ${state.adminMode?`<div class="card" style="padding:14px;margin-top:18px"><b>Reinicio de stock diario</b><p class="section-sub">Restaura el stock de todos los productos al valor configurado (usar al iniciar el día).</p><button class="btn gold" id="btnResetStock">Reiniciar stock del día</button></div>`:''}
+  `;
+  document.getElementById('fFecha').onchange = (e)=>{ state.ui.cierreDate = e.target.value; render(); };
+  const rb = document.getElementById('btnResetStock');
+  if(rb) rb.onclick = async ()=>{
+    if(!confirm('¿Reiniciar el stock de todos los productos?')) return;
+    try{
+      for(const p of state.productos){
+        if(p.stockDiario!=null) await dbCap.doc('productos/'+p.id).update({stockRestante:p.stockDiario});
+      }
+      toast('Stock reiniciado');
+    }catch(e){ toast('Error al reiniciar stock'); }
+  };
+}
+
+/* ================= CONFIG ================= */
+function renderConfig(app){
+  if(!state.adminMode){
+    app.innerHTML = `<div class="card empty"><b>Acceso restringido</b>Activá el modo administrador arriba a la derecha para configurar mesas, estaciones y el plano.</div>`;
+    return;
+  }
+  const cfg = state.config;
+  app.innerHTML = `
+    <h2 class="section-title">Configuración</h2>
+    <p class="section-sub">Ajustes generales del restaurante. Solo visibles y editables en modo administrador.</p>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Plano del salón</h3>
+      ${cfg.mapaUrl?`<img src="${cfg.mapaUrl}" style="max-width:280px;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:10px">`:''}
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="fPlano">
+      <p class="section-sub" style="margin-top:8px">Las mesas se colocan y reubican directamente sobre el plano, en la sección Mapa, con el modo administrador activo. El archivo se guardará en tu navegador.</p>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Mesas</h3>
+      <p class="section-sub">Actualmente hay ${state.mesas.length} mesa(s). Para agregar o mover mesas, hacelo desde la sección Mapa (clic para agregar, arrastrar para reubicar).</p>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Cocina</h3>
+      <div class="field-row">
+        <div class="field"><label>Cantidad de cocineros</label><input type="number" min="0" id="fCocineros" value="${cfg.cocineros||0}"></div>
+      </div>
+      <h4 style="font-size:13px;margin:10px 0 6px">Estaciones</h4>
+      <div id="estWrap" style="display:flex;flex-direction:column;gap:6px">
+        ${(cfg.estaciones||[]).map((e,i)=>`<div class="field-row" data-ei="${i}" style="align-items:center">
+          <input class="e-nombre" value="${esc(e.nombre)}" style="flex:1">
+          <button class="iconbtn" data-delest="${i}">✕</button>
+        </div>`).join('')}
+      </div>
+      <button class="btn sm ghost" id="btnAddEst" style="margin-top:8px">+ Agregar estación</button>
+      <div style="margin-top:14px"><button class="btn" id="btnSaveCocina">Guardar cambios de cocina</button></div>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Seguridad</h3>
+      <div class="field" style="max-width:220px"><label>PIN de administrador</label><input id="fPin" value="${esc(cfg.adminPin||'1234')}"></div>
+      <p class="section-sub">Este PIN es un control de acceso simple para el equipo del restaurante, no reemplaza una autenticación real.</p>
+      <button class="btn sm" id="btnSavePin" style="margin-top:6px">Guardar PIN</button>
+    </div>
+
+    <div class="card" style="padding:16px;border:1px dashed var(--gold)">
+      <h3 style="font-size:15px;margin-top:0">Datos de prueba</h3>
+      <p class="section-sub">Carga mesas, productos, estaciones y pedidos de ejemplo (en distintos estados) para ver cómo se ve el sistema en uso. Pensado para demostraciones, no para un restaurante en producción.</p>
+      <button class="btn gold" id="btnDemoData">Cargar datos de prueba</button>
+      <button class="btn danger" id="btnWipeData" style="margin-left:8px">Vaciar todos los datos</button>
+    </div>
+  `;
+  document.getElementById('btnDemoData').onclick = loadDemoData;
+  document.getElementById('btnWipeData').onclick = wipeAllData;
+
+  document.getElementById('fPlano').onchange = async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const res = await assetsCap.upload(file);
+      await dbCap.doc('config/main').update({mapaAssetId: res.id, mapaUrl: res.url});
+      toast('Plano actualizado localmente');
+    }catch(err){ toast('No se pudo subir la imagen'); }
+  };
+
+  let estaciones = JSON.parse(JSON.stringify(cfg.estaciones||[]));
+  function rebindEst(){
+    document.getElementById('estWrap').innerHTML = estaciones.map((e,i)=>`<div class="field-row" data-ei="${i}" style="align-items:center">
+      <input class="e-nombre" value="${esc(e.nombre)}" style="flex:1">
+      <button class="iconbtn" data-delest="${i}">✕</button>
+    </div>`).join('');
+    document.querySelectorAll('[data-delest]').forEach(b=>b.onclick=()=>{
+      readEstFromDOM();
+      if(estaciones.length<=1){ toast('Debe quedar al menos una estación'); return; }
+      estaciones.splice(parseInt(b.dataset.delest),1);
+      rebindEst();
+    });
+  }
+  function readEstFromDOM(){
+    document.querySelectorAll('#estWrap [data-ei]').forEach(el=>{
+      const i = parseInt(el.dataset.ei);
+      estaciones[i].nombre = el.querySelector('.e-nombre').value;
+    });
+  }
+  document.querySelectorAll('[data-delest]').forEach(b=>b.onclick=()=>{
+    if(estaciones.length<=1){ toast('Debe quedar al menos una estación'); return; }
+    estaciones.splice(parseInt(b.dataset.delest),1);
+    rebindEst();
+  });
+  document.getElementById('btnAddEst').onclick = ()=>{
+    readEstFromDOM();
+    estaciones.push({id:uidLocal(), nombre:'Nueva estación'});
+    rebindEst();
+  };
+  document.getElementById('btnSaveCocina').onclick = async ()=>{
+    readEstFromDOM();
+    const cocineros = parseInt(document.getElementById('fCocineros').value)||0;
+    try{
+      await dbCap.doc('config/main').update({cocineros, estaciones});
+      toast('Configuración de cocina guardada');
+    }catch(e){ toast('No se pudo guardar'); }
+  };
+  document.getElementById('btnSavePin').onclick = async ()=>{
+    const pin = document.getElementById('fPin').value.trim() || '1234';
+    try{ await dbCap.doc('config/main').update({adminPin:pin}); toast('PIN actualizado'); }
+    catch(e){ toast('No se pudo actualizar el PIN'); }
+  };
+}
+
+/* ================= DEMO DATA ================= */
+async function loadDemoData(){
+  if(!requireAdmin()) return;
+  if(!confirm('Esto va a crear mesas, productos, estaciones y pedidos de ejemplo. ¿Continuar?')) return;
+  toast('Cargando datos de prueba ampliados…');
+  try{
+    const estaciones = [
+      {id:'caliente', nombre:'Cocina caliente'},
+      {id:'fria', nombre:'Cocina fría'},
+      {id:'parrilla', nombre:'Parrilla'},
+      {id:'bebidas', nombre:'Bebidas'},
+      {id:'postres', nombre:'Postres'},
+    ];
+    await dbCap.doc('config/main').update({cocineros:5, estaciones});
+
+    const productosDef = [
+      // Calientes
+      {nombre:'Sorrentinos de jamón y queso', categoria:'Principales', precio:8500, estacionId:'caliente', stockDiario:20, grupos:[
+          {id:uidLocal(), nombre:'Salsa', tipo:'unica', obligatoria:true, opciones:[
+            {id:uidLocal(), nombre:'Fileto', precioExtra:0},
+            {id:uidLocal(), nombre:'Crema y nuez', precioExtra:500},
+            {id:uidLocal(), nombre:'Estofado', precioExtra:1200},
+          ]},
+          {id:uidLocal(), nombre:'Extras', tipo:'multiple', obligatoria:false, opciones:[
+            {id:uidLocal(), nombre:'Extra queso', precioExtra:800},
+          ]},
+      ]},
+      {nombre:'Milanesa napolitana', categoria:'Principales', precio:9200, estacionId:'caliente', stockDiario:15, grupos:[
+        {id:uidLocal(), nombre:'Guarnición', tipo:'unica', obligatoria:true, opciones:[
+          {id:uidLocal(), nombre:'Papas fritas', precioExtra:0},
+          {id:uidLocal(), nombre:'Puré de papas', precioExtra:0},
+          {id:uidLocal(), nombre:'Ensalada mixta', precioExtra:0},
+        ]},
+      ]},
+      {nombre:'Pizza Muzzarella', categoria:'Principales', precio:7500, estacionId:'caliente', stockDiario:30, grupos:[]},
+      
+      // Parrilla
+      {nombre:'Parrillada para 2', categoria:'Parrilla', precio:22000, estacionId:'parrilla', stockDiario:10, grupos:[
+        {id:uidLocal(), nombre:'Punto de cocción', tipo:'unica', obligatoria:true, opciones:[
+          {id:uidLocal(), nombre:'Jugoso', precioExtra:0},
+          {id:uidLocal(), nombre:'A punto', precioExtra:0},
+          {id:uidLocal(), nombre:'Bien cocido', precioExtra:0},
+        ]}
+      ]},
+      {nombre:'Choripán clásico', categoria:'Parrilla', precio:3500, estacionId:'parrilla', stockDiario:25, grupos:[]},
+      
+      // Fríos y Entradas
+      {nombre:'Ensalada Caesar', categoria:'Entradas', precio:5200, estacionId:'fria', stockDiario:25, grupos:[
+        {id:uidLocal(), nombre:'Proteína', tipo:'unica', obligatoria:false, opciones:[
+          {id:uidLocal(), nombre:'Pollo grillado', precioExtra:1200},
+          {id:uidLocal(), nombre:'Sin proteína', precioExtra:0},
+        ]},
+      ]},
+      {nombre:'Empanadas (docena)', categoria:'Entradas', precio:6000, estacionId:'fria', stockDiario:10, grupos:[]},
+      {nombre:'Tabla de Fiambres', categoria:'Entradas', precio:12000, estacionId:'fria', stockDiario:8, grupos:[]},
+      
+      // Bebidas
+      {nombre:'Copa de vino Malbec', categoria:'Bebidas', precio:3200, estacionId:'bebidas', stockDiario:null, grupos:[]},
+      {nombre:'Vino Malbec (Botella)', categoria:'Bebidas', precio:11000, estacionId:'bebidas', stockDiario:null, grupos:[]},
+      {nombre:'Agua con gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
+      {nombre:'Agua sin gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
+      {nombre:'Gaseosa línea Coca-Cola', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
+      {nombre:'Cerveza Artesanal IPA', categoria:'Bebidas', precio:3500, estacionId:'bebidas', stockDiario:50, grupos:[]},
+      
+      // Postres
+      {nombre:'Tiramisú', categoria:'Postres', precio:4200, estacionId:'postres', stockDiario:12, grupos:[]},
+      {nombre:'Flan casero', categoria:'Postres', precio:3800, estacionId:'postres', stockDiario:15, grupos:[
+        {id:uidLocal(), nombre:'Agregados', tipo:'multiple', obligatoria:false, opciones:[
+          {id:uidLocal(), nombre:'Dulce de Leche', precioExtra:500},
+          {id:uidLocal(), nombre:'Crema', precioExtra:500},
+        ]}
+      ]},
+      {nombre:'Helado (2 bochas)', categoria:'Postres', precio:3500, estacionId:'postres', stockDiario:40, grupos:[]}
+    ];
+    
+    const prodRefs = {};
+    for(const p of productosDef){
+      const ref = await dbCap.collection('productos').add({...p, stockRestante:p.stockDiario, activo:true});
+      prodRefs[p.nombre] = {id:ref.id, ...p};
+    }
+
+    // 12 Mesas en lugar de 8
+    const mesasDef = [
+      {numero:1, x:15, y:22}, {numero:2, x:38, y:22}, {numero:3, x:61, y:22}, {numero:4, x:84, y:22},
+      {numero:5, x:15, y:45}, {numero:6, x:38, y:45}, {numero:7, x:61, y:45}, {numero:8, x:84, y:45},
+      {numero:9, x:15, y:70}, {numero:10, x:38, y:70}, {numero:11, x:61, y:70}, {numero:12, x:84, y:70},
+    ];
+    const mesaRefs = [];
+    for(const m of mesasDef){
+      const ref = await dbCap.collection('mesas').add({numero:m.numero, x:m.x, y:m.y, estado:'libre', pedidoId:null});
+      mesaRefs.push({id:ref.id, ...m});
+    }
+
+    function itemFrom(nombreProd, cantidad, estado, opcionesTexto, observaciones){
+      const p = prodRefs[nombreProd];
+      if(!p) console.warn('Producto no encontrado en tests:', nombreProd);
+      return {
+        id:uidLocal(), productoId:p.id, nombre:p.nombre, cantidad, precio:p.precio, 
+        opcionesTexto:opcionesTexto||'', observaciones:observaciones||'', 
+        estado, estacionId:p.estacionId, creado:Date.now()-Math.floor(Math.random()*20*60000)
+      };
+    }
+
+    // Mesa 2: pedido abierto (mozo recién toma el pedido)
+    const items2 = [
+      itemFrom('Parrillada para 2', 1, 'pendiente', 'Punto de cocción: A punto'),
+      itemFrom('Cerveza Artesanal IPA', 2, 'pendiente'),
+    ];
+    const ped2 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[1].id, mesaNumero:mesaRefs[1].numero, personas:2, tenedores:2, items:items2, estado:'abierto', creado:Date.now()-5*60000, total:0});
+    await dbCap.doc('mesas/'+mesaRefs[1].id).update({estado:'ocupada', pedidoId:ped2.id});
+
+    // Mesa 6: en preparación
+    const items6 = [
+      itemFrom('Pizza Muzzarella', 1, 'preparando'),
+      itemFrom('Empanadas (docena)', 1, 'preparando', '', 'Mitad carne, mitad jamón y queso'),
+      itemFrom('Gaseosa línea Coca-Cola', 4, 'entregado')
+    ];
+    const ped6 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[5].id, mesaNumero:mesaRefs[5].numero, personas:4, tenedores:4, items:items6, estado:'abierto', creado:Date.now()-20*60000, total:0});
+    await dbCap.doc('mesas/'+mesaRefs[5].id).update({estado:'ocupada', pedidoId:ped6.id});
+
+    // Mesa 10: cuenta pedida
+    const items10 = [
+      itemFrom('Milanesa napolitana', 1, 'entregado', 'Guarnición: Papas fritas'),
+      itemFrom('Ensalada Caesar', 1, 'entregado', 'Proteína: Pollo grillado'),
+      itemFrom('Agua con gas', 2, 'entregado'),
+      itemFrom('Tiramisú', 1, 'entregado')
+    ];
+    const ped10 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[9].id, mesaNumero:mesaRefs[9].numero, personas:2, tenedores:2, items:items10, estado:'abierto', creado:Date.now()-50*60000, total:0});
+    await dbCap.doc('mesas/'+mesaRefs[9].id).update({estado:'cuenta_pedida', pedidoId:ped10.id});
+
+    // --- PEDIDOS CERRADOS (Historial para la caja/cierre) ---
+    const generadorCerrados = [
+      { num: 3, pax: 2, items: [ itemFrom('Sorrentinos de jamón y queso', 2, 'entregado', 'Salsa: Estofado'), itemFrom('Vino Malbec (Botella)', 1, 'entregado') ], pago: 'Efectivo', hrsAtras: 4 },
+      { num: 7, pax: 5, items: [ itemFrom('Parrillada para 2', 2, 'entregado', 'Punto de cocción: Jugoso'), itemFrom('Choripán clásico', 1, 'entregado'), itemFrom('Cerveza Artesanal IPA', 5, 'entregado') ], pago: 'Tarjeta débito', hrsAtras: 3.5 },
+      { num: 1, pax: 1, items: [ itemFrom('Ensalada Caesar', 1, 'entregado', 'Proteína: Sin proteína'), itemFrom('Agua sin gas', 1, 'entregado') ], pago: 'MercadoPago', hrsAtras: 2 },
+      { num: 11, pax: 3, items: [ itemFrom('Milanesa napolitana', 2, 'entregado', 'Guarnición: Puré de papas'), itemFrom('Pizza Muzzarella', 1, 'entregado'), itemFrom('Gaseosa línea Coca-Cola', 3, 'entregado'), itemFrom('Flan casero', 3, 'entregado', 'Agregados: Dulce de Leche, Crema') ], pago: 'Tarjeta crédito', hrsAtras: 1.5 }
+    ];
+
+    for(const hist of generadorCerrados){
+      const totalC = hist.items.reduce((s,it)=>s + it.precio*it.cantidad, 0);
+      await dbCap.collection('pedidos').add({
+        mesaId:'demo_c_'+hist.num, mesaNumero:hist.num, personas:hist.pax, tenedores:hist.pax, items:hist.items, estado:'cerrado',
+        creado:Date.now()-(hist.hrsAtras+1)*3600000, cerrado:Date.now()-hist.hrsAtras*3600000, total:totalC, medioPago:hist.pago
+      });
+    }
+
+    toast('Datos de prueba cargados con éxito');
+  }catch(e){
+    console.error(e);
+    toast('Ocurrió un error cargando los datos de prueba');
+  }
+}
+async function wipeAllData(){
+  if(!requireAdmin()) return;
+  if(!confirm('Esto borra TODAS las mesas, productos y pedidos guardados. ¿Confirmás?')) return;
+  toast('Borrando datos…');
+  try{
+    for(const m of state.mesas) await dbCap.doc('mesas/'+m.id).delete();
+    for(const p of state.productos) await dbCap.doc('productos/'+p.id).delete();
+    for(const p of state.pedidos) await dbCap.doc('pedidos/'+p.id).delete();
+    await dbCap.doc('config/main').update({numMesas:0});
+    toast('Datos borrados');
+  }catch(e){ toast('Error al borrar datos'); }
+}
+
+boot();
+</script>
+</body>
+</html>
