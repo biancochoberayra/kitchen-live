@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocina Ordu - Sistema Completo</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --accent: #0ea5e9;
+            --accent-hover: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            
+            --success: #22c55e;
+            --danger: #f43f5e;
+            --warning: #f59e0b;
+            --alert-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- BARRA LATERAL --- */
+        aside {
+            width: 260px;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .logo-container {
+            padding: 24px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo-container i { color: var(--accent); font-size: 1.5rem; }
+
+        .nav-links { list-style: none; padding: 16px 12px; flex-grow: 1; overflow-y: auto; }
+        .nav-links li { margin-bottom: 6px; }
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover { background-color: var(--bg-hover); color: var(--text-main); }
+        .nav-links a.active { background-color: var(--accent); color: #fff; }
+
+        /* --- ESTRUCTURA PRINCIPAL --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-right { display: flex; align-items: center; gap: 24px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .user-profile img { width: 36px; height: 36px; border-radius: 50%; }
+
+        /* CONTENEDOR DE VISTAS (SPA) */
+        .view-section {
+            display: none; /* Oculto por defecto */
+            padding: 24px 32px;
+            overflow-y: auto;
+            flex-grow: 1;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .view-section.active { display: flex; } /* Clase para mostrar la vista activa */
+
+        /* --- COMPONENTES GLOBALES --- */
+        .btn-primary {
+            background-color: var(--accent); color: white; border: none; padding: 10px 20px;
+            border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;}
+        
+        .card { background-color: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+        /* --- VISTA: INICIO (Dashboard) --- */
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+        .card-summary { padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); border-left: 4px solid var(--accent);}
+        .card-summary .value { font-size: 1.5rem; font-weight: 700; margin-top: 8px;}
+        
+        .salon-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+        .table-map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; min-height: 300px; background: var(--bg-main); padding: 20px; border-radius: 8px;}
+        .mesa-btn { height: 80px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; cursor: pointer; border: 2px solid var(--success); background: rgba(34,197,94,0.1); color: var(--success); }
+        .mesa-btn.ocupada { border-color: var(--danger); background: rgba(244,63,94,0.1); color: var(--danger); }
+
+        /* --- VISTA: COCINA (Kanban) --- */
+        .kanban-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; height: 100%; }
+        .kanban-column { background: var(--bg-card); border-radius: 12px; padding: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; }
+        .kanban-column h3 { font-size: 1rem; text-align: center; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+        .ticket { background: var(--bg-main); padding: 12px; border-radius: 8px; border-left: 4px solid var(--warning); }
+        .ticket.urgent { border-left-color: var(--alert-red); }
+        .ticket.ready { border-left-color: var(--success); }
+
+        /* --- VISTA: CAJA Y PRODUCTOS (Tablas) --- */
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .data-table th { color: var(--text-muted); font-weight: 500; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge.active { background: rgba(34,197,94,0.2); color: var(--success); }
+        
+        .caja-resumen { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .caja-total { font-size: 2rem; color: var(--success); font-weight: 700; }
+
+    </style>
+</head>
+<body>
+
+    <!-- BARRA LATERAL -->
+    <aside>
+        <div class="logo-container">
+            <i class="fa-solid fa-utensils"></i>
+            <span>Cocina Ordu</span>
+        </div>
+        <ul class="nav-links">
+            <li><a class="nav-item active" onclick="cambiarVista('inicio', this)"><i class="fa-solid fa-house"></i> Inicio</a></li>
+            <li><a class="nav-item" onclick="cambiarVista('pedidos', this)"><i class="fa-solid fa-receipt"></i> Pedidos</a></li>
+            <li><a class="nav-item" onclick="cambiarVista('cocina', this)"><i class="fa-solid fa-fire-burner"></i> Cocina</a></li>
+            <li><a class="nav-item" onclick="cambiarVista('caja', this)"><i class="fa-solid fa-cash-register"></i> Caja</a></li>
+            <li><a class="nav-item" onclick="cambiarVista('productos', this)"><i class="fa-solid fa-burger"></i> Productos</a></li>
+            <li><a class="nav-item" onclick="cambiarVista('configuracion', this)"><i class="fa-solid fa-gear"></i> Configuración</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <!-- ENCABEZADO -->
+        <header>
+            <div>
+                <h1 id="header-title" style="font-size: 1.25rem;">Dashboard Principal</h1>
+            </div>
+            <div class="header-right">
+                <span style="color: var(--text-muted); font-size: 0.85rem;" id="reloj"></span>
+                <i class="fa-solid fa-bell" style="cursor: pointer;"></i>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Ana+Lopez&background=38bdf8&color=fff" alt="Perfil">
+                    <div style="font-size: 0.85rem;">
+                        <strong>Ana López</strong><br>
+                        <span style="color: var(--text-muted)">Administrador</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ========================================== -->
+        <!-- VISTA: INICIO -->
+        <!-- ========================================== -->
+        <div id="vista-inicio" class="view-section active">
+            <div class="summary-cards">
+                <div class="card-summary" style="border-left-color: var(--danger)">
+                    <div style="color: var(--text-muted)">Mesas Ocupadas</div>
+                    <div class="value">6 / 10</div>
+                </div>
+                <div class="card-summary" style="border-left-color: var(--success)">
+                    <div style="color: var(--text-muted)">Mesas Libres</div>
+                    <div class="value">4 / 10</div>
+                </div>
+                <div class="card-summary" style="border-left-color: var(--warning)">
+                    <div style="color: var(--text-muted)">Ventas del Día</div>
+                    <div class="value">$245.300</div>
+                </div>
+            </div>
+
+            <div class="salon-grid">
+                <div class="card">
+                    <div class="section-header">
+                        <h2>Mapa del Salón</h2>
+                        <button class="btn-danger"><i class="fa-solid fa-plus"></i> Nuevo Pedido</button>
+                    </div>
+                    <div class="table-map">
+                        <div class="mesa-btn ocupada">M1 <span>Ocupada</span></div>
+                        <div class="mesa-btn">M2 <span>Libre</span></div>
+                        <div class="mesa-btn">M3 <span>Libre</span></div>
+                        <div class="mesa-btn ocupada">M4 <span>Ocupada</span></div>
+                        <div class="mesa-btn">M5 <span>Libre</span></div>
+                        <div class="mesa-btn">M6 <span>Libre</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Pedidos Recientes</h2>
+                    <br>
+                    <div class="ticket">Mesa 1 - En Cocina (32m)</div>
+                    <br>
+                    <div class="ticket urgent">Mesa 4 - Demorado (45m)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VISTA: PEDIDOS -->
+        <!-- ========================================== -->
+        <div id="vista-pedidos" class="view-section">
+            <div class="card">
+                <div class="section-header">
+                    <h2>Historial y Pedidos Activos</h2>
+                    <button class="btn-primary">Filtrar</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Mesa</th>
+                            <th>Detalle</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#1042</td>
+                            <td>Mesa 1</td>
+                            <td>2x Milanesa, 1x Coca Cola</td>
+                            <td><span class="badge active">En Proceso</span></td>
+                            <td>$3.350</td>
+                            <td><button class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">Ver</button></td>
+                        </tr>
+                        <tr>
+                            <td>#1041</td>
+                            <td>Mesa 4</td>
+                            <td>1x Ensalada, 1x Agua</td>
+                            <td><span class="badge" style="background: rgba(239,68,68,0.2); color: var(--alert-red)">Demorado</span></td>
+                            <td>$1.480</td>
+                            <td><button class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">Ver</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VISTA: COCINA (KITCHEN DISPLAY SYSTEM) -->
+        <!-- ========================================== -->
+        <div id="vista-cocina" class="view-section">
+            <div class="kanban-board">
+                <!-- Columna 1 -->
+                <div class="kanban-column">
+                    <h3 style="color: var(--alert-red)">Pendientes (Nuevos)</h3>
+                    <div class="ticket urgent">
+                        <strong>Mesa 7 (14:30)</strong>
+                        <ul style="margin-left: 16px; margin-top: 8px; font-size: 0.85rem;">
+                            <li>1x Bife de Chorizo (A punto)</li>
+                            <li>1x Puré rústico</li>
+                        </ul>
+                        <button class="btn-primary" style="width: 100%; margin-top: 10px;">Preparar</button>
+                    </div>
+                </div>
+                <!-- Columna 2 -->
+                <div class="kanban-column">
+                    <h3 style="color: var(--warning)">En Preparación</h3>
+                    <div class="ticket">
+                        <strong>Mesa 1 (14:15)</strong>
+                        <ul style="margin-left: 16px; margin-top: 8px; font-size: 0.85rem;">
+                            <li>2x Milanesa con fritas</li>
+                        </ul>
+                        <button class="btn-primary" style="width: 100%; margin-top: 10px; background: var(--success);">Marcar Listo</button>
+                    </div>
+                </div>
+                <!-- Columna 3 -->
+                <div class="kanban-column">
+                    <h3 style="color: var(--success)">Listos para Servir</h3>
+                    <div class="ticket ready">
+                        <strong>Mesa 3</strong>
+                        <div style="font-size: 0.85rem; margin-top: 8px;">Esperando al mozo...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VISTA: CAJA -->
+        <!-- ========================================== -->
+        <div id="vista-caja" class="view-section">
+            <div class="caja-resumen">
+                <div class="card">
+                    <div style="color: var(--text-muted)">Total Recaudado Hoy</div>
+                    <div class="caja-total">$245.300</div>
+                </div>
+                <div class="card" style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="color: var(--text-muted)">Efectivo</div>
+                        <h3 style="font-size: 1.5rem;">$98.000</h3>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-muted)">Tarjetas / Transferencias</div>
+                        <h3 style="font-size: 1.5rem;">$147.300</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Últimos Movimientos</h2>
+                <br>
+                <table class="data-table">
+                    <tr><th>Hora</th><th>Concepto</th><th>Método</th><th>Monto</th></tr>
+                    <tr><td>14:20</td><td>Cobro Mesa 5</td><td>MercadoPago</td><td>+$4.500</td></tr>
+                    <tr><td>13:45</td><td>Cobro Mesa 2</td><td>Efectivo</td><td>+$8.200</td></tr>
+                    <tr><td>11:00</td><td>Pago Proveedor (Pan)</td><td>Efectivo</td><td style="color: var(--alert-red)">-$12.000</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VISTA: PRODUCTOS -->
+        <!-- ========================================== -->
+        <div id="vista-productos" class="view-section">
+            <div class="card">
+                <div class="section-header">
+                    <h2>Menú y Productos</h2>
+                    <button class="btn-primary"><i class="fa-solid fa-plus"></i> Nuevo Producto</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Disponibilidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Milanesa con Fritas</td>
+                            <td>Platos Principales</td>
+                            <td>$2.500</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td>
+                                <i class="fa-solid fa-pen" style="color: var(--accent); cursor: pointer; margin-right: 10px;"></i>
+                                <i class="fa-solid fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Ensalada Caesar</td>
+                            <td>Entradas</td>
+                            <td>$1.800</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td>
+                                <i class="fa-solid fa-pen" style="color: var(--accent); cursor: pointer; margin-right: 10px;"></i>
+                                <i class="fa-solid fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Flan Casero</td>
+                            <td>Postres</td>
+                            <td>$900</td>
+                            <td><span class="badge" style="background: var(--bg-hover)">Agotado</span></td>
+                            <td>
+                                <i class="fa-solid fa-pen" style="color: var(--accent); cursor: pointer; margin-right: 10px;"></i>
+                                <i class="fa-solid fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VISTA: CONFIGURACIÓN -->
+        <!-- ========================================== -->
+        <div id="vista-configuracion" class="view-section">
+            <div class="card" style="max-width: 600px;">
+                <h2>Configuración del Restaurante</h2>
+                <br>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <label style="color: var(--text-muted); font-size: 0.85rem;">Nombre del Local</label><br>
+                        <input type="text" value="Cocina Ordu" style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label style="color: var(--text-muted); font-size: 0.85rem;">Impresora de Cocina (IP)</label><br>
+                        <input type="text" value="192.168.1.100" style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-top: 5px;">
+                    </div>
+                    <button class="btn-primary" style="width: fit-content; margin-top: 10px;">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT PARA NAVEGACIÓN SPA -->
+    <script>
+        // Función para cambiar entre secciones
+        function cambiarVista(idVista, elementoMenu) {
+            // 1. Ocultar todas las secciones
+            const vistas = document.querySelectorAll('.view-section');
+            vistas.forEach(vista => vista.classList.remove('active'));
+
+            // 2. Quitar clase 'active' de todos los botones del menú
+            const itemsMenu = document.querySelectorAll('.nav-item');
+            itemsMenu.forEach(item => item.classList.remove('active'));
+
+            // 3. Mostrar la vista seleccionada
+            document.getElementById('vista-' + idVista).classList.add('active');
+            
+            // 4. Marcar el botón clickeado como activo
+            elementoMenu.classList.add('active');
+
+            // 5. Actualizar título del Header dinámicamente
+            const titulos = {
+                'inicio': 'Dashboard Principal',
+                'pedidos': 'Gestión de Pedidos',
+                'cocina': 'Monitor de Cocina (KDS)',
+                'caja': 'Control de Caja y Facturación',
+                'productos': 'Catálogo de Productos',
+                'configuracion': 'Configuración del Sistema'
+            };
+            document.getElementById('header-title').innerText = titulos[idVista];
+        }
+
+        // Reloj en tiempo real para el Header
+        function actualizarReloj() {
+            const ahora = new Date();
+            const opciones = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('reloj').innerText = ahora.toLocaleDateString('es-ES', opciones);
+        }
+        setInterval(actualizarReloj, 60000); // Actualiza cada minuto
+        actualizarReloj(); // Llamada inicial
+    </script>
+
+</body>
+</html>
