@@ -274,9 +274,11 @@ let state = {
   movimientosCaja: [],
   movimientosStock: [],
   cierres: [],
+  historialPrecios: [],
+  proveedores: [],
   caja: null,
   rol: localStorage.getItem(ROL_KEY) || 'admin',
-  loaded: {config:false, mesas:false, productos:false, pedidos:false, gastos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false},
+  loaded: {config:false, mesas:false, productos:false, pedidos:false, gastos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false, proveedores:false},
   ui: {
     stationTab: null,
     cierreDate: todayStr(),
@@ -319,7 +321,7 @@ const DB_KEY = 'restaurantFlowLocalDB';
 let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
 
 function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
-const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], gastos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[] };
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], gastos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[], historialPrecios:[], proveedores:[] };
 function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
 
 const dbCap = {
@@ -457,6 +459,18 @@ async function boot(){
   dbCap.collection('cierres').onSnapshot(snap=>{
     state.cierres = snap.docs.map(d=>({id:d.id, ...d.data}));
     state.loaded.cierres = true;
+    render();
+  });
+
+  dbCap.collection('historialPrecios').onSnapshot(snap=>{
+    state.historialPrecios = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.historialPrecios = true;
+    render();
+  });
+
+  dbCap.collection('proveedores').onSnapshot(snap=>{
+    state.proveedores = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.proveedores = true;
     render();
   });
 }
@@ -875,21 +889,62 @@ function openConfigureItemModal(m, pedido, prod){
 }
 
 /* ---- cobrar ---- */
+const MEDIOS_PAGO = ['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia','Otro'];
 function openCobrarModal(m, pedido, total){
+  let pagos = [{medio:'Efectivo', monto:total}];
+  function pagosHtml(){
+    const sumado = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+    return `
+      <div id="pagosWrap" style="display:flex;flex-direction:column;gap:8px">
+        ${pagos.map((p,i)=>`<div class="field-row" data-pi="${i}" style="align-items:flex-end">
+          <div class="field"><label>Medio de pago</label><select class="pg-medio">${MEDIOS_PAGO.map(mp=>`<option ${mp===p.medio?'selected':''}>${mp}</option>`).join('')}</select></div>
+          <div class="field"><label>Monto</label><input type="number" min="0" class="pg-monto" value="${p.monto}"></div>
+          ${pagos.length>1?`<button class="iconbtn" data-delpago="${i}">✕</button>`:''}
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13.5px">
+        <span class="section-sub" style="margin:0">Ingresado: <b style="color:var(--ink)">${fmtMoney(sumado)}</b> / ${fmtMoney(total)}</span>
+        ${sumado!==total?`<span style="color:var(--warn);font-weight:700">${sumado>total?'Sobra':'Falta'} ${fmtMoney(Math.abs(sumado-total))}</span>`:''}
+      </div>
+      <button class="btn sm ghost" id="btnAddPago" style="margin-top:8px">+ Dividir en otro medio de pago</button>
+    `;
+  }
   openModal(`
     <h3>Cobrar mesa ${esc(m.numero)}</h3>
-    <p class="section-sub">Carga manual del pago. Total de la comanda: <b>${fmtMoney(total)}</b></p>
-    <div class="field-row">
-      <div class="field"><label>Monto cobrado</label><input type="number" min="0" value="${total}" id="fMonto"></div>
-      <div class="field"><label>Medio de pago</label><select id="fMedio"><option>Efectivo</option><option>Tarjeta débito</option><option>Tarjeta crédito</option><option>Transferencia</option><option>Otro</option></select></div>
-    </div>
-    <button class="btn gold" id="btnConfirmarCobro">Confirmar cobro y cerrar mesa</button>
+    <p class="section-sub">Carga manual del pago. Total de la comanda: <b>${fmtMoney(total)}</b>. Podés dividirlo en más de un medio de pago.</p>
+    <div id="pagosBox">${pagosHtml()}</div>
+    <button class="btn gold" id="btnConfirmarCobro" style="margin-top:14px">Confirmar cobro y cerrar mesa</button>
   `);
+  function readPagosFromDOM(){
+    document.querySelectorAll('#pagosWrap [data-pi]').forEach(el=>{
+      const i = parseInt(el.dataset.pi);
+      pagos[i].medio = el.querySelector('.pg-medio').value;
+      pagos[i].monto = parseFloat(el.querySelector('.pg-monto').value)||0;
+    });
+  }
+  function rebind(){
+    document.getElementById('pagosBox').innerHTML = pagosHtml();
+    document.getElementById('btnAddPago').onclick = ()=>{
+      readPagosFromDOM();
+      const sumado = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+      pagos.push({medio:'Efectivo', monto: Math.max(0, total-sumado)});
+      rebind();
+    };
+    document.querySelectorAll('[data-delpago]').forEach(b=>b.onclick=()=>{
+      readPagosFromDOM();
+      pagos.splice(parseInt(b.dataset.delpago),1);
+      rebind();
+    });
+  }
+  rebind();
   document.getElementById('btnConfirmarCobro').onclick = async ()=>{
-    const monto = parseFloat(document.getElementById('fMonto').value)||0;
-    const medio = document.getElementById('fMedio').value;
+    readPagosFromDOM();
+    const montoTotal = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+    if(montoTotal<=0){ toast('Ingresá al menos un monto mayor a 0'); return; }
+    const mediosUnicos = [...new Set(pagos.map(p=>p.medio))];
+    const medioPago = mediosUnicos.length>1 ? 'Mixto' : mediosUnicos[0];
     try{
-      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cerrado', total: monto, medioPago: medio, cerrado: Date.now()});
+      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cerrado', total: montoTotal, medioPago, pagos, cerrado: Date.now()});
       await dbCap.doc('mesas/'+m.id).update({estado:'libre', pedidoId:null});
       closeModal();
       toast('Mesa cobrada y cerrada');
@@ -1019,6 +1074,13 @@ function openProductEditor(prod){
       <div class="field"><label>Stock diario</label><input id="pStock" type="number" min="0" value="${prod.stockDiario==null?'':prod.stockDiario}" placeholder="vacío = sin control"></div>
       <div class="field"><label>Activo</label><select id="pActivo"><option value="1" ${prod.activo!==false?'selected':''}>Sí</option><option value="0" ${prod.activo===false?'selected':''}>No</option></select></div>
     </div>
+    ${!isNew?(()=>{
+      const hist = state.historialPrecios.filter(h=>h.productoId===prod.id).sort((a,b)=>b.creado-a.creado).slice(0,6);
+      return hist.length===0?'':`<div style="margin:-4px 0 10px">
+        <label style="font-size:12px;font-weight:700;color:var(--ink-soft)">Historial de precios</label>
+        <div class="section-sub" style="margin:4px 0 0">${hist.map(h=>`${fmtMoney(h.precioAnterior)} → ${fmtMoney(h.precioNuevo)} (${dateOf(h.creado)})`).join(' · ')}</div>
+      </div>`;
+    })():''}
     <h3 style="font-size:14px;margin-top:14px">Opciones del producto</h3>
     <p class="section-sub">Ej: grupo "Salsa" (elección única) o "Extras" (múltiple). Las observaciones libres ya están disponibles siempre al pedir.</p>
     <div id="gruposWrap">${gruposHtml()}</div>
@@ -1105,6 +1167,12 @@ function openProductEditor(prod){
         await dbCap.collection('productos').add(data);
       } else {
         if(stockDiario!=null && (prod.stockRestante==null || prod.stockDiario!==stockDiario)) data.stockRestante = stockDiario;
+        if(precio!==prod.precio){
+          await dbCap.collection('historialPrecios').add({
+            productoId: prod.id, productoNombre: nombre,
+            precioAnterior: prod.precio, precioNuevo: precio, creado: Date.now()
+          });
+        }
         await dbCap.doc('productos/'+prod.id).update(data);
       }
       closeModal(); toast('Producto guardado');
@@ -1389,16 +1457,27 @@ function openNuevoGastoModal(){
     <div class="field"><label>Descripción</label><input id="gDescripcion" placeholder="Ej: Detergente y lavandina"></div>
     <div class="field-row">
       <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="gMonto"></div>
-      <div class="field"><label>Proveedor (opcional)</label><input id="gProveedor"></div>
+      <div class="field"><label>Proveedor (opcional)</label>
+        <select id="gProveedor">
+          <option value="">Sin proveedor</option>
+          ${state.proveedores.map(pv=>`<option value="${esc(pv.nombre)}">${esc(pv.nombre)}</option>`).join('')}
+          <option value="__otro">Otro (escribir)</option>
+        </select>
+      </div>
     </div>
+    <div class="field" id="gProveedorOtroWrap" style="display:none"><label>Nombre del proveedor</label><input id="gProveedorOtro"></div>
     <button class="btn" id="btnGuardarGasto" style="margin-top:10px">Guardar gasto</button>
   `);
+  document.getElementById('gProveedor').onchange = (e)=>{
+    document.getElementById('gProveedorOtroWrap').style.display = e.target.value==='__otro' ? '' : 'none';
+  };
   document.getElementById('btnGuardarGasto').onclick = async ()=>{
     const categoria = document.getElementById('gCategoria').value;
     const medioPago = document.getElementById('gMedio').value;
     const descripcion = document.getElementById('gDescripcion').value.trim();
     const monto = parseFloat(document.getElementById('gMonto').value)||0;
-    const proveedor = document.getElementById('gProveedor').value.trim();
+    const provSel = document.getElementById('gProveedor').value;
+    const proveedor = provSel==='__otro' ? document.getElementById('gProveedorOtro').value.trim() : provSel;
     if(!descripcion){ toast('La descripción es obligatoria'); return; }
     if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
     try{
@@ -1470,6 +1549,7 @@ function renderCierre(app){
         cerrados.map(p=>`<div class="card" style="padding:12px 14px">
           <div style="display:flex;justify-content:space-between"><b>Mesa ${esc(p.mesaNumero)}</b><span>${fmtMoney(p.total)} · ${esc(p.medioPago||'—')}</span></div>
           <div class="prod-meta">${p.personas} personas · ${p.tenedores} tenedores · cerrada ${fmtTime(p.cerrado)}hs</div>
+          ${p.medioPago==='Mixto' && p.pagos? `<div class="prod-meta">${p.pagos.map(pg=>esc(pg.medio)+' '+fmtMoney(pg.monto)).join(' + ')}</div>`:''}
           <div class="prod-meta" style="margin-top:6px">${(p.items||[]).map(it=>it.cantidad+'× '+esc(it.nombre)).join(', ')}</div>
         </div>`).join('')}
     </div>
@@ -1527,8 +1607,8 @@ function exportarCierreCSV(fecha, cerrados, gastosDia, totalVentas, totalGastos)
   rows.push(['Ventas totales', totalVentas]);
   rows.push(['Gastos totales', totalGastos]);
   rows.push([]);
-  rows.push(['Mesa','Personas','Tenedores','Medio de pago','Total','Hora cierre','Items']);
-  cerrados.forEach(p=>rows.push([p.mesaNumero, p.personas, p.tenedores, p.medioPago||'', p.total, fmtTime(p.cerrado), (p.items||[]).map(it=>it.cantidad+'x '+it.nombre).join(' | ')]));
+  rows.push(['Mesa','Personas','Tenedores','Medio de pago','Detalle de pago','Total','Hora cierre','Items']);
+  cerrados.forEach(p=>rows.push([p.mesaNumero, p.personas, p.tenedores, p.medioPago||'', (p.pagos||[]).map(pg=>pg.medio+' '+pg.monto).join(' | '), p.total, fmtTime(p.cerrado), (p.items||[]).map(it=>it.cantidad+'x '+it.nombre).join(' | ')]));
   rows.push([]);
   rows.push(['Gastos']);
   rows.push(['Hora','Categoría','Descripción','Monto']);
@@ -1588,6 +1668,22 @@ function renderConfig(app){
       <button class="btn sm" id="btnSavePin" style="margin-top:6px">Guardar PIN</button>
     </div>
 
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Proveedores</h3>
+      <p class="section-sub">Lista simple para asociar a los gastos y compras. Sin datos de contacto: solo el nombre.</p>
+      <div id="provWrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+        ${state.proveedores.length===0?'<div class="section-sub" style="margin:0">Todavía no hay proveedores cargados.</div>':
+          state.proveedores.map(pv=>`<div class="field-row" style="align-items:center">
+            <span style="flex:1">${esc(pv.nombre)}</span>
+            <button class="iconbtn" data-delprov="${pv.id}">✕</button>
+          </div>`).join('')}
+      </div>
+      <div class="field-row">
+        <div class="field"><input id="fNuevoProveedor" placeholder="Nombre del proveedor"></div>
+        <button class="btn sm ghost" id="btnAddProveedor">+ Agregar</button>
+      </div>
+    </div>
+
     <div class="card" style="padding:16px;border:1px dashed var(--gold)">
       <h3 style="font-size:15px;margin-top:0">Datos de prueba</h3>
       <p class="section-sub">Carga mesas, productos, estaciones y pedidos de ejemplo (en distintos estados) para ver cómo se ve el sistema en uso. Pensado para demostraciones, no para un restaurante en producción.</p>
@@ -1597,6 +1693,17 @@ function renderConfig(app){
   `;
   document.getElementById('btnDemoData').onclick = loadDemoData;
   document.getElementById('btnWipeData').onclick = wipeAllData;
+  document.getElementById('btnAddProveedor').onclick = async ()=>{
+    const input = document.getElementById('fNuevoProveedor');
+    const nombre = input.value.trim();
+    if(!nombre){ toast('Ingresá un nombre'); return; }
+    try{ await dbCap.collection('proveedores').add({nombre, creado:Date.now()}); input.value=''; toast('Proveedor agregado'); }
+    catch(e){ toast('No se pudo agregar'); }
+  };
+  document.querySelectorAll('[data-delprov]').forEach(b=>b.onclick=async ()=>{
+    if(!confirm('¿Eliminar este proveedor?')) return;
+    try{ await dbCap.doc('proveedores/'+b.dataset.delprov).delete(); toast('Proveedor eliminado'); }catch(e){ toast('No se pudo eliminar'); }
+  });
 
   document.getElementById('fPlano').onchange = async (e)=>{
     const file = e.target.files[0];
@@ -1798,12 +1905,15 @@ async function loadDemoData(){
       });
     }
 
-    // --- CAJA Y GASTOS DE EJEMPLO ---
+    // --- PROVEEDORES, CAJA Y GASTOS DE EJEMPLO ---
+    for(const nombre of ['Distribuidora Sur','Bebidas del Litoral','Gas Metropolitano']){
+      await dbCap.collection('proveedores').add({nombre, creado:Date.now()});
+    }
     await dbCap.doc('caja/main').set({abierta:true, fecha:todayStr(), montoInicial:20000, abiertaEn:Date.now()-6*3600000, cerradaEn:null, montoRealCierre:null, diferencia:null});
     await dbCap.collection('movimientosCaja').add({tipo:'egreso', medioPago:'Efectivo', concepto:'Cambio para mozos', monto:5000, creado:Date.now()-5*3600000});
     const gastosDef = [
       {categoria:'Descartables', medioPago:'Efectivo', descripcion:'Vasos y servilletas', monto:4200, proveedor:'Distribuidora Sur', creado:Date.now()-4*3600000},
-      {categoria:'Servicios', medioPago:'Transferencia', descripcion:'Garrafa de gas', monto:9500, proveedor:'', creado:Date.now()-2*3600000},
+      {categoria:'Servicios', medioPago:'Transferencia', descripcion:'Garrafa de gas', monto:9500, proveedor:'Gas Metropolitano', creado:Date.now()-2*3600000},
       {categoria:'Limpieza', medioPago:'Efectivo', descripcion:'Detergente y lavandina', monto:2100, proveedor:'', creado:Date.now()-1*3600000},
     ];
     for(const g of gastosDef){ await dbCap.collection('gastos').add(g); }
@@ -1826,6 +1936,8 @@ async function wipeAllData(){
     for(const mv of state.movimientosCaja) await dbCap.doc('movimientosCaja/'+mv.id).delete();
     for(const mv of state.movimientosStock) await dbCap.doc('movimientosStock/'+mv.id).delete();
     for(const c of state.cierres) await dbCap.doc('cierres/'+c.id).delete();
+    for(const h of state.historialPrecios) await dbCap.doc('historialPrecios/'+h.id).delete();
+    for(const pv of state.proveedores) await dbCap.doc('proveedores/'+pv.id).delete();
     await dbCap.doc('caja/main').delete();
     await dbCap.doc('config/main').update({numMesas:0});
     toast('Datos borrados');
