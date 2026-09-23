@@ -184,6 +184,7 @@ const VIEWS = [
   {id:'cocina', label:'Cocina'},
   {id:'productos', label:'Productos'},
   {id:'caja', label:'Caja'},
+  {id:'gastos', label:'Gastos'},
   {id:'cierre', label:'Cierre'},
   {id:'config', label:'Config'},
 ];
@@ -197,10 +198,14 @@ let state = {
   mesas: [],
   productos: [],
   pedidos: [],
-  loaded: {config:false, mesas:false, productos:false, pedidos:false},
+  gastos: [],
+  movimientosCaja: [],
+  caja: null,
+  loaded: {config:false, mesas:false, productos:false, pedidos:false, gastos:false, movimientosCaja:false, caja:false},
   ui: {
     stationTab: null,
     cierreDate: todayStr(),
+    gastosDate: todayStr(),
     placingMesa: false,
   }
 };
@@ -238,7 +243,7 @@ const DB_KEY = 'restaurantFlowLocalDB';
 let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
 
 function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
-const dbListeners = { config:[], mesas:[], productos:[], pedidos:[] };
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], gastos:[], movimientosCaja:[], caja:[] };
 function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
 
 const dbCap = {
@@ -348,6 +353,24 @@ async function boot(){
     state.loaded.pedidos = true;
     render();
   });
+
+  dbCap.collection('gastos').onSnapshot(snap=>{
+    state.gastos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.gastos = true;
+    render();
+  });
+
+  dbCap.collection('movimientosCaja').onSnapshot(snap=>{
+    state.movimientosCaja = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.movimientosCaja = true;
+    render();
+  });
+
+  dbCap.doc('caja/main').onSnapshot(snap=>{
+    state.caja = snap.exists ? snap.data : null;
+    state.loaded.caja = true;
+    render();
+  });
 }
 
 /* ---------------- NAV / ADMIN ---------------- */
@@ -395,6 +418,7 @@ function render(){
   if(state.view==='cocina') return renderCocina(app);
   if(state.view==='productos') return renderProductos(app);
   if(state.view==='caja') return renderCaja(app);
+  if(state.view==='gastos') return renderGastos(app);
   if(state.view==='cierre') return renderCierre(app);
   if(state.view==='config') return renderConfig(app);
 }
@@ -939,15 +963,76 @@ function openProductEditor(prod){
 
 /* ================= CAJA ================= */
 function renderCaja(app){
+  const today = todayStr();
+  const cfg = state.caja;
+  const cajaAbiertaHoy = !!(cfg && cfg.abierta && cfg.fecha===today);
+  const cajaCerradaHoy = !!(cfg && !cfg.abierta && cfg.fecha===today);
+
+  if(!cajaAbiertaHoy && !cajaCerradaHoy){
+    app.innerHTML = `
+      <h2 class="section-title">Caja</h2>
+      <p class="section-sub">Todavía no se abrió la caja de hoy. Ingresá el monto inicial para empezar a operar.</p>
+      <div class="card" style="max-width:360px;padding:18px">
+        <div class="field"><label>Monto inicial</label><input type="number" min="0" value="0" id="fMontoInicial"></div>
+        <button class="btn gold" id="btnAbrirCaja" style="margin-top:12px">Abrir caja</button>
+      </div>
+    `;
+    document.getElementById('btnAbrirCaja').onclick = async ()=>{
+      const montoInicial = parseFloat(document.getElementById('fMontoInicial').value)||0;
+      try{
+        await dbCap.doc('caja/main').set({abierta:true, fecha:today, montoInicial, abiertaEn:Date.now(), cerradaEn:null, montoRealCierre:null, diferencia:null});
+        toast('Caja abierta');
+      }catch(e){ toast('No se pudo abrir la caja'); }
+    };
+    return;
+  }
+
   const pendientes = state.mesas.filter(m=>m.estado!=='libre').map(m=>{
     const pedido = state.pedidos.find(p=>p.id===m.pedidoId);
     const total = pedido? (pedido.items||[]).reduce((s,it)=>s+it.precio*it.cantidad,0):0;
     return {mesa:m, pedido, total};
   });
+  const ventasHoy = state.pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===today);
+  const totalVentasHoy = ventasHoy.reduce((s,p)=>s+(p.total||0),0);
+  const gastosHoy = state.gastos.filter(g=>dateOf(g.creado)===today);
+  const totalGastosHoy = gastosHoy.reduce((s,g)=>s+(g.monto||0),0);
+  const movHoy = state.movimientosCaja.filter(mv=>dateOf(mv.creado)===today);
+  const ingresosManuales = movHoy.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+mv.monto,0);
+  const egresosManuales = movHoy.filter(mv=>mv.tipo==='egreso').reduce((s,mv)=>s+mv.monto,0);
+  const totalEsperado = (cfg.montoInicial||0) + totalVentasHoy + ingresosManuales - totalGastosHoy - egresosManuales;
+
   app.innerHTML = `
-    <h2 class="section-title">Caja</h2>
-    <p class="section-sub">Carga manual de pagos por mesa. Cerrar una cuenta libera la mesa.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Caja</h2><p class="section-sub">Carga manual de pagos por mesa. Cerrar una cuenta libera la mesa.</p></div>
+      ${cajaAbiertaHoy?`<button class="btn gold" id="btnCerrarCaja">Cerrar caja</button>`:
+        `<span class="pill ${cfg.diferencia===0?'ok':'warn'}">Caja cerrada · contado ${fmtMoney(cfg.montoRealCierre||0)} · diferencia ${fmtMoney(cfg.diferencia||0)}</span>`}
+    </div>
+    <div class="grid-cards" style="margin:14px 0">
+      <div class="card" style="padding:14px"><div class="prod-meta">Monto inicial</div><div class="prod-price" style="font-size:20px">${fmtMoney(cfg.montoInicial)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Ventas cobradas hoy</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentasHoy)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Gastos hoy</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastosHoy)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Total esperado en caja</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalEsperado)}</div></div>
+    </div>
+
+    ${cajaAbiertaHoy?`<div class="card" style="padding:16px;margin-bottom:16px">
+      <div class="section-header"><h3 style="font-size:15px;margin:0">Movimientos manuales de caja</h3><button class="btn sm ghost" id="btnNuevoMov">+ Movimiento</button></div>
+      <table>
+        <thead><tr><th>Hora</th><th>Tipo</th><th>Concepto</th><th>Medio</th><th>Monto</th></tr></thead>
+        <tbody>
+          ${movHoy.length===0?'<tr><td colspan="5"><div class="empty">Sin movimientos manuales hoy.</div></td></tr>':
+            movHoy.map(mv=>`<tr>
+              <td>${fmtTime(mv.creado)}</td>
+              <td><span class="pill ${mv.tipo==='ingreso'?'ok':'danger'}">${mv.tipo==='ingreso'?'Ingreso':'Egreso'}</span></td>
+              <td>${esc(mv.concepto)}</td>
+              <td>${esc(mv.medioPago)}</td>
+              <td>${mv.tipo==='egreso'?'-':''}${fmtMoney(mv.monto)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`:''}
+
     <div class="card" style="overflow-x:auto">
+      <h3 style="font-size:15px;margin:0 0 10px">Mesas abiertas</h3>
       <table>
         <thead><tr><th>Mesa</th><th>Estado</th><th>Ítems</th><th>Total</th><th></th></tr></thead>
         <tbody>
@@ -957,16 +1042,134 @@ function renderCaja(app){
               <td><span class="pill ${row.mesa.estado==='cuenta_pedida'?'danger':'busy'}">${row.mesa.estado==='cuenta_pedida'?'Cuenta pedida':'Ocupada'}</span></td>
               <td>${row.pedido? (row.pedido.items||[]).length : 0}</td>
               <td>${fmtMoney(row.total)}</td>
-              <td><button class="btn sm gold" data-cobrar="${row.mesa.id}">Cobrar</button></td>
+              <td><button class="btn sm gold" data-cobrar="${row.mesa.id}" ${cajaAbiertaHoy?'':'disabled'}>Cobrar</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      ${cajaAbiertaHoy?'':'<p class="section-sub" style="margin-top:10px">La caja de hoy está cerrada — no se pueden registrar más cobros.</p>'}
+    </div>
+  `;
+  document.querySelectorAll('[data-cobrar]').forEach(b=>b.onclick=()=>{
+    if(!cajaAbiertaHoy) return;
+    const row = pendientes.find(r=>r.mesa.id===b.dataset.cobrar);
+    if(row && row.pedido) openCobrarModal(row.mesa, row.pedido, row.total);
+  });
+  const bnm = document.getElementById('btnNuevoMov');
+  if(bnm) bnm.onclick = openNuevoMovimientoModal;
+  const bcc = document.getElementById('btnCerrarCaja');
+  if(bcc) bcc.onclick = ()=> openCerrarCajaModal(totalEsperado);
+}
+function openNuevoMovimientoModal(){
+  openModal(`
+    <h3>Nuevo movimiento de caja</h3>
+    <div class="field-row">
+      <div class="field"><label>Tipo</label><select id="mvTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></div>
+      <div class="field"><label>Medio de pago</label><select id="mvMedio"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select></div>
+    </div>
+    <div class="field"><label>Concepto</label><input id="mvConcepto" placeholder="Ej: cambio inicial, retiro parcial..."></div>
+    <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="mvMonto"></div>
+    <button class="btn" id="btnGuardarMov" style="margin-top:10px">Guardar movimiento</button>
+  `);
+  document.getElementById('btnGuardarMov').onclick = async ()=>{
+    const tipo = document.getElementById('mvTipo').value;
+    const medioPago = document.getElementById('mvMedio').value;
+    const concepto = document.getElementById('mvConcepto').value.trim();
+    const monto = parseFloat(document.getElementById('mvMonto').value)||0;
+    if(!concepto){ toast('El concepto es obligatorio'); return; }
+    if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
+    try{
+      await dbCap.collection('movimientosCaja').add({tipo, medioPago, concepto, monto, creado:Date.now()});
+      closeModal(); toast('Movimiento registrado');
+    }catch(e){ toast('No se pudo registrar el movimiento'); }
+  };
+}
+function openCerrarCajaModal(totalEsperado){
+  openModal(`
+    <h3>Cerrar caja</h3>
+    <p class="section-sub">Total esperado según el sistema: <b>${fmtMoney(totalEsperado)}</b>. Contá el efectivo real y cargalo abajo.</p>
+    <div class="field"><label>Monto real contado</label><input type="number" min="0" value="${totalEsperado}" id="fMontoReal"></div>
+    <button class="btn gold" id="btnConfirmarCierreCaja" style="margin-top:10px">Confirmar cierre de caja</button>
+  `);
+  document.getElementById('btnConfirmarCierreCaja').onclick = async ()=>{
+    const montoReal = parseFloat(document.getElementById('fMontoReal').value)||0;
+    const diferencia = Math.round((montoReal - totalEsperado)*100)/100;
+    try{
+      await dbCap.doc('caja/main').update({abierta:false, cerradaEn:Date.now(), montoRealCierre:montoReal, diferencia});
+      closeModal();
+      toast(diferencia===0? 'Caja cerrada sin diferencias' : `Caja cerrada. Diferencia: ${fmtMoney(diferencia)}`);
+    }catch(e){ toast('No se pudo cerrar la caja'); }
+  };
+}
+
+/* ================= GASTOS ================= */
+const CATEGORIAS_GASTO = ['Limpieza','Mantenimiento','Servicios','Compras','Descartables','Reparaciones','Otros'];
+function renderGastos(app){
+  const fecha = state.ui.gastosDate;
+  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha).sort((a,b)=>b.creado-a.creado);
+  const total = gastosDia.reduce((s,g)=>s+g.monto,0);
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Gastos</h2><p class="section-sub">Registro de gastos y compras del restaurante.</p></div>
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field"><label>Fecha</label><input type="date" id="fFechaGastos" value="${fecha}"></div>
+        <button class="btn" id="btnNuevoGasto">+ Nuevo gasto</button>
+      </div>
+    </div>
+    <div class="card" style="padding:14px;margin:14px 0;max-width:260px">
+      <div class="prod-meta">Total gastado</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(total)}</div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Proveedor</th><th>Medio</th><th>Monto</th><th></th></tr></thead>
+        <tbody>
+          ${gastosDia.length===0?`<tr><td colspan="7"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>`:
+            gastosDia.map(g=>`<tr>
+              <td>${fmtTime(g.creado)}</td>
+              <td>${esc(g.categoria)}</td>
+              <td>${esc(g.descripcion)}</td>
+              <td>${esc(g.proveedor||'—')}</td>
+              <td>${esc(g.medioPago)}</td>
+              <td>${fmtMoney(g.monto)}</td>
+              <td><button class="iconbtn" data-delgasto="${g.id}">✕</button></td>
             </tr>`).join('')}
         </tbody>
       </table>
     </div>
   `;
-  document.querySelectorAll('[data-cobrar]').forEach(b=>b.onclick=()=>{
-    const row = pendientes.find(r=>r.mesa.id===b.dataset.cobrar);
-    if(row && row.pedido) openCobrarModal(row.mesa, row.pedido, row.total);
+  document.getElementById('fFechaGastos').onchange = e=>{ state.ui.gastosDate = e.target.value; render(); };
+  document.getElementById('btnNuevoGasto').onclick = openNuevoGastoModal;
+  document.querySelectorAll('[data-delgasto]').forEach(b=>b.onclick=async ()=>{
+    if(!confirm('¿Eliminar este gasto?')) return;
+    try{ await dbCap.doc('gastos/'+b.dataset.delgasto).delete(); toast('Gasto eliminado'); }catch(e){ toast('No se pudo eliminar'); }
   });
+}
+function openNuevoGastoModal(){
+  openModal(`
+    <h3>Nuevo gasto</h3>
+    <div class="field-row">
+      <div class="field"><label>Categoría</label><select id="gCategoria">${CATEGORIAS_GASTO.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Medio de pago</label><select id="gMedio"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select></div>
+    </div>
+    <div class="field"><label>Descripción</label><input id="gDescripcion" placeholder="Ej: Detergente y lavandina"></div>
+    <div class="field-row">
+      <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="gMonto"></div>
+      <div class="field"><label>Proveedor (opcional)</label><input id="gProveedor"></div>
+    </div>
+    <button class="btn" id="btnGuardarGasto" style="margin-top:10px">Guardar gasto</button>
+  `);
+  document.getElementById('btnGuardarGasto').onclick = async ()=>{
+    const categoria = document.getElementById('gCategoria').value;
+    const medioPago = document.getElementById('gMedio').value;
+    const descripcion = document.getElementById('gDescripcion').value.trim();
+    const monto = parseFloat(document.getElementById('gMonto').value)||0;
+    const proveedor = document.getElementById('gProveedor').value.trim();
+    if(!descripcion){ toast('La descripción es obligatoria'); return; }
+    if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
+    try{
+      await dbCap.collection('gastos').add({categoria, medioPago, descripcion, monto, proveedor, creado:Date.now()});
+      closeModal(); toast('Gasto registrado');
+    }catch(e){ toast('No se pudo registrar el gasto'); }
+  };
 }
 
 /* ================= CIERRE ================= */
@@ -981,23 +1184,38 @@ function renderCierre(app){
     productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad;
   }));
   const aggList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
+  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha);
+  const totalGastos = gastosDia.reduce((s,g)=>s+g.monto,0);
+  const cajaDelDia = (state.caja && state.caja.fecha===fecha) ? state.caja : null;
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
-      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, productos vendidos, personas y cubiertos.</p></div>
+      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, gastos, productos vendidos, personas y cubiertos.</p></div>
       <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
     </div>
     <div class="grid-cards" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas totales</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentas)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Gastos totales</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastos)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Mesas cerradas</div><div class="prod-price" style="font-size:20px">${cerrados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Personas atendidas</div><div class="prod-price" style="font-size:20px">${totalPersonas}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Tenedores usados</div><div class="prod-price" style="font-size:20px">${totalTenedores}</div></div>
     </div>
+    ${cajaDelDia?`<div class="card" style="padding:14px;margin-bottom:18px">
+      <h3 style="font-size:15px;margin:0 0 8px">Caja del día</h3>
+      <p class="section-sub" style="margin:0">Inicial ${fmtMoney(cajaDelDia.montoInicial)} ${cajaDelDia.abierta?'· <span class="pill busy">Abierta</span>':`· contado ${fmtMoney(cajaDelDia.montoRealCierre||0)} · diferencia <b style="color:${cajaDelDia.diferencia===0?'var(--ok)':'var(--danger)'}">${fmtMoney(cajaDelDia.diferencia||0)}</b>`}</p>
+    </div>`:''}
     <h3 style="font-size:15px">Productos vendidos</h3>
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>
         ${aggList.length===0?'<tr><td colspan="2"><div class="empty">Sin ventas cerradas para esta fecha.</div></td></tr>':
           aggList.map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <h3 style="font-size:15px">Gastos del día</h3>
+    <div class="card" style="overflow-x:auto;margin-bottom:18px">
+      <table><thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Monto</th></tr></thead><tbody>
+        ${gastosDia.length===0?'<tr><td colspan="4"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>':
+          gastosDia.map(g=>`<tr><td>${fmtTime(g.creado)}</td><td>${esc(g.categoria)}</td><td>${esc(g.descripcion)}</td><td>${fmtMoney(g.monto)}</td></tr>`).join('')}
       </tbody></table>
     </div>
     <h3 style="font-size:15px">Detalle por mesa</h3>
@@ -1280,6 +1498,16 @@ async function loadDemoData(){
       });
     }
 
+    // --- CAJA Y GASTOS DE EJEMPLO ---
+    await dbCap.doc('caja/main').set({abierta:true, fecha:todayStr(), montoInicial:20000, abiertaEn:Date.now()-6*3600000, cerradaEn:null, montoRealCierre:null, diferencia:null});
+    await dbCap.collection('movimientosCaja').add({tipo:'egreso', medioPago:'Efectivo', concepto:'Cambio para mozos', monto:5000, creado:Date.now()-5*3600000});
+    const gastosDef = [
+      {categoria:'Descartables', medioPago:'Efectivo', descripcion:'Vasos y servilletas', monto:4200, proveedor:'Distribuidora Sur', creado:Date.now()-4*3600000},
+      {categoria:'Servicios', medioPago:'Transferencia', descripcion:'Garrafa de gas', monto:9500, proveedor:'', creado:Date.now()-2*3600000},
+      {categoria:'Limpieza', medioPago:'Efectivo', descripcion:'Detergente y lavandina', monto:2100, proveedor:'', creado:Date.now()-1*3600000},
+    ];
+    for(const g of gastosDef){ await dbCap.collection('gastos').add(g); }
+
     toast('Datos de prueba cargados con éxito');
   }catch(e){
     console.error(e);
@@ -1294,6 +1522,9 @@ async function wipeAllData(){
     for(const m of state.mesas) await dbCap.doc('mesas/'+m.id).delete();
     for(const p of state.productos) await dbCap.doc('productos/'+p.id).delete();
     for(const p of state.pedidos) await dbCap.doc('pedidos/'+p.id).delete();
+    for(const g of state.gastos) await dbCap.doc('gastos/'+g.id).delete();
+    for(const mv of state.movimientosCaja) await dbCap.doc('movimientosCaja/'+mv.id).delete();
+    await dbCap.doc('caja/main').delete();
     await dbCap.doc('config/main').update({numMesas:0});
     toast('Datos borrados');
   }catch(e){ toast('Error al borrar datos'); }

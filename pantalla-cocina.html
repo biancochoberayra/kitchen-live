@@ -79,6 +79,11 @@ body {
 .tile .mesa-label { font-size: 0.85rem; opacity: .65; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
 .tile .mesa-num { font-size: clamp(2.6rem, 5vw, 4.6rem); font-weight: 800; line-height: 1; }
 .tile .meta { font-size: 0.85rem; opacity: .7; font-weight: 600; }
+.tile .hint { font-size: 0.72rem; opacity: .55; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+.tile.tappable { cursor: pointer; transition: transform .12s ease, filter .12s ease; }
+.tile.tappable:hover { filter: brightness(1.12); }
+.tile.tappable:active { transform: scale(.96); }
 
 .col-pendiente .tile { border-color: rgba(245,158,11,.45); background: linear-gradient(160deg, rgba(245,158,11,.14), var(--bg-tile) 65%); }
 .col-pendiente .tile.urgent { border-color: var(--danger); background: linear-gradient(160deg, rgba(239,68,68,.22), var(--bg-tile) 65%); animation: pulseUrgent 1.1s ease-in-out infinite; }
@@ -136,6 +141,7 @@ function loadDB(){
     return raw || {config:{}, mesas:{}, productos:{}, pedidos:{}};
   }catch(e){ return {config:{}, mesas:{}, productos:{}, pedidos:{}}; }
 }
+function saveDB(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 function asArray(col){ return Object.keys(col||{}).map(id=>({id, ...col[id]})); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function minutosDesde(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/60000)); }
@@ -153,6 +159,7 @@ function computeBoard(){
     else if(items.some(it=>it.estado==='preparando')) bucket = 'preparando';
     else bucket = 'listo';
     buckets[bucket].push({
+      pedidoId: p.id,
       mesaNumero: p.mesaNumero,
       cantidad: items.length,
       creado: p.creado
@@ -163,13 +170,30 @@ function computeBoard(){
   return { buckets, hasAnyData: asArray(db.mesas).length>0 || asArray(db.pedidos).length>0 };
 }
 
+// Avanza el pedido de un ticket un paso: pendiente->preparando (colKey='pendiente')
+// o preparando->listo (colKey='preparando'). El paso listo->entregado lo hace el
+// mozo desde el sistema principal, no la cocina, igual que en kitchen-live.html.
+function advanceBucket(pedidoId, colKey){
+  const nextEstado = colKey==='pendiente' ? 'preparando' : colKey==='preparando' ? 'listo' : null;
+  if(!nextEstado) return;
+  const db = loadDB();
+  const pedido = db.pedidos && db.pedidos[pedidoId];
+  if(!pedido) return;
+  pedido.items = (pedido.items||[]).map(it=> it.estado===colKey ? {...it, estado:nextEstado} : it);
+  saveDB(db);
+  render();
+}
+
 function tileHtml(entry, colKey){
   const mins = minutosDesde(entry.creado);
   const urgent = colKey==='pendiente' && mins >= URGENTE_MIN;
-  return `<div class="tile ${urgent?'urgent':''}">
+  const tappable = colKey==='pendiente' || colKey==='preparando';
+  const hint = colKey==='pendiente' ? 'Toca para empezar a preparar' : colKey==='preparando' ? 'Toca para marcar listo' : 'Esperando al mozo';
+  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" ${tappable?`data-pedido-id="${entry.pedidoId}" data-col="${colKey}"`:''}>
     <div class="mesa-label">Mesa</div>
     <div class="mesa-num">${esc(entry.mesaNumero)}</div>
     <div class="meta">${entry.cantidad} ítem${entry.cantidad===1?'':'s'} · hace ${mins} min</div>
+    <div class="hint">${hint}</div>
   </div>`;
 }
 
@@ -180,7 +204,7 @@ function render(){
   if(!hasAnyData){
     board.innerHTML = `<div class="full-empty" style="grid-column:1/-1">
       <i class="fa-solid fa-fire-burner"></i>
-      <div>Todavía no hay pedidos cargados.<br>Abrí <a href="a.html">el sistema</a> y empezá a tomar pedidos desde el Mapa.</div>
+      <div>Todavía no hay pedidos cargados.<br>Abrí <a href="kitchen-live.html">el sistema</a> y empezá a tomar pedidos desde el Mapa.</div>
     </div>`;
     return;
   }
@@ -208,6 +232,10 @@ function render(){
     document.getElementById(map[key]).innerHTML = list.length===0
       ? '<div class="empty-col">Sin mesas acá</div>'
       : list.map(e=>tileHtml(e, key)).join('');
+  });
+
+  document.querySelectorAll('.tile.tappable').forEach(el=>{
+    el.addEventListener('click', ()=> advanceBucket(el.dataset.pedidoId, el.dataset.col));
   });
 }
 
