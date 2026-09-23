@@ -148,6 +148,7 @@ header h1{font-size:1.2rem;margin:0}
 .modal-bg{position:fixed;inset:0;background:rgba(10,18,17,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
 .modal{background:var(--paper-raise);border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .modal.wide{max-width:760px}
+.modal.xwide{max-width:920px}
 .modal h3{margin:0 0 2px}
 .modal-close{float:right;background:var(--paper);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:16px;color:var(--ink-soft)}
 
@@ -526,7 +527,7 @@ function requireAdmin(){
 /* ---------------- MODAL ---------------- */
 function openModal(html, opts={}){
   const root = document.getElementById('modalRoot');
-  root.innerHTML = `<div class="modal-bg" id="modalBg"><div class="modal ${opts.wide?'wide':''}">
+  root.innerHTML = `<div class="modal-bg" id="modalBg"><div class="modal ${opts.wide?'wide':''} ${opts.xwide?'xwide':''}">
     <button class="modal-close" id="modalCloseBtn">✕</button>
     ${html}
   </div></div>`;
@@ -795,18 +796,29 @@ function openAddItemModal(m, pedido){
   const cats = [...new Set(activos.map(p=>p.categoria||'General'))];
   openModal(`
     <h3>Agregar producto — Mesa ${esc(m.numero)}</h3>
-    <div class="field"><label>Buscar / categoría</label>
-      <select id="fCat"><option value="">Todas las categorías</option>${cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select>
+    <div class="field-row">
+      <div class="field" style="flex:2"><label>Buscar producto</label><input id="fBuscarProd" type="text" placeholder="Escribí el nombre..." autofocus></div>
+      <div class="field"><label>Categoría</label>
+        <select id="fCat"><option value="">Todas las categorías</option>${cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select>
+      </div>
     </div>
-    <div id="prodPickList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:44vh;overflow-y:auto">
+    <div id="prodPickList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:56vh;overflow-y:auto">
       ${activos.map(p=>productPickRow(p)).join('') || '<div class="empty">No hay productos activos. Cargalos desde la sección Productos.</div>'}
     </div>
-  `, {wide:true});
-  document.getElementById('fCat').onchange = (e)=>{
-    const val = e.target.value;
-    document.getElementById('prodPickList').innerHTML = activos.filter(p=>!val||(p.categoria||'General')===val).map(p=>productPickRow(p)).join('');
+  `, {xwide:true});
+  function aplicarFiltro(){
+    const texto = document.getElementById('fBuscarProd').value.trim().toLowerCase();
+    const cat = document.getElementById('fCat').value;
+    const filtrados = activos.filter(p=>
+      (!cat || (p.categoria||'General')===cat) &&
+      (!texto || p.nombre.toLowerCase().includes(texto))
+    );
+    document.getElementById('prodPickList').innerHTML = filtrados.map(p=>productPickRow(p)).join('') ||
+      '<div class="empty">No se encontraron productos con ese filtro.</div>';
     bindPickRows();
-  };
+  }
+  document.getElementById('fBuscarProd').oninput = aplicarFiltro;
+  document.getElementById('fCat').onchange = aplicarFiltro;
   bindPickRows();
   function bindPickRows(){
     document.querySelectorAll('[data-pick]').forEach(btn=>{
