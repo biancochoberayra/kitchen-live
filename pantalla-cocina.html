@@ -37,6 +37,13 @@ body {
 }
 .brand { display: flex; align-items: center; gap: 14px; font-size: clamp(1.1rem, 1.8vw, 1.7rem); font-weight: 800; letter-spacing: .3px; }
 .brand i { color: var(--accent); font-size: 1.15em; }
+.header-links { display: flex; align-items: center; gap: 6px; }
+.header-links a {
+    display: flex; align-items: center; gap: 7px; text-decoration: none;
+    color: var(--text-muted); font-weight: 600; font-size: 13px;
+    padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+}
+.header-links a:hover { background: var(--bg-tile); color: var(--text-main); }
 .clock { font-size: clamp(1rem, 1.6vw, 1.4rem); font-weight: 700; color: var(--text-muted); letter-spacing: .5px; }
 
 /* --- BOARD (3 columnas) --- */
@@ -106,6 +113,7 @@ body {
 @media (max-width: 900px) {
     .board { grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); overflow-y: auto; }
     body { overflow-y: auto; }
+    .header-links a span { display: none; }
 }
 </style>
 </head>
@@ -113,6 +121,10 @@ body {
 
 <header class="board-header">
     <div class="brand"><i class="fa-solid fa-fire-burner"></i> RestaurantFlow — Cocina en vivo</div>
+    <nav class="header-links">
+      <a href="kitchen-live.html"><i class="fa-solid fa-house"></i> <span>Sistema</span></a>
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
+    </nav>
     <div class="clock" id="reloj"></div>
 </header>
 
