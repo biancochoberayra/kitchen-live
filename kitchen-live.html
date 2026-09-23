@@ -6,7 +6,8 @@
 <title>RestaurantFlow - Local</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root{
   /* Paleta tomada de cocina-ordu.html (azul marino + celeste) */
@@ -34,11 +35,11 @@ html,body{margin:0;padding:0}
 body{
   background:var(--paper);
   color:var(--ink);
-  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
-h1,h2,h3,.brandfont{font-family:'Manrope',system-ui,sans-serif}
+h1,h2,h3,.brandfont{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;background:var(--paper-raise);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-2);outline-offset:1px}
@@ -46,29 +47,61 @@ a{color:inherit}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
 
-.topbar{
-  position:sticky;top:0;z-index:40;
-  background:var(--brand);color:#f4f8f6;
-  display:flex;align-items:center;gap:14px;
-  padding:10px 16px;box-shadow:var(--shadow);
-  overflow-x:auto;
+.app-shell{display:flex;min-height:100vh}
+
+aside{
+  width:250px;flex:none;
+  background:var(--paper-raise);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
 }
-.brand-mark{display:flex;align-items:center;gap:8px;white-space:nowrap;padding-right:8px;border-right:1px solid rgba(255,255,255,.25)}
-.brand-mark .dot{width:10px;height:10px;border-radius:3px;background:var(--gold);flex:none}
-.brand-mark span{font-weight:800;font-size:16px;letter-spacing:.2px}
-.navtabs{display:flex;gap:4px;flex:1;overflow-x:auto}
-.navtabs button{
-  background:transparent;border:none;color:#dfeee8;padding:8px 12px;border-radius:8px;font-weight:600;font-size:13.5px;white-space:nowrap;
+.logo-container{
+  padding:22px 20px;display:flex;align-items:center;gap:10px;
+  font-weight:800;font-size:17px;letter-spacing:.2px;
+  border-bottom:1px solid var(--line);
 }
-.navtabs button.active{background:rgba(255,255,255,.16);color:#fff}
-.navtabs button:hover:not(.active){background:rgba(255,255,255,.08)}
+.logo-container i{color:var(--brand);font-size:1.35rem}
+
+.rol-picker{padding:12px 16px;border-bottom:1px solid var(--line)}
+.rol-picker label{display:block;font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.rol-picker select{width:100%;font-size:13px;padding:7px 8px}
+
+.nav-links{list-style:none;margin:0;padding:14px 10px;flex:1;overflow-y:auto}
+.nav-links li{margin-bottom:4px}
+.nav-links a{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;border-radius:9px;
+  color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:13.5px;
+}
+.nav-links a i{width:18px;text-align:center;font-size:14px}
+.nav-links a:hover{background:var(--line);color:var(--ink)}
+.nav-links a.active{background:var(--brand);color:#fff}
+
+.sidebar-foot{padding:14px 10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.side-link{
+  display:flex;align-items:center;gap:10px;text-decoration:none;
+  color:var(--ink-soft);font-weight:600;font-size:13px;
+  padding:8px 10px;border-radius:8px;
+}
+.side-link:hover{background:var(--line);color:var(--ink)}
+.side-link i{width:16px;text-align:center}
 .adminbtn{
-  white-space:nowrap;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;
-  padding:7px 12px;border-radius:8px;font-weight:700;font-size:13px;
+  white-space:nowrap;border:1px solid var(--line);background:transparent;color:var(--ink);
+  padding:8px 12px;border-radius:8px;font-weight:700;font-size:13px;margin-top:4px;
 }
 .adminbtn.on{background:var(--gold);border-color:var(--gold);color:#241a04}
 
-.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column}
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--paper-raise);border-bottom:1px solid var(--line);
+  padding:16px 26px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+header h1{font-size:1.2rem;margin:0}
+.clock{color:var(--ink-soft);font-size:13px;font-weight:600}
+
+.wrap{max-width:1180px;margin:0 auto;padding:18px 26px 60px}
 .card{background:var(--paper-raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .section-title{font-size:20px;font-weight:800;margin:0 0 4px}
 .section-sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px}
@@ -158,35 +191,75 @@ tr:last-child td{border-bottom:none}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:100px;font-size:13.5px;font-weight:600;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 
-@media (max-width:640px){
-  .brand-mark span{font-size:14px}
-  .wrap{padding:14px 10px 50px}
+@media (max-width:780px){
+  .app-shell{flex-direction:column}
+  aside{
+    width:100%;height:auto;position:sticky;top:0;z-index:30;
+    flex-direction:column;border-right:none;border-bottom:1px solid var(--line);
+  }
+  .logo-container{padding:12px 16px;font-size:15px}
+  .nav-links{display:flex;flex-direction:row;gap:2px;padding:8px 10px;overflow-x:auto;flex:none}
+  .nav-links li{margin-bottom:0}
+  .nav-links a{white-space:nowrap}
+  .sidebar-foot{flex-direction:row;justify-content:flex-end;padding:8px 10px}
+  .side-link span{display:none}
+  header{padding:12px 16px}
+  .wrap{padding:14px 12px 50px}
 }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand-mark"><span class="dot"></span><span class="brandfont">RestaurantFlow</span></div>
-  <div class="navtabs" id="navtabs"></div>
-  <a class="adminbtn" href="pantalla-cocina.html" style="text-decoration:none;display:inline-flex;align-items:center">Pantalla cocina</a>
-  <a class="adminbtn" href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center">Dashboard</a>
-  <button class="adminbtn" id="adminToggle">Modo admin</button>
+<div class="app-shell">
+  <aside>
+    <div class="logo-container brandfont"><i class="fa-solid fa-utensils"></i><span>RestaurantFlow</span></div>
+    <div class="rol-picker">
+      <label for="rolSelect">Rol</label>
+      <select id="rolSelect">
+        <option value="admin">Administrador</option>
+        <option value="mozo">Mozo</option>
+        <option value="cocina">Cocina</option>
+        <option value="caja">Caja</option>
+        <option value="stock">Encargado de stock</option>
+      </select>
+    </div>
+    <ul class="nav-links" id="navtabs"></ul>
+    <div class="sidebar-foot">
+      <a class="side-link" href="pantalla-cocina.html"><i class="fa-solid fa-tv"></i><span>Pantalla cocina</span></a>
+      <a class="side-link" href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a>
+      <button class="adminbtn" id="adminToggle">Modo admin</button>
+    </div>
+  </aside>
+  <div class="main-content">
+    <header>
+      <h1 id="headerTitle">Salón</h1>
+      <span class="clock" id="reloj"></span>
+    </header>
+    <div class="wrap" id="app"></div>
+  </div>
 </div>
-
-<div class="wrap" id="app"></div>
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 
 <script>
 const VIEWS = [
-  {id:'mapa', label:'Mapa · Mozo'},
-  {id:'cocina', label:'Cocina'},
-  {id:'productos', label:'Productos'},
-  {id:'caja', label:'Caja'},
-  {id:'cierre', label:'Cierre'},
-  {id:'config', label:'Config'},
+  {id:'mapa', label:'Mapa · Mozo', icon:'fa-house', titulo:'Salón'},
+  {id:'cocina', label:'Cocina', icon:'fa-fire-burner', titulo:'Cocina'},
+  {id:'productos', label:'Productos', icon:'fa-burger', titulo:'Productos'},
+  {id:'stock', label:'Stock', icon:'fa-boxes-stacked', titulo:'Stock diario'},
+  {id:'caja', label:'Caja', icon:'fa-cash-register', titulo:'Caja'},
+  {id:'gastos', label:'Gastos', icon:'fa-receipt', titulo:'Gastos'},
+  {id:'cierre', label:'Cierre', icon:'fa-chart-pie', titulo:'Cierre del día'},
+  {id:'config', label:'Config', icon:'fa-gear', titulo:'Configuración'},
 ];
+const ROLES = {
+  admin: {label:'Administrador', views:['mapa','cocina','productos','stock','caja','gastos','cierre','config']},
+  mozo: {label:'Mozo', views:['mapa','cocina']},
+  cocina: {label:'Cocina', views:['cocina']},
+  caja: {label:'Caja', views:['caja','gastos','cierre']},
+  stock: {label:'Encargado de stock', views:['productos','stock']},
+};
+const ROL_KEY = 'restaurantFlowRol';
 const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
 const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
 
@@ -197,10 +270,20 @@ let state = {
   mesas: [],
   productos: [],
   pedidos: [],
-  loaded: {config:false, mesas:false, productos:false, pedidos:false},
+  gastos: [],
+  movimientosCaja: [],
+  movimientosStock: [],
+  cierres: [],
+  historialPrecios: [],
+  proveedores: [],
+  caja: null,
+  rol: localStorage.getItem(ROL_KEY) || 'admin',
+  loaded: {config:false, mesas:false, productos:false, pedidos:false, gastos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false, proveedores:false},
   ui: {
     stationTab: null,
     cierreDate: todayStr(),
+    gastosDate: todayStr(),
+    stockDate: todayStr(),
     placingMesa: false,
   }
 };
@@ -238,7 +321,7 @@ const DB_KEY = 'restaurantFlowLocalDB';
 let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
 
 function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
-const dbListeners = { config:[], mesas:[], productos:[], pedidos:[] };
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], gastos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[], historialPrecios:[], proveedores:[] };
 function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
 
 const dbCap = {
@@ -348,17 +431,83 @@ async function boot(){
     state.loaded.pedidos = true;
     render();
   });
+
+  dbCap.collection('gastos').onSnapshot(snap=>{
+    state.gastos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.gastos = true;
+    render();
+  });
+
+  dbCap.collection('movimientosCaja').onSnapshot(snap=>{
+    state.movimientosCaja = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.movimientosCaja = true;
+    render();
+  });
+
+  dbCap.doc('caja/main').onSnapshot(snap=>{
+    state.caja = snap.exists ? snap.data : null;
+    state.loaded.caja = true;
+    render();
+  });
+
+  dbCap.collection('movimientosStock').onSnapshot(snap=>{
+    state.movimientosStock = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.movimientosStock = true;
+    render();
+  });
+
+  dbCap.collection('cierres').onSnapshot(snap=>{
+    state.cierres = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.cierres = true;
+    render();
+  });
+
+  dbCap.collection('historialPrecios').onSnapshot(snap=>{
+    state.historialPrecios = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.historialPrecios = true;
+    render();
+  });
+
+  dbCap.collection('proveedores').onSnapshot(snap=>{
+    state.proveedores = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.proveedores = true;
+    render();
+  });
+}
+function cierreConfirmado(fecha){
+  return state.cierres.find(c=>c.fecha===fecha) || null;
 }
 
 /* ---------------- NAV / ADMIN ---------------- */
 function renderNav(){
+  const allowed = (ROLES[state.rol]||ROLES.admin).views;
+  if(!allowed.includes(state.view)) state.view = allowed[0];
   const nav = document.getElementById('navtabs');
-  nav.innerHTML = VIEWS.map(v=>`<button data-view="${v.id}" class="${state.view===v.id?'active':''}">${v.label}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ state.view=b.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render(); }));
+  nav.innerHTML = VIEWS.filter(v=>allowed.includes(v.id)).map(v=>`<li><a href="#${v.id}" data-view="${v.id}" class="${state.view===v.id?'active':''}"><i class="fa-solid ${v.icon}"></i> ${v.label}</a></li>`).join('');
+  nav.querySelectorAll('a').forEach(a=>a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    state.view=a.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render();
+  }));
   const at = document.getElementById('adminToggle');
   at.textContent = state.adminMode ? 'Admin activo' : 'Modo admin';
   at.className = 'adminbtn' + (state.adminMode?' on':'');
+  const ht = document.getElementById('headerTitle');
+  if(ht){ const v = VIEWS.find(v=>v.id===state.view); ht.textContent = v ? v.titulo : ''; }
+  const rs = document.getElementById('rolSelect');
+  if(rs && rs.value!==state.rol) rs.value = state.rol;
 }
+function actualizarReloj(){
+  const ahora = new Date();
+  const el = document.getElementById('reloj');
+  if(el) el.textContent = ahora.toLocaleDateString('es-AR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+}
+setInterval(actualizarReloj, 60000);
+actualizarReloj();
+document.getElementById('rolSelect').addEventListener('change', (e)=>{
+  state.rol = e.target.value;
+  localStorage.setItem(ROL_KEY, state.rol);
+  renderNav(); render();
+});
 document.getElementById('adminToggle').addEventListener('click', ()=>{
   if(state.adminMode){ state.adminMode=false; renderNav(); render(); return; }
   const pin = prompt('PIN de administrador:');
@@ -394,7 +543,9 @@ function render(){
   if(state.view==='mapa') return renderMapa(app);
   if(state.view==='cocina') return renderCocina(app);
   if(state.view==='productos') return renderProductos(app);
+  if(state.view==='stock') return renderStock(app);
   if(state.view==='caja') return renderCaja(app);
+  if(state.view==='gastos') return renderGastos(app);
   if(state.view==='cierre') return renderCierre(app);
   if(state.view==='config') return renderConfig(app);
 }
@@ -542,6 +693,7 @@ function renderMesaOrderModal(m, pedido){
       <button class="btn" id="btnAddItem">+ Agregar producto</button>
       ${m.estado!=='cuenta_pedida'?`<button class="btn ghost" id="btnPedirCuenta">Pedir cuenta</button>`:''}
       ${m.estado==='cuenta_pedida'?`<button class="btn gold" id="btnCobrar">Cobrar y cerrar</button>`:''}
+      <button class="btn danger" id="btnCancelarPedido" style="margin-left:auto">Cancelar pedido</button>
     </div>
   `, {wide:true});
   document.getElementById('btnAddItem').onclick = ()=> openAddItemModal(m, pedido);
@@ -552,6 +704,7 @@ function renderMesaOrderModal(m, pedido){
   };
   const bco = document.getElementById('btnCobrar');
   if(bco) bco.onclick = ()=> openCobrarModal(m, pedido, total);
+  document.getElementById('btnCancelarPedido').onclick = ()=> openCancelarPedidoModal(m, pedido);
 
   // entregar / avanzar item buttons
   document.querySelectorAll('[data-entregar]').forEach(btn=>{
@@ -593,11 +746,47 @@ function mesaItemRow(it){
     </div>
   </div>`;
 }
-async function restoreStock(productoId, cantidad){
+// Registra un movimiento de stock y actualiza stockRestante del producto.
+// delta positivo = suma stock (entrada, anulación), negativo = resta (venta, ajuste a la baja).
+async function registrarMovimientoStock(productoId, productoNombre, tipo, delta, motivo){
   const prod = state.productos.find(p=>p.id===productoId);
   if(!prod || prod.stockDiario==null) return;
-  const nuevo = Math.min(prod.stockDiario, (prod.stockRestante||0)+cantidad);
-  try{ await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo}); }catch(e){}
+  const nuevo = Math.max(0, (prod.stockRestante||0) + delta);
+  try{
+    await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo});
+    await dbCap.collection('movimientosStock').add({
+      productoId, productoNombre, tipo, delta, motivo: motivo||'', creado: Date.now()
+    });
+  }catch(e){}
+}
+async function restoreStock(productoId, cantidad){
+  const prod = state.productos.find(p=>p.id===productoId);
+  if(!prod) return;
+  await registrarMovimientoStock(productoId, prod.nombre, 'anulacion', cantidad, 'Ítem quitado de la comanda');
+}
+
+/* ---- cancelar pedido completo (con motivo) ---- */
+function openCancelarPedidoModal(m, pedido){
+  if(!requireAdmin()) return;
+  openModal(`
+    <h3>Cancelar pedido — Mesa ${esc(m.numero)}</h3>
+    <p class="section-sub">Esto libera la mesa y anula la comanda completa. El pedido queda guardado como cancelado en el historial, no se borra.</p>
+    <div class="field"><label>Motivo</label><textarea id="fMotivoCancel" rows="2" placeholder="Ej: el cliente se retiró, error de carga..."></textarea></div>
+    <button class="btn danger" id="btnConfirmarCancelar" style="margin-top:10px">Confirmar cancelación</button>
+  `);
+  document.getElementById('btnConfirmarCancelar').onclick = async ()=>{
+    const motivo = document.getElementById('fMotivoCancel').value.trim();
+    if(!motivo){ toast('El motivo es obligatorio'); return; }
+    try{
+      for(const it of (pedido.items||[])){
+        if(it.estado!=='entregado') await restoreStock(it.productoId, it.cantidad);
+      }
+      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cancelado', motivoCancelacion:motivo, canceladoEn:Date.now()});
+      await dbCap.doc('mesas/'+m.id).update({estado:'libre', pedidoId:null});
+      closeModal();
+      toast('Pedido cancelado');
+    }catch(e){ toast('No se pudo cancelar el pedido'); }
+  };
 }
 
 /* ---- add item to comanda (with product options) ---- */
@@ -687,7 +876,7 @@ function openConfigureItemModal(m, pedido, prod){
       const newItems = [...(pedido.items||[]), item];
       await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
       if(prod.stockDiario!=null){
-        await dbCap.doc('productos/'+prod.id).update({stockRestante: Math.max(0,(prod.stockRestante||0)-cantidad)});
+        await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
       }
       toast('Producto agregado a la comanda');
       closeModal();
@@ -700,21 +889,62 @@ function openConfigureItemModal(m, pedido, prod){
 }
 
 /* ---- cobrar ---- */
+const MEDIOS_PAGO = ['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia','Otro'];
 function openCobrarModal(m, pedido, total){
+  let pagos = [{medio:'Efectivo', monto:total}];
+  function pagosHtml(){
+    const sumado = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+    return `
+      <div id="pagosWrap" style="display:flex;flex-direction:column;gap:8px">
+        ${pagos.map((p,i)=>`<div class="field-row" data-pi="${i}" style="align-items:flex-end">
+          <div class="field"><label>Medio de pago</label><select class="pg-medio">${MEDIOS_PAGO.map(mp=>`<option ${mp===p.medio?'selected':''}>${mp}</option>`).join('')}</select></div>
+          <div class="field"><label>Monto</label><input type="number" min="0" class="pg-monto" value="${p.monto}"></div>
+          ${pagos.length>1?`<button class="iconbtn" data-delpago="${i}">✕</button>`:''}
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13.5px">
+        <span class="section-sub" style="margin:0">Ingresado: <b style="color:var(--ink)">${fmtMoney(sumado)}</b> / ${fmtMoney(total)}</span>
+        ${sumado!==total?`<span style="color:var(--warn);font-weight:700">${sumado>total?'Sobra':'Falta'} ${fmtMoney(Math.abs(sumado-total))}</span>`:''}
+      </div>
+      <button class="btn sm ghost" id="btnAddPago" style="margin-top:8px">+ Dividir en otro medio de pago</button>
+    `;
+  }
   openModal(`
     <h3>Cobrar mesa ${esc(m.numero)}</h3>
-    <p class="section-sub">Carga manual del pago. Total de la comanda: <b>${fmtMoney(total)}</b></p>
-    <div class="field-row">
-      <div class="field"><label>Monto cobrado</label><input type="number" min="0" value="${total}" id="fMonto"></div>
-      <div class="field"><label>Medio de pago</label><select id="fMedio"><option>Efectivo</option><option>Tarjeta débito</option><option>Tarjeta crédito</option><option>Transferencia</option><option>Otro</option></select></div>
-    </div>
-    <button class="btn gold" id="btnConfirmarCobro">Confirmar cobro y cerrar mesa</button>
+    <p class="section-sub">Carga manual del pago. Total de la comanda: <b>${fmtMoney(total)}</b>. Podés dividirlo en más de un medio de pago.</p>
+    <div id="pagosBox">${pagosHtml()}</div>
+    <button class="btn gold" id="btnConfirmarCobro" style="margin-top:14px">Confirmar cobro y cerrar mesa</button>
   `);
+  function readPagosFromDOM(){
+    document.querySelectorAll('#pagosWrap [data-pi]').forEach(el=>{
+      const i = parseInt(el.dataset.pi);
+      pagos[i].medio = el.querySelector('.pg-medio').value;
+      pagos[i].monto = parseFloat(el.querySelector('.pg-monto').value)||0;
+    });
+  }
+  function rebind(){
+    document.getElementById('pagosBox').innerHTML = pagosHtml();
+    document.getElementById('btnAddPago').onclick = ()=>{
+      readPagosFromDOM();
+      const sumado = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+      pagos.push({medio:'Efectivo', monto: Math.max(0, total-sumado)});
+      rebind();
+    };
+    document.querySelectorAll('[data-delpago]').forEach(b=>b.onclick=()=>{
+      readPagosFromDOM();
+      pagos.splice(parseInt(b.dataset.delpago),1);
+      rebind();
+    });
+  }
+  rebind();
   document.getElementById('btnConfirmarCobro').onclick = async ()=>{
-    const monto = parseFloat(document.getElementById('fMonto').value)||0;
-    const medio = document.getElementById('fMedio').value;
+    readPagosFromDOM();
+    const montoTotal = pagos.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+    if(montoTotal<=0){ toast('Ingresá al menos un monto mayor a 0'); return; }
+    const mediosUnicos = [...new Set(pagos.map(p=>p.medio))];
+    const medioPago = mediosUnicos.length>1 ? 'Mixto' : mediosUnicos[0];
     try{
-      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cerrado', total: monto, medioPago: medio, cerrado: Date.now()});
+      await dbCap.doc('pedidos/'+pedido.id).update({estado:'cerrado', total: montoTotal, medioPago, pagos, cerrado: Date.now()});
       await dbCap.doc('mesas/'+m.id).update({estado:'libre', pedidoId:null});
       closeModal();
       toast('Mesa cobrada y cerrada');
@@ -844,6 +1074,13 @@ function openProductEditor(prod){
       <div class="field"><label>Stock diario</label><input id="pStock" type="number" min="0" value="${prod.stockDiario==null?'':prod.stockDiario}" placeholder="vacío = sin control"></div>
       <div class="field"><label>Activo</label><select id="pActivo"><option value="1" ${prod.activo!==false?'selected':''}>Sí</option><option value="0" ${prod.activo===false?'selected':''}>No</option></select></div>
     </div>
+    ${!isNew?(()=>{
+      const hist = state.historialPrecios.filter(h=>h.productoId===prod.id).sort((a,b)=>b.creado-a.creado).slice(0,6);
+      return hist.length===0?'':`<div style="margin:-4px 0 10px">
+        <label style="font-size:12px;font-weight:700;color:var(--ink-soft)">Historial de precios</label>
+        <div class="section-sub" style="margin:4px 0 0">${hist.map(h=>`${fmtMoney(h.precioAnterior)} → ${fmtMoney(h.precioNuevo)} (${dateOf(h.creado)})`).join(' · ')}</div>
+      </div>`;
+    })():''}
     <h3 style="font-size:14px;margin-top:14px">Opciones del producto</h3>
     <p class="section-sub">Ej: grupo "Salsa" (elección única) o "Extras" (múltiple). Las observaciones libres ya están disponibles siempre al pedir.</p>
     <div id="gruposWrap">${gruposHtml()}</div>
@@ -930,6 +1167,12 @@ function openProductEditor(prod){
         await dbCap.collection('productos').add(data);
       } else {
         if(stockDiario!=null && (prod.stockRestante==null || prod.stockDiario!==stockDiario)) data.stockRestante = stockDiario;
+        if(precio!==prod.precio){
+          await dbCap.collection('historialPrecios').add({
+            productoId: prod.id, productoNombre: nombre,
+            precioAnterior: prod.precio, precioNuevo: precio, creado: Date.now()
+          });
+        }
         await dbCap.doc('productos/'+prod.id).update(data);
       }
       closeModal(); toast('Producto guardado');
@@ -937,17 +1180,161 @@ function openProductEditor(prod){
   };
 }
 
+/* ================= STOCK ================= */
+const TIPO_MOV_LABEL = {entrada:'Entrada', ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
+function renderStock(app){
+  const fecha = state.ui.stockDate || todayStr();
+  const conStock = state.productos.filter(p=>p.stockDiario!=null);
+  const agotados = conStock.filter(p=>(p.stockRestante||0)<=0);
+  const movsDia = state.movimientosStock.filter(mv=>dateOf(mv.creado)===fecha).sort((a,b)=>b.creado-a.creado);
+  const bloqueadoHoy = !!cierreConfirmado(todayStr());
+
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Stock de productos terminados, entradas, ajustes y ventas del día.</p></div>
+    </div>
+    ${agotados.length>0?`<div class="card" style="padding:14px;margin-bottom:16px;border-color:var(--danger)">
+      <b style="color:var(--danger)">${agotados.length} producto(s) agotado(s):</b>
+      <span class="section-sub" style="margin:0"> ${agotados.map(p=>esc(p.nombre)).join(', ')}</span>
+    </div>`:''}
+    <div class="card" style="overflow-x:auto;margin-bottom:18px">
+      <table>
+        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th><th></th></tr></thead>
+        <tbody>
+          ${conStock.length===0?'<tr><td colspan="6"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
+            conStock.map(p=>`<tr>
+              <td><b>${esc(p.nombre)}</b></td>
+              <td>${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</td>
+              <td>${p.stockDiario}</td>
+              <td>${p.stockRestante||0}</td>
+              <td>${(p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
+              <td>${bloqueadoHoy?'':`<button class="btn sm ghost" data-stockmov="${p.id}">+ Movimiento</button>`}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      ${bloqueadoHoy?'<p class="section-sub" style="margin-top:10px">El cierre de hoy ya está confirmado — no se pueden registrar más movimientos de stock.</p>':''}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <h3 style="font-size:15px;margin:0">Historial de movimientos</h3>
+      <div class="field"><label>Fecha</label><input type="date" id="fFechaStock" value="${fecha}"></div>
+    </div>
+    <div class="card" style="overflow-x:auto;margin-top:10px">
+      <table>
+        <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr></thead>
+        <tbody>
+          ${movsDia.length===0?'<tr><td colspan="5"><div class="empty">Sin movimientos de stock para esta fecha.</div></td></tr>':
+            movsDia.map(mv=>`<tr>
+              <td>${fmtTime(mv.creado)}</td>
+              <td>${esc(mv.productoNombre)}</td>
+              <td><span class="pill ${mv.delta>=0?'ok':'danger'}">${TIPO_MOV_LABEL[mv.tipo]||mv.tipo}</span></td>
+              <td>${mv.delta>0?'+':''}${mv.delta}</td>
+              <td>${esc(mv.motivo||'—')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('fFechaStock').onchange = e=>{ state.ui.stockDate = e.target.value; render(); };
+  document.querySelectorAll('[data-stockmov]').forEach(b=>b.onclick=()=>{
+    const prod = state.productos.find(p=>p.id===b.dataset.stockmov);
+    if(prod) openStockMovModal(prod);
+  });
+}
+function openStockMovModal(prod){
+  openModal(`
+    <h3>Movimiento de stock — ${esc(prod.nombre)}</h3>
+    <p class="section-sub">Stock restante actual: <b>${prod.stockRestante||0}</b> de ${prod.stockDiario}</p>
+    <div class="field-row">
+      <div class="field"><label>Tipo</label><select id="mvTipoStock"><option value="entrada">Entrada (repone stock)</option><option value="ajuste">Ajuste (corrección de conteo)</option></select></div>
+      <div class="field"><label>Cantidad</label><input type="number" id="mvCantStock" placeholder="Ej: 10 o -3"></div>
+    </div>
+    <p class="section-sub" style="margin-top:-4px">Usá un número positivo para sumar stock, negativo para restar.</p>
+    <div class="field"><label>Motivo</label><input id="mvMotivoStock" placeholder="Ej: compra a proveedor, recuento físico..."></div>
+    <button class="btn" id="btnGuardarMovStock" style="margin-top:10px">Guardar movimiento</button>
+  `);
+  document.getElementById('btnGuardarMovStock').onclick = async ()=>{
+    const tipo = document.getElementById('mvTipoStock').value;
+    const cantidad = parseFloat(document.getElementById('mvCantStock').value);
+    const motivo = document.getElementById('mvMotivoStock').value.trim();
+    if(!cantidad){ toast('Ingresá una cantidad distinta de 0'); return; }
+    if(!motivo){ toast('El motivo es obligatorio'); return; }
+    await registrarMovimientoStock(prod.id, prod.nombre, tipo, cantidad, motivo);
+    closeModal(); toast('Movimiento de stock registrado');
+  };
+}
+
 /* ================= CAJA ================= */
 function renderCaja(app){
+  const today = todayStr();
+  const cfg = state.caja;
+  const cajaAbiertaHoy = !!(cfg && cfg.abierta && cfg.fecha===today);
+  const cajaCerradaHoy = !!(cfg && !cfg.abierta && cfg.fecha===today);
+
+  if(!cajaAbiertaHoy && !cajaCerradaHoy){
+    app.innerHTML = `
+      <h2 class="section-title">Caja</h2>
+      <p class="section-sub">Todavía no se abrió la caja de hoy. Ingresá el monto inicial para empezar a operar.</p>
+      <div class="card" style="max-width:360px;padding:18px">
+        <div class="field"><label>Monto inicial</label><input type="number" min="0" value="0" id="fMontoInicial"></div>
+        <button class="btn gold" id="btnAbrirCaja" style="margin-top:12px">Abrir caja</button>
+      </div>
+    `;
+    document.getElementById('btnAbrirCaja').onclick = async ()=>{
+      const montoInicial = parseFloat(document.getElementById('fMontoInicial').value)||0;
+      try{
+        await dbCap.doc('caja/main').set({abierta:true, fecha:today, montoInicial, abiertaEn:Date.now(), cerradaEn:null, montoRealCierre:null, diferencia:null});
+        toast('Caja abierta');
+      }catch(e){ toast('No se pudo abrir la caja'); }
+    };
+    return;
+  }
+
   const pendientes = state.mesas.filter(m=>m.estado!=='libre').map(m=>{
     const pedido = state.pedidos.find(p=>p.id===m.pedidoId);
     const total = pedido? (pedido.items||[]).reduce((s,it)=>s+it.precio*it.cantidad,0):0;
     return {mesa:m, pedido, total};
   });
+  const ventasHoy = state.pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===today);
+  const totalVentasHoy = ventasHoy.reduce((s,p)=>s+(p.total||0),0);
+  const gastosHoy = state.gastos.filter(g=>dateOf(g.creado)===today);
+  const totalGastosHoy = gastosHoy.reduce((s,g)=>s+(g.monto||0),0);
+  const movHoy = state.movimientosCaja.filter(mv=>dateOf(mv.creado)===today);
+  const ingresosManuales = movHoy.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+mv.monto,0);
+  const egresosManuales = movHoy.filter(mv=>mv.tipo==='egreso').reduce((s,mv)=>s+mv.monto,0);
+  const totalEsperado = (cfg.montoInicial||0) + totalVentasHoy + ingresosManuales - totalGastosHoy - egresosManuales;
+
   app.innerHTML = `
-    <h2 class="section-title">Caja</h2>
-    <p class="section-sub">Carga manual de pagos por mesa. Cerrar una cuenta libera la mesa.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Caja</h2><p class="section-sub">Carga manual de pagos por mesa. Cerrar una cuenta libera la mesa.</p></div>
+      ${cajaAbiertaHoy?`<button class="btn gold" id="btnCerrarCaja">Cerrar caja</button>`:
+        `<span class="pill ${cfg.diferencia===0?'ok':'warn'}">Caja cerrada · contado ${fmtMoney(cfg.montoRealCierre||0)} · diferencia ${fmtMoney(cfg.diferencia||0)}</span>`}
+    </div>
+    <div class="grid-cards" style="margin:14px 0">
+      <div class="card" style="padding:14px"><div class="prod-meta">Monto inicial</div><div class="prod-price" style="font-size:20px">${fmtMoney(cfg.montoInicial)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Ventas cobradas hoy</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentasHoy)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Gastos hoy</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastosHoy)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Total esperado en caja</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalEsperado)}</div></div>
+    </div>
+
+    ${cajaAbiertaHoy?`<div class="card" style="padding:16px;margin-bottom:16px">
+      <div class="section-header"><h3 style="font-size:15px;margin:0">Movimientos manuales de caja</h3><button class="btn sm ghost" id="btnNuevoMov">+ Movimiento</button></div>
+      <table>
+        <thead><tr><th>Hora</th><th>Tipo</th><th>Concepto</th><th>Medio</th><th>Monto</th></tr></thead>
+        <tbody>
+          ${movHoy.length===0?'<tr><td colspan="5"><div class="empty">Sin movimientos manuales hoy.</div></td></tr>':
+            movHoy.map(mv=>`<tr>
+              <td>${fmtTime(mv.creado)}</td>
+              <td><span class="pill ${mv.tipo==='ingreso'?'ok':'danger'}">${mv.tipo==='ingreso'?'Ingreso':'Egreso'}</span></td>
+              <td>${esc(mv.concepto)}</td>
+              <td>${esc(mv.medioPago)}</td>
+              <td>${mv.tipo==='egreso'?'-':''}${fmtMoney(mv.monto)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`:''}
+
     <div class="card" style="overflow-x:auto">
+      <h3 style="font-size:15px;margin:0 0 10px">Mesas abiertas</h3>
       <table>
         <thead><tr><th>Mesa</th><th>Estado</th><th>Ítems</th><th>Total</th><th></th></tr></thead>
         <tbody>
@@ -957,22 +1344,154 @@ function renderCaja(app){
               <td><span class="pill ${row.mesa.estado==='cuenta_pedida'?'danger':'busy'}">${row.mesa.estado==='cuenta_pedida'?'Cuenta pedida':'Ocupada'}</span></td>
               <td>${row.pedido? (row.pedido.items||[]).length : 0}</td>
               <td>${fmtMoney(row.total)}</td>
-              <td><button class="btn sm gold" data-cobrar="${row.mesa.id}">Cobrar</button></td>
+              <td><button class="btn sm gold" data-cobrar="${row.mesa.id}" ${cajaAbiertaHoy?'':'disabled'}>Cobrar</button></td>
             </tr>`).join('')}
         </tbody>
       </table>
+      ${cajaAbiertaHoy?'':'<p class="section-sub" style="margin-top:10px">La caja de hoy está cerrada — no se pueden registrar más cobros.</p>'}
     </div>
   `;
   document.querySelectorAll('[data-cobrar]').forEach(b=>b.onclick=()=>{
+    if(!cajaAbiertaHoy) return;
     const row = pendientes.find(r=>r.mesa.id===b.dataset.cobrar);
     if(row && row.pedido) openCobrarModal(row.mesa, row.pedido, row.total);
   });
+  const bnm = document.getElementById('btnNuevoMov');
+  if(bnm) bnm.onclick = openNuevoMovimientoModal;
+  const bcc = document.getElementById('btnCerrarCaja');
+  if(bcc) bcc.onclick = ()=> openCerrarCajaModal(totalEsperado);
+}
+function openNuevoMovimientoModal(){
+  openModal(`
+    <h3>Nuevo movimiento de caja</h3>
+    <div class="field-row">
+      <div class="field"><label>Tipo</label><select id="mvTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></div>
+      <div class="field"><label>Medio de pago</label><select id="mvMedio"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select></div>
+    </div>
+    <div class="field"><label>Concepto</label><input id="mvConcepto" placeholder="Ej: cambio inicial, retiro parcial..."></div>
+    <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="mvMonto"></div>
+    <button class="btn" id="btnGuardarMov" style="margin-top:10px">Guardar movimiento</button>
+  `);
+  document.getElementById('btnGuardarMov').onclick = async ()=>{
+    const tipo = document.getElementById('mvTipo').value;
+    const medioPago = document.getElementById('mvMedio').value;
+    const concepto = document.getElementById('mvConcepto').value.trim();
+    const monto = parseFloat(document.getElementById('mvMonto').value)||0;
+    if(!concepto){ toast('El concepto es obligatorio'); return; }
+    if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
+    try{
+      await dbCap.collection('movimientosCaja').add({tipo, medioPago, concepto, monto, creado:Date.now()});
+      closeModal(); toast('Movimiento registrado');
+    }catch(e){ toast('No se pudo registrar el movimiento'); }
+  };
+}
+function openCerrarCajaModal(totalEsperado){
+  openModal(`
+    <h3>Cerrar caja</h3>
+    <p class="section-sub">Total esperado según el sistema: <b>${fmtMoney(totalEsperado)}</b>. Contá el efectivo real y cargalo abajo.</p>
+    <div class="field"><label>Monto real contado</label><input type="number" min="0" value="${totalEsperado}" id="fMontoReal"></div>
+    <button class="btn gold" id="btnConfirmarCierreCaja" style="margin-top:10px">Confirmar cierre de caja</button>
+  `);
+  document.getElementById('btnConfirmarCierreCaja').onclick = async ()=>{
+    const montoReal = parseFloat(document.getElementById('fMontoReal').value)||0;
+    const diferencia = Math.round((montoReal - totalEsperado)*100)/100;
+    try{
+      await dbCap.doc('caja/main').update({abierta:false, cerradaEn:Date.now(), montoRealCierre:montoReal, diferencia});
+      closeModal();
+      toast(diferencia===0? 'Caja cerrada sin diferencias' : `Caja cerrada. Diferencia: ${fmtMoney(diferencia)}`);
+    }catch(e){ toast('No se pudo cerrar la caja'); }
+  };
+}
+
+/* ================= GASTOS ================= */
+const CATEGORIAS_GASTO = ['Limpieza','Mantenimiento','Servicios','Compras','Descartables','Reparaciones','Otros'];
+function renderGastos(app){
+  const fecha = state.ui.gastosDate;
+  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha).sort((a,b)=>b.creado-a.creado);
+  const total = gastosDia.reduce((s,g)=>s+g.monto,0);
+  const bloqueado = !!cierreConfirmado(fecha);
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
+      <div><h2 class="section-title">Gastos</h2><p class="section-sub">Registro de gastos y compras del restaurante.</p></div>
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field"><label>Fecha</label><input type="date" id="fFechaGastos" value="${fecha}"></div>
+        <button class="btn" id="btnNuevoGasto">+ Nuevo gasto</button>
+      </div>
+    </div>
+    <div class="card" style="padding:14px;margin:14px 0;max-width:260px">
+      <div class="prod-meta">Total gastado</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(total)}</div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Proveedor</th><th>Medio</th><th>Monto</th><th></th></tr></thead>
+        <tbody>
+          ${gastosDia.length===0?`<tr><td colspan="7"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>`:
+            gastosDia.map(g=>`<tr>
+              <td>${fmtTime(g.creado)}</td>
+              <td>${esc(g.categoria)}</td>
+              <td>${esc(g.descripcion)}</td>
+              <td>${esc(g.proveedor||'—')}</td>
+              <td>${esc(g.medioPago)}</td>
+              <td>${fmtMoney(g.monto)}</td>
+              <td>${bloqueado?'':`<button class="iconbtn" data-delgasto="${g.id}">✕</button>`}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      ${bloqueado?'<p class="section-sub" style="margin-top:10px">Este día tiene el cierre confirmado — los gastos ya no se pueden borrar.</p>':''}
+    </div>
+  `;
+  document.getElementById('fFechaGastos').onchange = e=>{ state.ui.gastosDate = e.target.value; render(); };
+  document.getElementById('btnNuevoGasto').onclick = openNuevoGastoModal;
+  document.querySelectorAll('[data-delgasto]').forEach(b=>b.onclick=async ()=>{
+    if(!confirm('¿Eliminar este gasto?')) return;
+    try{ await dbCap.doc('gastos/'+b.dataset.delgasto).delete(); toast('Gasto eliminado'); }catch(e){ toast('No se pudo eliminar'); }
+  });
+}
+function openNuevoGastoModal(){
+  openModal(`
+    <h3>Nuevo gasto</h3>
+    <div class="field-row">
+      <div class="field"><label>Categoría</label><select id="gCategoria">${CATEGORIAS_GASTO.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Medio de pago</label><select id="gMedio"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select></div>
+    </div>
+    <div class="field"><label>Descripción</label><input id="gDescripcion" placeholder="Ej: Detergente y lavandina"></div>
+    <div class="field-row">
+      <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="gMonto"></div>
+      <div class="field"><label>Proveedor (opcional)</label>
+        <select id="gProveedor">
+          <option value="">Sin proveedor</option>
+          ${state.proveedores.map(pv=>`<option value="${esc(pv.nombre)}">${esc(pv.nombre)}</option>`).join('')}
+          <option value="__otro">Otro (escribir)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="gProveedorOtroWrap" style="display:none"><label>Nombre del proveedor</label><input id="gProveedorOtro"></div>
+    <button class="btn" id="btnGuardarGasto" style="margin-top:10px">Guardar gasto</button>
+  `);
+  document.getElementById('gProveedor').onchange = (e)=>{
+    document.getElementById('gProveedorOtroWrap').style.display = e.target.value==='__otro' ? '' : 'none';
+  };
+  document.getElementById('btnGuardarGasto').onclick = async ()=>{
+    const categoria = document.getElementById('gCategoria').value;
+    const medioPago = document.getElementById('gMedio').value;
+    const descripcion = document.getElementById('gDescripcion').value.trim();
+    const monto = parseFloat(document.getElementById('gMonto').value)||0;
+    const provSel = document.getElementById('gProveedor').value;
+    const proveedor = provSel==='__otro' ? document.getElementById('gProveedorOtro').value.trim() : provSel;
+    if(!descripcion){ toast('La descripción es obligatoria'); return; }
+    if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
+    try{
+      await dbCap.collection('gastos').add({categoria, medioPago, descripcion, monto, proveedor, creado:Date.now()});
+      closeModal(); toast('Gasto registrado');
+    }catch(e){ toast('No se pudo registrar el gasto'); }
+  };
 }
 
 /* ================= CIERRE ================= */
 function renderCierre(app){
   const fecha = state.ui.cierreDate;
   const cerrados = state.pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===fecha);
+  const cancelados = state.pedidos.filter(p=>p.estado==='cancelado' && dateOf(p.canceladoEn)===fecha);
   const totalVentas = cerrados.reduce((s,p)=>s+(p.total||0),0);
   const totalPersonas = cerrados.reduce((s,p)=>s+(p.personas||0),0);
   const totalTenedores = cerrados.reduce((s,p)=>s+(p.tenedores||0),0);
@@ -981,18 +1500,35 @@ function renderCierre(app){
     productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad;
   }));
   const aggList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
+  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha);
+  const totalGastos = gastosDia.reduce((s,g)=>s+g.monto,0);
+  const cajaDelDia = (state.caja && state.caja.fecha===fecha) ? state.caja : null;
+  const confirmado = cierreConfirmado(fecha);
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
-      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, productos vendidos, personas y cubiertos.</p></div>
-      <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
+      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, gastos, productos vendidos, personas y cubiertos.</p></div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
+        <button class="btn ghost" id="btnExportarCSV">Exportar CSV</button>
+      </div>
     </div>
+    ${confirmado?`<div class="card" style="padding:12px 16px;margin:14px 0;border-color:var(--ok);display:flex;align-items:center;gap:10px">
+      <span class="pill ok">🔒 Cierre confirmado</span>
+      <span class="section-sub" style="margin:0">Confirmado ${fmtTime(confirmado.confirmadoEn)}hs. Este día ya no se puede modificar.</span>
+    </div>`:''}
     <div class="grid-cards" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas totales</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentas)}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Gastos totales</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastos)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Mesas cerradas</div><div class="prod-price" style="font-size:20px">${cerrados.length}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Pedidos cancelados</div><div class="prod-price" style="font-size:20px">${cancelados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Personas atendidas</div><div class="prod-price" style="font-size:20px">${totalPersonas}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Tenedores usados</div><div class="prod-price" style="font-size:20px">${totalTenedores}</div></div>
     </div>
+    ${cajaDelDia?`<div class="card" style="padding:14px;margin-bottom:18px">
+      <h3 style="font-size:15px;margin:0 0 8px">Caja del día</h3>
+      <p class="section-sub" style="margin:0">Inicial ${fmtMoney(cajaDelDia.montoInicial)} ${cajaDelDia.abierta?'· <span class="pill busy">Abierta</span>':`· contado ${fmtMoney(cajaDelDia.montoRealCierre||0)} · diferencia <b style="color:${cajaDelDia.diferencia===0?'var(--ok)':'var(--danger)'}">${fmtMoney(cajaDelDia.diferencia||0)}</b>`}</p>
+    </div>`:''}
     <h3 style="font-size:15px">Productos vendidos</h3>
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>
@@ -1000,28 +1536,90 @@ function renderCierre(app){
           aggList.map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}
       </tbody></table>
     </div>
+    <h3 style="font-size:15px">Gastos del día</h3>
+    <div class="card" style="overflow-x:auto;margin-bottom:18px">
+      <table><thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Monto</th></tr></thead><tbody>
+        ${gastosDia.length===0?'<tr><td colspan="4"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>':
+          gastosDia.map(g=>`<tr><td>${fmtTime(g.creado)}</td><td>${esc(g.categoria)}</td><td>${esc(g.descripcion)}</td><td>${fmtMoney(g.monto)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
     <h3 style="font-size:15px">Detalle por mesa</h3>
-    <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
       ${cerrados.length===0?'<div class="card empty">Sin cierres registrados.</div>':
         cerrados.map(p=>`<div class="card" style="padding:12px 14px">
           <div style="display:flex;justify-content:space-between"><b>Mesa ${esc(p.mesaNumero)}</b><span>${fmtMoney(p.total)} · ${esc(p.medioPago||'—')}</span></div>
           <div class="prod-meta">${p.personas} personas · ${p.tenedores} tenedores · cerrada ${fmtTime(p.cerrado)}hs</div>
+          ${p.medioPago==='Mixto' && p.pagos? `<div class="prod-meta">${p.pagos.map(pg=>esc(pg.medio)+' '+fmtMoney(pg.monto)).join(' + ')}</div>`:''}
           <div class="prod-meta" style="margin-top:6px">${(p.items||[]).map(it=>it.cantidad+'× '+esc(it.nombre)).join(', ')}</div>
         </div>`).join('')}
     </div>
-    ${state.adminMode?`<div class="card" style="padding:14px;margin-top:18px"><b>Reinicio de stock diario</b><p class="section-sub">Restaura el stock de todos los productos al valor configurado (usar al iniciar el día).</p><button class="btn gold" id="btnResetStock">Reiniciar stock del día</button></div>`:''}
+    ${cancelados.length>0?`<h3 style="font-size:15px">Pedidos cancelados</h3>
+    <div class="card" style="overflow-x:auto;margin-bottom:18px">
+      <table><thead><tr><th>Hora</th><th>Mesa</th><th>Motivo</th></tr></thead><tbody>
+        ${cancelados.map(p=>`<tr><td>${fmtTime(p.canceladoEn)}</td><td>Mesa ${esc(p.mesaNumero)}</td><td>${esc(p.motivoCancelacion||'—')}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`:''}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+      ${state.adminMode && !confirmado?`<div class="card" style="padding:14px;flex:1;min-width:260px"><b>Reinicio de stock diario</b><p class="section-sub">Restaura el stock de todos los productos al valor configurado (usar al iniciar el día).</p><button class="btn gold" id="btnResetStock">Reiniciar stock del día</button></div>`:''}
+      ${state.adminMode?`<div class="card" style="padding:14px;flex:1;min-width:260px">
+        <b>Confirmar cierre del día</b>
+        <p class="section-sub">${confirmado?'Este día ya fue confirmado y no admite más cambios.':'Una vez confirmado, no se van a poder borrar gastos ni reiniciar el stock de esta fecha.'}</p>
+        <button class="btn ${confirmado?'':'danger'}" id="btnConfirmarCierre" ${confirmado?'disabled':''}>${confirmado?'Cierre ya confirmado':'Confirmar cierre'}</button>
+      </div>`:''}
+    </div>
   `;
   document.getElementById('fFecha').onchange = (e)=>{ state.ui.cierreDate = e.target.value; render(); };
+  document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreCSV(fecha, cerrados, gastosDia, totalVentas, totalGastos);
   const rb = document.getElementById('btnResetStock');
   if(rb) rb.onclick = async ()=>{
     if(!confirm('¿Reiniciar el stock de todos los productos?')) return;
     try{
       for(const p of state.productos){
-        if(p.stockDiario!=null) await dbCap.doc('productos/'+p.id).update({stockRestante:p.stockDiario});
+        if(p.stockDiario!=null){
+          const delta = p.stockDiario - (p.stockRestante||0);
+          if(delta!==0) await registrarMovimientoStock(p.id, p.nombre, 'apertura', delta, 'Reinicio de stock diario');
+        }
       }
       toast('Stock reiniciado');
     }catch(e){ toast('Error al reiniciar stock'); }
   };
+  const bcc = document.getElementById('btnConfirmarCierre');
+  if(bcc) bcc.onclick = async ()=>{
+    if(!requireAdmin()) return;
+    if(!confirm('¿Confirmar el cierre del día '+fecha+'? Ya no se va a poder modificar.')) return;
+    try{
+      await dbCap.doc('cierres/'+fecha).set({
+        fecha, confirmadoEn: Date.now(), totalVentas, totalGastos,
+        mesasCerradas: cerrados.length, cajaDiferencia: cajaDelDia?cajaDelDia.diferencia:null
+      });
+      toast('Cierre confirmado');
+    }catch(e){ toast('No se pudo confirmar el cierre'); }
+  };
+}
+function csvEscape(v){
+  v = String(v==null?'':v);
+  if(/[",\n]/.test(v)) v = '"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function exportarCierreCSV(fecha, cerrados, gastosDia, totalVentas, totalGastos){
+  const rows = [];
+  rows.push(['Cierre del día', fecha]);
+  rows.push(['Ventas totales', totalVentas]);
+  rows.push(['Gastos totales', totalGastos]);
+  rows.push([]);
+  rows.push(['Mesa','Personas','Tenedores','Medio de pago','Detalle de pago','Total','Hora cierre','Items']);
+  cerrados.forEach(p=>rows.push([p.mesaNumero, p.personas, p.tenedores, p.medioPago||'', (p.pagos||[]).map(pg=>pg.medio+' '+pg.monto).join(' | '), p.total, fmtTime(p.cerrado), (p.items||[]).map(it=>it.cantidad+'x '+it.nombre).join(' | ')]));
+  rows.push([]);
+  rows.push(['Gastos']);
+  rows.push(['Hora','Categoría','Descripción','Monto']);
+  gastosDia.forEach(g=>rows.push([fmtTime(g.creado), g.categoria, g.descripcion, g.monto]));
+  const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `cierre-${fecha}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 /* ================= CONFIG ================= */
@@ -1070,6 +1668,22 @@ function renderConfig(app){
       <button class="btn sm" id="btnSavePin" style="margin-top:6px">Guardar PIN</button>
     </div>
 
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Proveedores</h3>
+      <p class="section-sub">Lista simple para asociar a los gastos y compras. Sin datos de contacto: solo el nombre.</p>
+      <div id="provWrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+        ${state.proveedores.length===0?'<div class="section-sub" style="margin:0">Todavía no hay proveedores cargados.</div>':
+          state.proveedores.map(pv=>`<div class="field-row" style="align-items:center">
+            <span style="flex:1">${esc(pv.nombre)}</span>
+            <button class="iconbtn" data-delprov="${pv.id}">✕</button>
+          </div>`).join('')}
+      </div>
+      <div class="field-row">
+        <div class="field"><input id="fNuevoProveedor" placeholder="Nombre del proveedor"></div>
+        <button class="btn sm ghost" id="btnAddProveedor">+ Agregar</button>
+      </div>
+    </div>
+
     <div class="card" style="padding:16px;border:1px dashed var(--gold)">
       <h3 style="font-size:15px;margin-top:0">Datos de prueba</h3>
       <p class="section-sub">Carga mesas, productos, estaciones y pedidos de ejemplo (en distintos estados) para ver cómo se ve el sistema en uso. Pensado para demostraciones, no para un restaurante en producción.</p>
@@ -1079,6 +1693,17 @@ function renderConfig(app){
   `;
   document.getElementById('btnDemoData').onclick = loadDemoData;
   document.getElementById('btnWipeData').onclick = wipeAllData;
+  document.getElementById('btnAddProveedor').onclick = async ()=>{
+    const input = document.getElementById('fNuevoProveedor');
+    const nombre = input.value.trim();
+    if(!nombre){ toast('Ingresá un nombre'); return; }
+    try{ await dbCap.collection('proveedores').add({nombre, creado:Date.now()}); input.value=''; toast('Proveedor agregado'); }
+    catch(e){ toast('No se pudo agregar'); }
+  };
+  document.querySelectorAll('[data-delprov]').forEach(b=>b.onclick=async ()=>{
+    if(!confirm('¿Eliminar este proveedor?')) return;
+    try{ await dbCap.doc('proveedores/'+b.dataset.delprov).delete(); toast('Proveedor eliminado'); }catch(e){ toast('No se pudo eliminar'); }
+  });
 
   document.getElementById('fPlano').onchange = async (e)=>{
     const file = e.target.files[0];
@@ -1280,6 +1905,19 @@ async function loadDemoData(){
       });
     }
 
+    // --- PROVEEDORES, CAJA Y GASTOS DE EJEMPLO ---
+    for(const nombre of ['Distribuidora Sur','Bebidas del Litoral','Gas Metropolitano']){
+      await dbCap.collection('proveedores').add({nombre, creado:Date.now()});
+    }
+    await dbCap.doc('caja/main').set({abierta:true, fecha:todayStr(), montoInicial:20000, abiertaEn:Date.now()-6*3600000, cerradaEn:null, montoRealCierre:null, diferencia:null});
+    await dbCap.collection('movimientosCaja').add({tipo:'egreso', medioPago:'Efectivo', concepto:'Cambio para mozos', monto:5000, creado:Date.now()-5*3600000});
+    const gastosDef = [
+      {categoria:'Descartables', medioPago:'Efectivo', descripcion:'Vasos y servilletas', monto:4200, proveedor:'Distribuidora Sur', creado:Date.now()-4*3600000},
+      {categoria:'Servicios', medioPago:'Transferencia', descripcion:'Garrafa de gas', monto:9500, proveedor:'Gas Metropolitano', creado:Date.now()-2*3600000},
+      {categoria:'Limpieza', medioPago:'Efectivo', descripcion:'Detergente y lavandina', monto:2100, proveedor:'', creado:Date.now()-1*3600000},
+    ];
+    for(const g of gastosDef){ await dbCap.collection('gastos').add(g); }
+
     toast('Datos de prueba cargados con éxito');
   }catch(e){
     console.error(e);
@@ -1294,6 +1932,13 @@ async function wipeAllData(){
     for(const m of state.mesas) await dbCap.doc('mesas/'+m.id).delete();
     for(const p of state.productos) await dbCap.doc('productos/'+p.id).delete();
     for(const p of state.pedidos) await dbCap.doc('pedidos/'+p.id).delete();
+    for(const g of state.gastos) await dbCap.doc('gastos/'+g.id).delete();
+    for(const mv of state.movimientosCaja) await dbCap.doc('movimientosCaja/'+mv.id).delete();
+    for(const mv of state.movimientosStock) await dbCap.doc('movimientosStock/'+mv.id).delete();
+    for(const c of state.cierres) await dbCap.doc('cierres/'+c.id).delete();
+    for(const h of state.historialPrecios) await dbCap.doc('historialPrecios/'+h.id).delete();
+    for(const pv of state.proveedores) await dbCap.doc('proveedores/'+pv.id).delete();
+    await dbCap.doc('caja/main').delete();
     await dbCap.doc('config/main').update({numMesas:0});
     toast('Datos borrados');
   }catch(e){ toast('Error al borrar datos'); }

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantalla de Cocina - RestaurantFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+    --bg: #05070c;
+    --bg-col: #0b1220;
+    --bg-tile: #111a2c;
+    --border-color: #1c2740;
+    --text-main: #f8fafc;
+    --text-muted: #7c8aa3;
+
+    --warn: #f59e0b;
+    --accent: #0ea5e9;
+    --ok: #22c55e;
+    --danger: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+html, body { height: 100%; }
+body {
+    background: var(--bg); color: var(--text-main);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* --- HEADER --- */
+.board-header {
+    flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 34px;
+    background: var(--bg-col);
+    border-bottom: 1px solid var(--border-color);
+}
+.brand { display: flex; align-items: center; gap: 14px; font-size: clamp(1.1rem, 1.8vw, 1.7rem); font-weight: 800; letter-spacing: .3px; }
+.brand i { color: var(--accent); font-size: 1.15em; }
+.header-links { display: flex; align-items: center; gap: 6px; }
+.header-links a {
+    display: flex; align-items: center; gap: 7px; text-decoration: none;
+    color: var(--text-muted); font-weight: 600; font-size: 13px;
+    padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+}
+.header-links a:hover { background: var(--bg-tile); color: var(--text-main); }
+.clock { font-size: clamp(1rem, 1.6vw, 1.4rem); font-weight: 700; color: var(--text-muted); letter-spacing: .5px; }
+
+/* --- BOARD (3 columnas) --- */
+.board {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 2px; background: var(--border-color);
+}
+.col { background: var(--bg-col); display: flex; flex-direction: column; min-height: 0; }
+
+.col-head {
+    flex: none; padding: 18px 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: clamp(1.05rem, 2vw, 1.7rem); font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 3px solid;
+}
+.col-head .count {
+    font-size: 0.6em; font-weight: 800; padding: 5px 16px; border-radius: 100px;
+    background: rgba(255,255,255,.12);
+}
+.col-pendiente .col-head { color: var(--warn); border-color: var(--warn); background: rgba(245,158,11,.08); }
+.col-preparando .col-head { color: var(--accent); border-color: var(--accent); background: rgba(14,165,233,.08); }
+.col-listo .col-head { color: var(--ok); border-color: var(--ok); background: rgba(34,197,94,.08); }
+
+.tiles {
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 22px; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 18px; align-content: start;
+}
+.tiles::-webkit-scrollbar { width: 10px; }
+.tiles::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 8px; }
+
+.tile {
+    border-radius: 20px; padding: 24px 18px; text-align: center;
+    background: var(--bg-tile); border: 2px solid transparent;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.tile .mesa-label { font-size: 0.85rem; opacity: .65; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+.tile .mesa-num { font-size: clamp(2.6rem, 5vw, 4.6rem); font-weight: 800; line-height: 1; }
+.tile .meta { font-size: 0.85rem; opacity: .7; font-weight: 600; }
+.tile .hint { font-size: 0.72rem; opacity: .55; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+.tile.tappable { cursor: pointer; transition: transform .12s ease, filter .12s ease; }
+.tile.tappable:hover { filter: brightness(1.12); }
+.tile.tappable:active { transform: scale(.96); }
+
+.col-pendiente .tile { border-color: rgba(245,158,11,.45); background: linear-gradient(160deg, rgba(245,158,11,.14), var(--bg-tile) 65%); }
+.col-pendiente .tile.urgent { border-color: var(--danger); background: linear-gradient(160deg, rgba(239,68,68,.22), var(--bg-tile) 65%); animation: pulseUrgent 1.1s ease-in-out infinite; }
+.col-pendiente .tile.urgent .mesa-num { color: var(--danger); }
+.col-preparando .tile { border-color: rgba(14,165,233,.45); background: linear-gradient(160deg, rgba(14,165,233,.14), var(--bg-tile) 65%); }
+.col-listo .tile { border-color: rgba(34,197,94,.55); background: linear-gradient(160deg, rgba(34,197,94,.2), var(--bg-tile) 65%); animation: pulseReady 1.8s ease-in-out infinite; }
+
+@keyframes pulseReady { 0%,100% { box-shadow: 0 0 0 rgba(34,197,94,0); } 50% { box-shadow: 0 0 30px rgba(34,197,94,.55); } }
+@keyframes pulseUrgent { 0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); } 50% { box-shadow: 0 0 26px rgba(239,68,68,.6); } }
+
+.empty-col { grid-column: 1/-1; padding: 50px 20px; text-align: center; color: var(--text-muted); font-size: 1.05rem; opacity: .6; }
+
+.full-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+    color: var(--text-muted); text-align: center; padding: 40px;
+}
+.full-empty i { font-size: 3rem; opacity: .3; }
+.full-empty a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+@media (max-width: 900px) {
+    .board { grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); overflow-y: auto; }
+    body { overflow-y: auto; }
+    .header-links a span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="board-header">
+    <div class="brand"><i class="fa-solid fa-fire-burner"></i> RestaurantFlow — Cocina en vivo</div>
+    <nav class="header-links">
+      <a href="kitchen-live.html"><i class="fa-solid fa-house"></i> <span>Sistema</span></a>
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
+    </nav>
+    <div class="clock" id="reloj"></div>
+</header>
+
+<main class="board" id="board">
+    <section class="col col-pendiente">
+        <div class="col-head"><span><i class="fa-solid fa-hourglass-half"></i> Pendiente</span><span class="count" id="countPendiente">0</span></div>
+        <div class="tiles" id="colPendiente"></div>
+    </section>
+    <section class="col col-preparando">
+        <div class="col-head"><span><i class="fa-solid fa-fire"></i> En preparación</span><span class="count" id="countPreparando">0</span></div>
+        <div class="tiles" id="colPreparando"></div>
+    </section>
+    <section class="col col-listo">
+        <div class="col-head"><span><i class="fa-solid fa-check"></i> Listo</span><span class="count" id="countListo">0</span></div>
+        <div class="tiles" id="colListo"></div>
+    </section>
+</main>
+
+<script>
+const DB_KEY = 'restaurantFlowLocalDB';
+const URGENTE_MIN = 10; // minutos esperando sin empezar a preparar = se marca urgente
+
+function loadDB(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(DB_KEY));
+    return raw || {config:{}, mesas:{}, productos:{}, pedidos:{}};
+  }catch(e){ return {config:{}, mesas:{}, productos:{}, pedidos:{}}; }
+}
+function saveDB(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function asArray(col){ return Object.keys(col||{}).map(id=>({id, ...col[id]})); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function minutosDesde(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/60000)); }
+
+function computeBoard(){
+  const db = loadDB();
+  const pedidos = asArray(db.pedidos).filter(p=>p.estado==='abierto');
+  const buckets = { pendiente: [], preparando: [], listo: [] };
+
+  pedidos.forEach(p=>{
+    const items = (p.items||[]).filter(it=>it.estado!=='entregado');
+    if(items.length===0) return; // nada pendiente de esta mesa
+    let bucket;
+    if(items.some(it=>it.estado==='pendiente')) bucket = 'pendiente';
+    else if(items.some(it=>it.estado==='preparando')) bucket = 'preparando';
+    else bucket = 'listo';
+    buckets[bucket].push({
+      pedidoId: p.id,
+      mesaNumero: p.mesaNumero,
+      cantidad: items.length,
+      creado: p.creado
+    });
+  });
+
+  Object.values(buckets).forEach(list=>list.sort((a,b)=>(a.creado||0)-(b.creado||0)));
+  return { buckets, hasAnyData: asArray(db.mesas).length>0 || asArray(db.pedidos).length>0 };
+}
+
+// Avanza el pedido de un ticket un paso: pendiente->preparando (colKey='pendiente')
+// o preparando->listo (colKey='preparando'). El paso listo->entregado lo hace el
+// mozo desde el sistema principal, no la cocina, igual que en kitchen-live.html.
+function advanceBucket(pedidoId, colKey){
+  const nextEstado = colKey==='pendiente' ? 'preparando' : colKey==='preparando' ? 'listo' : null;
+  if(!nextEstado) return;
+  const db = loadDB();
+  const pedido = db.pedidos && db.pedidos[pedidoId];
+  if(!pedido) return;
+  pedido.items = (pedido.items||[]).map(it=> it.estado===colKey ? {...it, estado:nextEstado} : it);
+  saveDB(db);
+  render();
+}
+
+function tileHtml(entry, colKey){
+  const mins = minutosDesde(entry.creado);
+  const urgent = colKey==='pendiente' && mins >= URGENTE_MIN;
+  const tappable = colKey==='pendiente' || colKey==='preparando';
+  const hint = colKey==='pendiente' ? 'Toca para empezar a preparar' : colKey==='preparando' ? 'Toca para marcar listo' : 'Esperando al mozo';
+  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" ${tappable?`data-pedido-id="${entry.pedidoId}" data-col="${colKey}"`:''}>
+    <div class="mesa-label">Mesa</div>
+    <div class="mesa-num">${esc(entry.mesaNumero)}</div>
+    <div class="meta">${entry.cantidad} ítem${entry.cantidad===1?'':'s'} · hace ${mins} min</div>
+    <div class="hint">${hint}</div>
+  </div>`;
+}
+
+function render(){
+  const { buckets, hasAnyData } = computeBoard();
+  const board = document.getElementById('board');
+
+  if(!hasAnyData){
+    board.innerHTML = `<div class="full-empty" style="grid-column:1/-1">
+      <i class="fa-solid fa-fire-burner"></i>
+      <div>Todavía no hay pedidos cargados.<br>Abrí <a href="kitchen-live.html">el sistema</a> y empezá a tomar pedidos desde el Mapa.</div>
+    </div>`;
+    return;
+  }
+  if(!document.getElementById('colPendiente')){
+    board.innerHTML = `
+    <section class="col col-pendiente">
+        <div class="col-head"><span><i class="fa-solid fa-hourglass-half"></i> Pendiente</span><span class="count" id="countPendiente">0</span></div>
+        <div class="tiles" id="colPendiente"></div>
+    </section>
+    <section class="col col-preparando">
+        <div class="col-head"><span><i class="fa-solid fa-fire"></i> En preparación</span><span class="count" id="countPreparando">0</span></div>
+        <div class="tiles" id="colPreparando"></div>
+    </section>
+    <section class="col col-listo">
+        <div class="col-head"><span><i class="fa-solid fa-check"></i> Listo</span><span class="count" id="countListo">0</span></div>
+        <div class="tiles" id="colListo"></div>
+    </section>`;
+  }
+
+  const map = { pendiente: 'colPendiente', preparando: 'colPreparando', listo: 'colListo' };
+  const counts = { pendiente: 'countPendiente', preparando: 'countPreparando', listo: 'countListo' };
+  Object.keys(map).forEach(key=>{
+    const list = buckets[key];
+    document.getElementById(counts[key]).textContent = list.length;
+    document.getElementById(map[key]).innerHTML = list.length===0
+      ? '<div class="empty-col">Sin mesas acá</div>'
+      : list.map(e=>tileHtml(e, key)).join('');
+  });
+
+  document.querySelectorAll('.tile.tappable').forEach(el=>{
+    el.addEventListener('click', ()=> advanceBucket(el.dataset.pedidoId, el.dataset.col));
+  });
+}
+
+function actualizarReloj(){
+  const ahora = new Date();
+  document.getElementById('reloj').textContent = ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+render();
+setInterval(render, 4000);
+window.addEventListener('storage', (e)=>{ if(e.key===DB_KEY) render(); });
+</script>
+
+</body>
+</html>
