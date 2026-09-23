@@ -6,7 +6,8 @@
 <title>RestaurantFlow - Local</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root{
   /* Paleta tomada de cocina-ordu.html (azul marino + celeste) */
@@ -34,11 +35,11 @@ html,body{margin:0;padding:0}
 body{
   background:var(--paper);
   color:var(--ink);
-  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
-h1,h2,h3,.brandfont{font-family:'Manrope',system-ui,sans-serif}
+h1,h2,h3,.brandfont{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;background:var(--paper-raise);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-2);outline-offset:1px}
@@ -46,29 +47,57 @@ a{color:inherit}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
 
-.topbar{
-  position:sticky;top:0;z-index:40;
-  background:var(--brand);color:#f4f8f6;
-  display:flex;align-items:center;gap:14px;
-  padding:10px 16px;box-shadow:var(--shadow);
-  overflow-x:auto;
+.app-shell{display:flex;min-height:100vh}
+
+aside{
+  width:250px;flex:none;
+  background:var(--paper-raise);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
 }
-.brand-mark{display:flex;align-items:center;gap:8px;white-space:nowrap;padding-right:8px;border-right:1px solid rgba(255,255,255,.25)}
-.brand-mark .dot{width:10px;height:10px;border-radius:3px;background:var(--gold);flex:none}
-.brand-mark span{font-weight:800;font-size:16px;letter-spacing:.2px}
-.navtabs{display:flex;gap:4px;flex:1;overflow-x:auto}
-.navtabs button{
-  background:transparent;border:none;color:#dfeee8;padding:8px 12px;border-radius:8px;font-weight:600;font-size:13.5px;white-space:nowrap;
+.logo-container{
+  padding:22px 20px;display:flex;align-items:center;gap:10px;
+  font-weight:800;font-size:17px;letter-spacing:.2px;
+  border-bottom:1px solid var(--line);
 }
-.navtabs button.active{background:rgba(255,255,255,.16);color:#fff}
-.navtabs button:hover:not(.active){background:rgba(255,255,255,.08)}
+.logo-container i{color:var(--brand);font-size:1.35rem}
+
+.nav-links{list-style:none;margin:0;padding:14px 10px;flex:1;overflow-y:auto}
+.nav-links li{margin-bottom:4px}
+.nav-links a{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;border-radius:9px;
+  color:var(--ink-soft);text-decoration:none;font-weight:600;font-size:13.5px;
+}
+.nav-links a i{width:18px;text-align:center;font-size:14px}
+.nav-links a:hover{background:var(--line);color:var(--ink)}
+.nav-links a.active{background:var(--brand);color:#fff}
+
+.sidebar-foot{padding:14px 10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.side-link{
+  display:flex;align-items:center;gap:10px;text-decoration:none;
+  color:var(--ink-soft);font-weight:600;font-size:13px;
+  padding:8px 10px;border-radius:8px;
+}
+.side-link:hover{background:var(--line);color:var(--ink)}
+.side-link i{width:16px;text-align:center}
 .adminbtn{
-  white-space:nowrap;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;
-  padding:7px 12px;border-radius:8px;font-weight:700;font-size:13px;
+  white-space:nowrap;border:1px solid var(--line);background:transparent;color:var(--ink);
+  padding:8px 12px;border-radius:8px;font-weight:700;font-size:13px;margin-top:4px;
 }
 .adminbtn.on{background:var(--gold);border-color:var(--gold);color:#241a04}
 
-.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column}
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--paper-raise);border-bottom:1px solid var(--line);
+  padding:16px 26px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+header h1{font-size:1.2rem;margin:0}
+.clock{color:var(--ink-soft);font-size:13px;font-weight:600}
+
+.wrap{max-width:1180px;margin:0 auto;padding:18px 26px 60px}
 .card{background:var(--paper-raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .section-title{font-size:20px;font-weight:800;margin:0 0 4px}
 .section-sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px}
@@ -158,35 +187,55 @@ tr:last-child td{border-bottom:none}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:100px;font-size:13.5px;font-weight:600;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 
-@media (max-width:640px){
-  .brand-mark span{font-size:14px}
-  .wrap{padding:14px 10px 50px}
+@media (max-width:780px){
+  .app-shell{flex-direction:column}
+  aside{
+    width:100%;height:auto;position:sticky;top:0;z-index:30;
+    flex-direction:column;border-right:none;border-bottom:1px solid var(--line);
+  }
+  .logo-container{padding:12px 16px;font-size:15px}
+  .nav-links{display:flex;flex-direction:row;gap:2px;padding:8px 10px;overflow-x:auto;flex:none}
+  .nav-links li{margin-bottom:0}
+  .nav-links a{white-space:nowrap}
+  .sidebar-foot{flex-direction:row;justify-content:flex-end;padding:8px 10px}
+  .side-link span{display:none}
+  header{padding:12px 16px}
+  .wrap{padding:14px 12px 50px}
 }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand-mark"><span class="dot"></span><span class="brandfont">RestaurantFlow</span></div>
-  <div class="navtabs" id="navtabs"></div>
-  <a class="adminbtn" href="pantalla-cocina.html" style="text-decoration:none;display:inline-flex;align-items:center">Pantalla cocina</a>
-  <a class="adminbtn" href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center">Dashboard</a>
-  <button class="adminbtn" id="adminToggle">Modo admin</button>
+<div class="app-shell">
+  <aside>
+    <div class="logo-container brandfont"><i class="fa-solid fa-utensils"></i><span>RestaurantFlow</span></div>
+    <ul class="nav-links" id="navtabs"></ul>
+    <div class="sidebar-foot">
+      <a class="side-link" href="pantalla-cocina.html"><i class="fa-solid fa-tv"></i><span>Pantalla cocina</span></a>
+      <a class="side-link" href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a>
+      <button class="adminbtn" id="adminToggle">Modo admin</button>
+    </div>
+  </aside>
+  <div class="main-content">
+    <header>
+      <h1 id="headerTitle">Salón</h1>
+      <span class="clock" id="reloj"></span>
+    </header>
+    <div class="wrap" id="app"></div>
+  </div>
 </div>
-
-<div class="wrap" id="app"></div>
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 
 <script>
 const VIEWS = [
-  {id:'mapa', label:'Mapa · Mozo'},
-  {id:'cocina', label:'Cocina'},
-  {id:'productos', label:'Productos'},
-  {id:'caja', label:'Caja'},
-  {id:'gastos', label:'Gastos'},
-  {id:'cierre', label:'Cierre'},
-  {id:'config', label:'Config'},
+  {id:'mapa', label:'Mapa · Mozo', icon:'fa-house', titulo:'Salón'},
+  {id:'cocina', label:'Cocina', icon:'fa-fire-burner', titulo:'Cocina'},
+  {id:'productos', label:'Productos', icon:'fa-burger', titulo:'Productos'},
+  {id:'caja', label:'Caja', icon:'fa-cash-register', titulo:'Caja'},
+  {id:'gastos', label:'Gastos', icon:'fa-receipt', titulo:'Gastos'},
+  {id:'cierre', label:'Cierre', icon:'fa-chart-pie', titulo:'Cierre del día'},
+  {id:'config', label:'Config', icon:'fa-gear', titulo:'Configuración'},
 ];
 const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
 const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
@@ -376,12 +425,24 @@ async function boot(){
 /* ---------------- NAV / ADMIN ---------------- */
 function renderNav(){
   const nav = document.getElementById('navtabs');
-  nav.innerHTML = VIEWS.map(v=>`<button data-view="${v.id}" class="${state.view===v.id?'active':''}">${v.label}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ state.view=b.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render(); }));
+  nav.innerHTML = VIEWS.map(v=>`<li><a href="#${v.id}" data-view="${v.id}" class="${state.view===v.id?'active':''}"><i class="fa-solid ${v.icon}"></i> ${v.label}</a></li>`).join('');
+  nav.querySelectorAll('a').forEach(a=>a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    state.view=a.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render();
+  }));
   const at = document.getElementById('adminToggle');
   at.textContent = state.adminMode ? 'Admin activo' : 'Modo admin';
   at.className = 'adminbtn' + (state.adminMode?' on':'');
+  const ht = document.getElementById('headerTitle');
+  if(ht){ const v = VIEWS.find(v=>v.id===state.view); ht.textContent = v ? v.titulo : ''; }
 }
+function actualizarReloj(){
+  const ahora = new Date();
+  const el = document.getElementById('reloj');
+  if(el) el.textContent = ahora.toLocaleDateString('es-AR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+}
+setInterval(actualizarReloj, 60000);
+actualizarReloj();
 document.getElementById('adminToggle').addEventListener('click', ()=>{
   if(state.adminMode){ state.adminMode=false; renderNav(); render(); return; }
   const pin = prompt('PIN de administrador:');
