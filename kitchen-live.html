@@ -846,6 +846,7 @@ function openConfigureItemModal(m, pedido, prod){
         <div style="font-weight:700;font-size:13px;margin-bottom:6px">${esc(g.nombre)} ${g.obligatoria?'<span class="pill warn">Obligatorio</span>':''}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px" data-group="${g.id}" data-multi="${g.tipo==='multiple'?'1':'0'}">
           ${(g.opciones||[]).map(o=>`<div class="chip-toggle" data-opt="${o.id}" data-price="${o.precioExtra||0}">${esc(o.nombre)}${o.precioExtra?` (+${fmtMoney(o.precioExtra)})`:''}</div>`).join('')}
+          ${g.permiteNinguno?`<div class="chip-toggle" data-opt="__ninguno" data-price="0" style="border-style:dashed;opacity:.85">Sin ${esc(g.nombre.toLowerCase())}</div>`:''}
         </div>
       </div>
     `).join('')}
@@ -1059,7 +1060,9 @@ function openProductEditor(prod){
           <div class="field"><label>Nombre del grupo</label><input class="g-nombre" value="${esc(g.nombre)}" placeholder="Ej: Salsa"></div>
           <div class="field"><label>Tipo</label><select class="g-tipo"><option value="unica" ${g.tipo==='unica'?'selected':''}>Elección única</option><option value="multiple" ${g.tipo==='multiple'?'selected':''}>Múltiple</option></select></div>
           <div class="field" style="max-width:110px"><label>Obligatorio</label><select class="g-oblig"><option value="0" ${!g.obligatoria?'selected':''}>No</option><option value="1" ${g.obligatoria?'selected':''}>Sí</option></select></div>
+          <div class="field" style="max-width:150px"><label>Botón "sin elegir"</label><select class="g-ninguno"><option value="0" ${!g.permiteNinguno?'selected':''}>No</option><option value="1" ${g.permiteNinguno?'selected':''}>Sí</option></select></div>
         </div>
+        <p class="section-sub" style="margin:-4px 0 8px">"Obligatorio" pide elegir algo antes de agregar el producto. "Botón sin elegir" agrega una opción tipo "Sin ${esc(g.nombre||'—')}" a $0, útil para grupos obligatorios donde el cliente puede no querer nada de este grupo.</p>
         <div class="opciones-list">
           ${(g.opciones||[]).map((o,oi)=>`<div class="field-row" data-oi="${oi}" style="align-items:flex-end">
             <div class="field"><label>Opción</label><input class="o-nombre" value="${esc(o.nombre)}"></div>
@@ -1109,6 +1112,7 @@ function openProductEditor(prod){
       grupos[gi].nombre = gEl.querySelector('.g-nombre').value;
       grupos[gi].tipo = gEl.querySelector('.g-tipo').value;
       grupos[gi].obligatoria = gEl.querySelector('.g-oblig').value==='1';
+      grupos[gi].permiteNinguno = gEl.querySelector('.g-ninguno').value==='1';
       gEl.querySelectorAll('[data-oi]').forEach(oEl=>{
         const oi = parseInt(oEl.dataset.oi);
         grupos[gi].opciones[oi].nombre = oEl.querySelector('.o-nombre').value;
@@ -1120,7 +1124,7 @@ function openProductEditor(prod){
     document.getElementById('gruposWrap').innerHTML = gruposHtml();
     document.getElementById('btnAddGroup').onclick = ()=>{
       readGruposFromDOM();
-      grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, opciones:[]});
+      grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, permiteNinguno:false, opciones:[]});
       rebindGroupEditor();
     };
     document.querySelectorAll('[data-addopt]').forEach(b=>b.onclick=()=>{
@@ -1142,7 +1146,7 @@ function openProductEditor(prod){
     });
   }
   document.getElementById('btnAddGroup').onclick = ()=>{
-    grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, opciones:[]});
+    grupos.push({id:uidLocal(), nombre:'Nuevo grupo', tipo:'unica', obligatoria:false, permiteNinguno:false, opciones:[]});
     rebindGroupEditor();
   };
   document.querySelectorAll('[data-addopt]').forEach(b=>b.onclick=()=>{
@@ -1799,10 +1803,10 @@ async function loadDemoData(){
           ]},
       ]},
       {nombre:'Milanesa napolitana', categoria:'Principales', precio:9200, estacionId:'caliente', stockDiario:15, grupos:[
-        {id:uidLocal(), nombre:'Guarnición', tipo:'unica', obligatoria:true, opciones:[
+        {id:uidLocal(), nombre:'Guarnición', tipo:'unica', obligatoria:true, permiteNinguno:true, opciones:[
           {id:uidLocal(), nombre:'Papas fritas', precioExtra:0},
-          {id:uidLocal(), nombre:'Puré de papas', precioExtra:0},
-          {id:uidLocal(), nombre:'Ensalada mixta', precioExtra:0},
+          {id:uidLocal(), nombre:'Puré de papas', precioExtra:500},
+          {id:uidLocal(), nombre:'Ensalada mixta', precioExtra:300},
         ]},
       ]},
       {nombre:'Pizza Muzzarella', categoria:'Principales', precio:7500, estacionId:'caliente', stockDiario:30, grupos:[]},
