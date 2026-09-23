@@ -72,31 +72,43 @@ body {
 .tiles {
     flex: 1; min-height: 0; overflow-y: auto;
     padding: 22px; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 18px; align-content: start;
 }
 .tiles::-webkit-scrollbar { width: 10px; }
 .tiles::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 8px; }
 
 .tile {
-    border-radius: 20px; padding: 24px 18px; text-align: center;
+    border-radius: 20px; padding: 20px 22px;
     background: var(--bg-tile); border: 2px solid transparent;
     display: flex; flex-direction: column; gap: 8px;
 }
-.tile .mesa-label { font-size: 0.85rem; opacity: .65; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
-.tile .mesa-num { font-size: clamp(2.6rem, 5vw, 4.6rem); font-weight: 800; line-height: 1; }
-.tile .meta { font-size: 0.85rem; opacity: .7; font-weight: 600; }
-.tile .hint { font-size: 0.72rem; opacity: .55; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.tile .mesa-label {
+    font-size: clamp(1.1rem, 1.6vw, 1.5rem); font-weight: 800; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 8px;
+}
+.tile .item-name { font-size: clamp(1.3rem, 2.1vw, 1.9rem); font-weight: 800; line-height: 1.2; }
+.tile .item-opts { font-size: clamp(0.95rem, 1.3vw, 1.15rem); opacity: .75; font-weight: 600; }
+.tile .item-obs { font-size: clamp(0.9rem, 1.2vw, 1.05rem); opacity: .8; font-style: italic; color: var(--warn); }
+.tile .tile-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08);
+}
+.tile .tile-time { font-size: 0.9rem; font-weight: 700; opacity: .6; }
+.tile .hint { font-size: 0.72rem; opacity: .65; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 
 .tile.tappable { cursor: pointer; transition: transform .12s ease, filter .12s ease; }
 .tile.tappable:hover { filter: brightness(1.12); }
 .tile.tappable:active { transform: scale(.96); }
 
 .col-pendiente .tile { border-color: rgba(245,158,11,.45); background: linear-gradient(160deg, rgba(245,158,11,.14), var(--bg-tile) 65%); }
+.col-pendiente .tile .mesa-label { color: var(--warn); }
 .col-pendiente .tile.urgent { border-color: var(--danger); background: linear-gradient(160deg, rgba(239,68,68,.22), var(--bg-tile) 65%); animation: pulseUrgent 1.1s ease-in-out infinite; }
-.col-pendiente .tile.urgent .mesa-num { color: var(--danger); }
+.col-pendiente .tile.urgent .mesa-label { color: var(--danger); }
 .col-preparando .tile { border-color: rgba(14,165,233,.45); background: linear-gradient(160deg, rgba(14,165,233,.14), var(--bg-tile) 65%); }
+.col-preparando .tile .mesa-label { color: var(--accent); }
 .col-listo .tile { border-color: rgba(34,197,94,.55); background: linear-gradient(160deg, rgba(34,197,94,.2), var(--bg-tile) 65%); animation: pulseReady 1.8s ease-in-out infinite; }
+.col-listo .tile .mesa-label { color: var(--ok); }
 
 @keyframes pulseReady { 0%,100% { box-shadow: 0 0 0 rgba(34,197,94,0); } 50% { box-shadow: 0 0 30px rgba(34,197,94,.55); } }
 @keyframes pulseUrgent { 0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); } 50% { box-shadow: 0 0 26px rgba(239,68,68,.6); } }
@@ -157,24 +169,33 @@ function saveDB(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 function asArray(col){ return Object.keys(col||{}).map(id=>({id, ...col[id]})); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function minutosDesde(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/60000)); }
+function fmtTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
 
+// Un ticket por ítem (no por mesa), igual de granular que la vista Cocina
+// del sistema principal: cada producto pedido se sigue por separado.
 function computeBoard(){
   const db = loadDB();
   const pedidos = asArray(db.pedidos).filter(p=>p.estado==='abierto');
   const buckets = { pendiente: [], preparando: [], listo: [] };
 
   pedidos.forEach(p=>{
-    const items = (p.items||[]).filter(it=>it.estado!=='entregado');
-    if(items.length===0) return; // nada pendiente de esta mesa
-    let bucket;
-    if(items.some(it=>it.estado==='pendiente')) bucket = 'pendiente';
-    else if(items.some(it=>it.estado==='preparando')) bucket = 'preparando';
-    else bucket = 'listo';
-    buckets[bucket].push({
-      pedidoId: p.id,
-      mesaNumero: p.mesaNumero,
-      cantidad: items.length,
-      creado: p.creado
+    (p.items||[]).forEach(it=>{
+      if(it.estado==='entregado') return;
+      if(!buckets[it.estado]) return;
+      buckets[it.estado].push({
+        pedidoId: p.id,
+        itemId: it.id,
+        mesaNumero: p.mesaNumero,
+        nombre: it.nombre,
+        cantidad: it.cantidad,
+        opcionesTexto: it.opcionesTexto,
+        observaciones: it.observaciones,
+        creado: it.creado || p.creado
+      });
     });
   });
 
@@ -182,16 +203,16 @@ function computeBoard(){
   return { buckets, hasAnyData: asArray(db.mesas).length>0 || asArray(db.pedidos).length>0 };
 }
 
-// Avanza el pedido de un ticket un paso: pendiente->preparando (colKey='pendiente')
-// o preparando->listo (colKey='preparando'). El paso listo->entregado lo hace el
-// mozo desde el sistema principal, no la cocina, igual que en kitchen-live.html.
-function advanceBucket(pedidoId, colKey){
+// Avanza un ítem un paso: pendiente->preparando (colKey='pendiente') o
+// preparando->listo (colKey='preparando'). El paso listo->entregado lo hace
+// el mozo desde el sistema principal, no la cocina, igual que en kitchen-live.html.
+function advanceItem(pedidoId, itemId, colKey){
   const nextEstado = colKey==='pendiente' ? 'preparando' : colKey==='preparando' ? 'listo' : null;
   if(!nextEstado) return;
   const db = loadDB();
   const pedido = db.pedidos && db.pedidos[pedidoId];
   if(!pedido) return;
-  pedido.items = (pedido.items||[]).map(it=> it.estado===colKey ? {...it, estado:nextEstado} : it);
+  pedido.items = (pedido.items||[]).map(it=> it.id===itemId ? {...it, estado:nextEstado} : it);
   saveDB(db);
   render();
 }
@@ -200,12 +221,16 @@ function tileHtml(entry, colKey){
   const mins = minutosDesde(entry.creado);
   const urgent = colKey==='pendiente' && mins >= URGENTE_MIN;
   const tappable = colKey==='pendiente' || colKey==='preparando';
-  const hint = colKey==='pendiente' ? 'Toca para empezar a preparar' : colKey==='preparando' ? 'Toca para marcar listo' : 'Esperando al mozo';
-  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" ${tappable?`data-pedido-id="${entry.pedidoId}" data-col="${colKey}"`:''}>
-    <div class="mesa-label">Mesa</div>
-    <div class="mesa-num">${esc(entry.mesaNumero)}</div>
-    <div class="meta">${entry.cantidad} ítem${entry.cantidad===1?'':'s'} · hace ${mins} min</div>
-    <div class="hint">${hint}</div>
+  const hint = colKey==='pendiente' ? 'Toca: empezar a preparar' : colKey==='preparando' ? 'Toca: marcar listo' : 'Esperando al mozo';
+  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" ${tappable?`data-pedido-id="${entry.pedidoId}" data-item-id="${entry.itemId}" data-col="${colKey}"`:''}>
+    <div class="mesa-label"><i class="fa-solid fa-utensils"></i> Mesa ${esc(entry.mesaNumero)}</div>
+    <div class="item-name">${entry.cantidad}× ${esc(entry.nombre)}</div>
+    ${entry.opcionesTexto?`<div class="item-opts">${esc(entry.opcionesTexto)}</div>`:''}
+    ${entry.observaciones?`<div class="item-obs">"${esc(entry.observaciones)}"</div>`:''}
+    <div class="tile-foot">
+      <span class="tile-time"><i class="fa-regular fa-clock"></i> ${fmtTime(entry.creado)}</span>
+      <span class="hint">${hint}</span>
+    </div>
   </div>`;
 }
 
@@ -242,12 +267,12 @@ function render(){
     const list = buckets[key];
     document.getElementById(counts[key]).textContent = list.length;
     document.getElementById(map[key]).innerHTML = list.length===0
-      ? '<div class="empty-col">Sin mesas acá</div>'
+      ? '<div class="empty-col">Sin pedidos acá</div>'
       : list.map(e=>tileHtml(e, key)).join('');
   });
 
   document.querySelectorAll('.tile.tappable').forEach(el=>{
-    el.addEventListener('click', ()=> advanceBucket(el.dataset.pedidoId, el.dataset.col));
+    el.addEventListener('click', ()=> advanceItem(el.dataset.pedidoId, el.dataset.itemId, el.dataset.col));
   });
 }
 
