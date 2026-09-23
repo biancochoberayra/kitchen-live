@@ -9,65 +9,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#152524;
-  --ink-soft:#3d5350;
-  --paper:#eef2ef;
-  --paper-raise:#ffffff;
-  --line:#d3ddd8;
-  --brand:#1f4742;
-  --brand-2:#2f6f5e;
-  --gold:#c98a2b;
-  --gold-soft:#f2e3c6;
-  --ok:#2f7d5c;
-  --ok-bg:#deefe4;
-  --warn:#c98a2b;
-  --warn-bg:#f8ecd6;
-  --busy:#3765a3;
-  --busy-bg:#e1eaf6;
-  --danger:#b1462f;
-  --danger-bg:#f7e2db;
-  --shadow: 0 1px 2px rgba(21,37,36,.06), 0 8px 24px -12px rgba(21,37,36,.18);
-}
-:root:not([data-theme="light"]){
-  @media (prefers-color-scheme: dark){
-    --ink:#eaf1ee;
-    --ink-soft:#a9bdb7;
-    --paper:#0f1917;
-    --paper-raise:#17231f;
-    --line:#2a3733;
-    --brand:#57a897;
-    --brand-2:#3f8a76;
-    --gold:#e3ab52;
-    --gold-soft:#3a3120;
-    --ok:#59c393;
-    --ok-bg:#123527;
-    --warn:#e3ab52;
-    --warn-bg:#3a3120;
-    --busy:#7fb0e8;
-    --busy-bg:#152a3d;
-    --danger:#e2846a;
-    --danger-bg:#3b2119;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
-  }
-}
-:root[data-theme="dark"]{
-  --ink:#eaf1ee;
-  --ink-soft:#a9bdb7;
-  --paper:#0f1917;
-  --paper-raise:#17231f;
-  --line:#2a3733;
-  --brand:#57a897;
-  --brand-2:#3f8a76;
-  --gold:#e3ab52;
-  --gold-soft:#3a3120;
-  --ok:#59c393;
-  --ok-bg:#123527;
-  --warn:#e3ab52;
-  --warn-bg:#3a3120;
-  --busy:#7fb0e8;
-  --busy-bg:#152a3d;
-  --danger:#e2846a;
-  --danger-bg:#3b2119;
+  /* Paleta tomada de cocina-ordu.html (azul marino + celeste) */
+  --ink:#f8fafc;
+  --ink-soft:#94a3b8;
+  --paper:#0f172a;
+  --paper-raise:#1e293b;
+  --line:#334155;
+  --brand:#0ea5e9;
+  --brand-2:#38bdf8;
+  --gold:#f59e0b;
+  --gold-soft:rgba(245,158,11,.16);
+  --ok:#22c55e;
+  --ok-bg:rgba(34,197,94,.16);
+  --warn:#f59e0b;
+  --warn-bg:rgba(245,158,11,.16);
+  --busy:#0ea5e9;
+  --busy-bg:rgba(14,165,233,.16);
+  --danger:#ef4444;
+  --danger-bg:rgba(239,68,68,.16);
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
@@ -210,6 +169,8 @@ tr:last-child td{border-bottom:none}
 <div class="topbar">
   <div class="brand-mark"><span class="dot"></span><span class="brandfont">RestaurantFlow</span></div>
   <div class="navtabs" id="navtabs"></div>
+  <a class="adminbtn" href="pantalla-cocina.html" style="text-decoration:none;display:inline-flex;align-items:center">Pantalla cocina</a>
+  <a class="adminbtn" href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center">Dashboard</a>
   <button class="adminbtn" id="adminToggle">Modo admin</button>
 </div>
 
@@ -352,6 +313,8 @@ const assetsCap = {
 
 /* ---------------- BOOT ---------------- */
 async function boot(){
+  const hashView = location.hash.slice(1);
+  if(VIEWS.some(v=>v.id===hashView)) state.view = hashView;
   renderNav();
   render();
 
@@ -391,7 +354,7 @@ async function boot(){
 function renderNav(){
   const nav = document.getElementById('navtabs');
   nav.innerHTML = VIEWS.map(v=>`<button data-view="${v.id}" class="${state.view===v.id?'active':''}">${v.label}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ state.view=b.dataset.view; state.ui.placingMesa=false; renderNav(); render(); }));
+  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ state.view=b.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render(); }));
   const at = document.getElementById('adminToggle');
   at.textContent = state.adminMode ? 'Admin activo' : 'Modo admin';
   at.className = 'adminbtn' + (state.adminMode?' on':'');

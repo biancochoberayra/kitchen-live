@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - RestaurantFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-hover: #334155;
+    --accent: #0ea5e9;
+    --accent-hover: #38bdf8;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+
+    --success: #22c55e;
+    --danger: #f43f5e;
+    --warning: #f59e0b;
+    --alert-red: #ef4444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+body { background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; }
+
+/* --- BARRA LATERAL --- */
+aside {
+    width: 260px; flex: none;
+    background-color: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+}
+.logo-container {
+    padding: 24px; font-size: 1.25rem; font-weight: 700;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+.logo-container i { color: var(--accent); font-size: 1.5rem; }
+
+.nav-links { list-style: none; padding: 16px 12px; flex-grow: 1; overflow-y: auto; }
+.nav-links li { margin-bottom: 6px; }
+.nav-links a {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; color: var(--text-muted); text-decoration: none;
+    border-radius: 8px; font-weight: 500; transition: all 0.2s;
+}
+.nav-links a:hover { background-color: var(--bg-hover); color: var(--text-main); }
+.nav-links a.active { background-color: var(--accent); color: #fff; }
+.nav-foot { padding: 16px; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); }
+
+/* --- ESTRUCTURA PRINCIPAL --- */
+.main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+
+header {
+    background-color: var(--bg-card); padding: 16px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky; top: 0; z-index: 5;
+}
+.header-right { display: flex; align-items: center; gap: 20px; }
+.btn-refresh {
+    background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color);
+    padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.btn-refresh:hover { background: var(--accent); border-color: var(--accent); }
+
+.content { padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+.card { background-color: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-header h2 { font-size: 1.05rem; }
+
+/* --- KPI CARDS --- */
+.summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.card-summary {
+    padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);
+    background: var(--bg-card); border-left: 4px solid var(--accent);
+    display: flex; flex-direction: column; gap: 8px;
+}
+.card-summary .label { color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; }
+.card-summary .value { font-size: 1.7rem; font-weight: 800; }
+.card-summary .sub { font-size: 0.75rem; color: var(--text-muted); }
+
+.cols-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .cols-2 { grid-template-columns: 1fr; } }
+
+/* --- BAR CHART (CSS, sin librerias) --- */
+.bar-row { display: grid; grid-template-columns: 140px 1fr 70px; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.82rem; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-label { color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { background: var(--bg-main); border-radius: 6px; height: 14px; overflow: hidden; }
+.bar-fill { background: linear-gradient(90deg, var(--accent), var(--accent-hover)); height: 100%; border-radius: 6px; }
+.bar-value { text-align: right; font-weight: 700; }
+
+/* --- TABLA --- */
+.data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+.data-table th, .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+.data-table th { color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .3px; }
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
+.badge.ok { background: rgba(34,197,94,0.2); color: var(--success); }
+.badge.warn { background: rgba(245,158,11,0.2); color: var(--warning); }
+.badge.busy { background: rgba(14,165,233,0.2); color: var(--accent); }
+
+.empty-state { padding: 40px 20px; text-align: center; color: var(--text-muted); }
+.empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; color: var(--border-color); }
+.empty-state a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+@media (max-width: 720px) {
+    aside { position: fixed; left: -280px; z-index: 50; transition: left .2s; }
+    aside.open { left: 0; }
+    header { padding: 14px 16px; }
+    .content { padding: 16px 16px 40px; }
+}
+</style>
+</head>
+<body>
+
+<aside>
+    <div class="logo-container">
+        <i class="fa-solid fa-utensils"></i>
+        <span>RestaurantFlow</span>
+    </div>
+    <ul class="nav-links">
+        <li><a class="active" href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+        <li><a href="a.html#mapa"><i class="fa-solid fa-house"></i> Mapa · Mozo</a></li>
+        <li><a href="a.html#cocina"><i class="fa-solid fa-fire-burner"></i> Cocina</a></li>
+        <li><a href="pantalla-cocina.html"><i class="fa-solid fa-tv"></i> Pantalla cocina</a></li>
+        <li><a href="a.html#productos"><i class="fa-solid fa-burger"></i> Productos</a></li>
+        <li><a href="a.html#caja"><i class="fa-solid fa-cash-register"></i> Caja</a></li>
+        <li><a href="a.html#cierre"><i class="fa-solid fa-receipt"></i> Cierre</a></li>
+        <li><a href="a.html#config"><i class="fa-solid fa-gear"></i> Config</a></li>
+    </ul>
+    <div class="nav-foot">Datos en vivo desde este navegador (localStorage). Abrí "Mapa · Mozo" para operar el salón.</div>
+</aside>
+
+<div class="main-content">
+    <header>
+        <div>
+            <h1 style="font-size: 1.2rem;">Dashboard Principal</h1>
+        </div>
+        <div class="header-right">
+            <span style="color: var(--text-muted); font-size: 0.8rem;" id="reloj"></span>
+            <button class="btn-refresh" id="btnRefresh"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+        </div>
+    </header>
+
+    <div class="content" id="app"></div>
+</div>
+
+<script>
+const DB_KEY = 'restaurantFlowLocalDB';
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dateOf(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtMoney(n){
+  n = Number(n)||0;
+  return '$' + n.toLocaleString('es-AR',{minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function loadDB(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(DB_KEY));
+    return raw || {config:{}, mesas:{}, productos:{}, pedidos:{}};
+  }catch(e){ return {config:{}, mesas:{}, productos:{}, pedidos:{}}; }
+}
+function asArray(col){ return Object.keys(col||{}).map(id=>({id, ...col[id]})); }
+
+function computeData(){
+  const db = loadDB();
+  const mesas = asArray(db.mesas);
+  const productos = asArray(db.productos);
+  const pedidos = asArray(db.pedidos);
+  const today = todayStr();
+
+  const cerradosHoy = pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===today);
+  const abiertos = pedidos.filter(p=>p.estado==='abierto');
+
+  const ventasHoy = cerradosHoy.reduce((s,p)=>s+(p.total||0),0);
+  const personasHoy = cerradosHoy.reduce((s,p)=>s+(p.personas||0),0);
+  const tenedoresHoy = cerradosHoy.reduce((s,p)=>s+(p.tenedores||0),0);
+
+  const mesasOcupadas = mesas.filter(m=>m.estado!=='libre').length;
+  const mesasLibres = mesas.filter(m=>m.estado==='libre').length;
+  const ocupacionPct = mesas.length ? Math.round((mesasOcupadas/mesas.length)*100) : 0;
+
+  const productoAgg = {};
+  cerradosHoy.forEach(p=>(p.items||[]).forEach(it=>{
+    productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad;
+  }));
+  const topProductos = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const productoTop = topProductos[0] ? topProductos[0][0] : '—';
+
+  const pagoAgg = {};
+  cerradosHoy.forEach(p=>{
+    const medio = p.medioPago || 'Sin especificar';
+    pagoAgg[medio] = (pagoAgg[medio]||0) + (p.total||0);
+  });
+  const pagoList = Object.entries(pagoAgg).sort((a,b)=>b[1]-a[1]);
+
+  const stockBajo = productos.filter(p=>p.stockDiario!=null && (p.stockRestante||0) <= Math.max(2, Math.round(p.stockDiario*0.15)));
+
+  return {
+    hasAnyData: mesas.length>0 || productos.length>0 || pedidos.length>0,
+    mesas, productos, pedidos, cerradosHoy, abiertos,
+    ventasHoy, personasHoy, tenedoresHoy,
+    mesasOcupadas, mesasLibres, ocupacionPct,
+    topProductos, productoTop, pagoList, stockBajo
+  };
+}
+
+function barRows(list, maxLabel){
+  if(list.length===0) return '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-chart-simple"></i>Sin datos todavía hoy.</div>';
+  const max = Math.max(...list.map(([,v])=>v), 1);
+  return list.map(([label,val])=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${esc(label)}">${esc(maxLabel && label.length>maxLabel ? label.slice(0,maxLabel)+'…' : label)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((val/max)*100)}%"></div></div>
+      <div class="bar-value">${typeof val==='number' && val>999 ? fmtMoney(val) : val}</div>
+    </div>
+  `).join('');
+}
+
+function render(){
+  const d = computeData();
+  const app = document.getElementById('app');
+
+  if(!d.hasAnyData){
+    app.innerHTML = `
+      <div class="card empty-state">
+        <i class="fa-solid fa-chart-line"></i>
+        <b style="display:block;color:var(--text-main);margin-bottom:6px">Todavía no hay datos cargados</b>
+        Abrí <a href="a.html">el sistema</a>, activá el modo administrador y cargá datos de prueba, o empezá a tomar pedidos desde el Mapa.
+      </div>
+    `;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="summary-cards">
+      <div class="card-summary" style="border-left-color: var(--success)">
+        <div class="label"><i class="fa-solid fa-sack-dollar"></i> Ventas del día</div>
+        <div class="value">${fmtMoney(d.ventasHoy)}</div>
+        <div class="sub">${d.cerradosHoy.length} mesa(s) cerrada(s) hoy</div>
+      </div>
+      <div class="card-summary" style="border-left-color: var(--busy, var(--accent))">
+        <div class="label"><i class="fa-solid fa-chair"></i> Ocupación de mesas</div>
+        <div class="value">${d.mesasOcupadas} / ${d.mesas.length}</div>
+        <div class="sub">${d.ocupacionPct}% ocupado · ${d.mesasLibres} libres</div>
+      </div>
+      <div class="card-summary" style="border-left-color: var(--warning)">
+        <div class="label"><i class="fa-solid fa-receipt"></i> Pedidos pendientes</div>
+        <div class="value">${d.abiertos.length}</div>
+        <div class="sub">Mesas con comanda abierta ahora</div>
+      </div>
+      <div class="card-summary" style="border-left-color: var(--accent)">
+        <div class="label"><i class="fa-solid fa-crown"></i> Producto más vendido</div>
+        <div class="value" style="font-size:1.15rem">${esc(d.productoTop)}</div>
+        <div class="sub">${d.topProductos[0] ? d.topProductos[0][1]+' unidades hoy' : 'Sin ventas cerradas hoy'}</div>
+      </div>
+      <div class="card-summary" style="border-left-color: var(--danger)">
+        <div class="label"><i class="fa-solid fa-users"></i> Personas atendidas</div>
+        <div class="value">${d.personasHoy}</div>
+        <div class="sub">${d.tenedoresHoy} tenedores usados hoy</div>
+      </div>
+    </div>
+
+    <div class="cols-2">
+      <div class="card">
+        <div class="section-header"><h2>Productos más vendidos hoy</h2></div>
+        ${barRows(d.topProductos, 20)}
+      </div>
+      <div class="card">
+        <div class="section-header"><h2>Ventas por método de pago</h2></div>
+        ${barRows(d.pagoList, 20)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h2>Estado de cocina — pedidos abiertos</h2>
+      </div>
+      ${d.abiertos.length===0 ? '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-check"></i>No hay mesas abiertas en este momento.</div>' : `
+      <table class="data-table">
+        <thead><tr><th>Mesa</th><th>Personas</th><th>Ítems</th><th>Estado</th><th>Abierta</th></tr></thead>
+        <tbody>
+          ${d.abiertos.map(p=>{
+            const items = p.items||[];
+            const pendientes = items.filter(it=>it.estado==='pendiente').length;
+            const listos = items.filter(it=>it.estado==='listo').length;
+            let badge = '<span class="badge ok">Al día</span>';
+            if(pendientes>0) badge = '<span class="badge warn">'+pendientes+' pendiente(s)</span>';
+            else if(listos>0) badge = '<span class="badge busy">'+listos+' listo(s) para servir</span>';
+            return `<tr>
+              <td><b>Mesa ${esc(p.mesaNumero)}</b></td>
+              <td>${p.personas||'—'}</td>
+              <td>${items.length}</td>
+              <td>${badge}</td>
+              <td>${fmtTime(p.creado)}hs</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+
+    ${d.stockBajo.length>0 ? `
+    <div class="card" style="border-color: var(--warning)">
+      <div class="section-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> Stock bajo</h2></div>
+      <table class="data-table">
+        <thead><tr><th>Producto</th><th>Restante</th><th>Stock diario</th></tr></thead>
+        <tbody>
+          ${d.stockBajo.map(p=>`<tr><td>${esc(p.nombre)}</td><td>${p.stockRestante||0}</td><td>${p.stockDiario}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+  `;
+}
+
+function actualizarReloj(){
+  const ahora = new Date();
+  const opciones = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+  document.getElementById('reloj').innerText = ahora.toLocaleDateString('es-ES', opciones);
+}
+actualizarReloj();
+setInterval(actualizarReloj, 60000);
+
+render();
+setInterval(render, 8000);
+window.addEventListener('storage', (e)=>{ if(e.key===DB_KEY) render(); });
+document.getElementById('btnRefresh').addEventListener('click', render);
+</script>
+
+</body>
+</html>
