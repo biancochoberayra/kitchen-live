@@ -126,6 +126,13 @@ header h1{font-size:1.2rem;margin:0}
 .wrap.wrap-mapa{max-width:1560px}
 .mapa-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px}
 .mapa-toolbar .stationbar{margin:0;flex:1;min-width:200px}
+.zona-switcher{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+  border-radius:100px;padding:6px 8px;flex:1;min-width:230px}
+.zona-switcher button{background:var(--brand);color:#fff;border:none;width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.zona-switcher button:hover{background:var(--brand-2)}
+.zona-switcher-label{flex:1;text-align:center;font-weight:800;font-size:14.5px;display:flex;align-items:center;
+  justify-content:center;gap:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mapa-shell{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
   repeating-linear-gradient(45deg, var(--paper) 0 12px, var(--paper-raise) 12px 24px);
   min-height:420px;}
@@ -598,8 +605,10 @@ function renderMapa(app){
     <p class="section-sub">Tocá una mesa para abrirla, tomar el pedido o cerrar la cuenta.${state.adminMode?' Modo admin: hacé clic en el plano para agregar una mesa, o arrastrá una mesa para reubicarla.':''}</p>
     <div class="card" style="padding:14px">
       <div class="mapa-toolbar">
-        ${zonas.length>1?`<div class="stationbar" id="zonaTabs">
-          ${zonas.map(z=>`<button data-zona="${z.id}" class="${z.id===zona.id?'active':''}">${esc(z.nombre)} <span class="badge-count">${state.mesas.filter(m=>mesaZonaId(m)===z.id).length}</span></button>`).join('')}
+        ${zonas.length>1?`<div class="zona-switcher">
+          <button id="zonaPrev" title="Zona anterior"><i class="fa-solid fa-chevron-left"></i></button>
+          <div class="zona-switcher-label"><i class="fa-solid fa-layer-group"></i> ${esc(zona.nombre)} <span class="badge-count">${mesasZona.length}</span></div>
+          <button id="zonaNext" title="Zona siguiente"><i class="fa-solid fa-chevron-right"></i></button>
         </div>`:''}
         <div class="field" style="max-width:190px;${zonas.length>1?'margin-left:auto':''}">
           <label>Carga rápida (N° mesa)</label>
@@ -623,7 +632,13 @@ function renderMapa(app){
     </div>
   `;
   if(zonas.length>1){
-    document.querySelectorAll('#zonaTabs button').forEach(b=>b.onclick=()=>{ state.ui.zonaActiva=b.dataset.zona; render(); });
+    const idxActual = zonas.findIndex(z=>z.id===zona.id);
+    document.getElementById('zonaPrev').onclick = ()=>{
+      state.ui.zonaActiva = zonas[(idxActual-1+zonas.length)%zonas.length].id; render();
+    };
+    document.getElementById('zonaNext').onclick = ()=>{
+      state.ui.zonaActiva = zonas[(idxActual+1)%zonas.length].id; render();
+    };
   }
   document.getElementById('btnCargaRapida').onclick = ()=> goToMesaNumero(document.getElementById('fCargaRapida').value);
   document.getElementById('fCargaRapida').addEventListener('keydown', e=>{ if(e.key==='Enter') goToMesaNumero(e.target.value); });
