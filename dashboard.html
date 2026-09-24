@@ -110,17 +110,31 @@ header {
 .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; color: var(--border-color); }
 .empty-state a { color: var(--accent); font-weight: 700; text-decoration: none; }
 
+#mobileMenuBtn{display:none;position:fixed;top:12px;left:12px;z-index:90;width:40px;height:40px;border-radius:50%;
+  align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--border-color);
+  color:var(--text-main);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:15px}
+#asideBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70}
+#asideBackdrop.show{display:block}
+.table-scroll{overflow-x:auto}
+
 @media (max-width: 720px) {
-    aside { position: fixed; left: -280px; z-index: 50; transition: left .2s; }
-    aside.open { left: 0; }
-    header { padding: 14px 16px; }
+    aside { position: fixed; top:0; left: -280px; height:100vh; z-index: 80; transition: left .2s; }
+    aside.open { left: 0; box-shadow:0 0 40px rgba(0,0,0,.5); }
+    #mobileMenuBtn{ display:flex; }
+    header { padding: 12px 16px 12px 60px; }
+    header h1 { font-size: 1.05rem; }
     .content { padding: 16px 16px 40px; }
+    .data-table{ min-width:480px; }
+    .bar-row{ grid-template-columns: 90px 1fr 55px; gap:6px; }
+    .summary-cards{ grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body>
 
-<aside>
+<button id="mobileMenuBtn" aria-label="Menú"><i class="fa-solid fa-bars"></i></button>
+<div id="asideBackdrop"></div>
+<aside id="asideEl">
     <div class="logo-container">
         <i class="fa-solid fa-utensils"></i>
         <span>RestaurantFlow</span>
@@ -299,6 +313,7 @@ function render(){
         <h2>Estado de cocina — pedidos abiertos</h2>
       </div>
       ${d.abiertos.length===0 ? '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-check"></i>No hay mesas abiertas en este momento.</div>' : `
+      <div class="table-scroll">
       <table class="data-table">
         <thead><tr><th>Mesa</th><th>Personas</th><th>Ítems</th><th>Estado</th><th>Abierta</th></tr></thead>
         <tbody>
@@ -318,18 +333,21 @@ function render(){
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`}
+      </table>
+      </div>`}
     </div>
 
     ${d.stockBajo.length>0 ? `
     <div class="card" style="border-color: var(--warning)">
       <div class="section-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> Stock bajo</h2></div>
+      <div class="table-scroll">
       <table class="data-table">
         <thead><tr><th>Producto</th><th>Restante</th><th>Stock diario</th></tr></thead>
         <tbody>
           ${d.stockBajo.map(p=>`<tr><td>${esc(p.nombre)}</td><td>${p.stockRestante||0}</td><td>${p.stockDiario}</td></tr>`).join('')}
         </tbody>
       </table>
+      </div>
     </div>` : ''}
   `;
 }
@@ -346,6 +364,20 @@ render();
 setInterval(render, 8000);
 window.addEventListener('storage', (e)=>{ if(e.key===DB_KEY) render(); });
 document.getElementById('btnRefresh').addEventListener('click', render);
+
+function closeMobileMenu(){
+  document.getElementById('asideEl').classList.remove('open');
+  document.getElementById('asideBackdrop').classList.remove('show');
+}
+function openMobileMenu(){
+  document.getElementById('asideEl').classList.add('open');
+  document.getElementById('asideBackdrop').classList.add('show');
+}
+document.getElementById('mobileMenuBtn').addEventListener('click', ()=>{
+  document.getElementById('asideEl').classList.contains('open') ? closeMobileMenu() : openMobileMenu();
+});
+document.getElementById('asideBackdrop').addEventListener('click', closeMobileMenu);
+document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click', closeMobileMenu));
 </script>
 
 </body>

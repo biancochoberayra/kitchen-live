@@ -29,6 +29,13 @@ base de datos en `localStorage` (clave `restaurantFlowLocalDB`), así que
 podés tenerlas abiertas en pestañas distintas del mismo navegador y ver los
 cambios reflejarse (con un pequeño polling, no en tiempo real instantáneo).
 
+`kitchen-live.html` y `dashboard.html` son responsive: en pantallas chicas
+el rol y la navegación quedan colapsados detrás de un botón flotante en la
+esquina (menú tipo cajón), para dejarle más espacio al contenido, y las
+tablas con muchas columnas se pueden desplazar horizontalmente en vez de
+achicarse. `pantalla-cocina.html` está pensada para una pantalla grande de
+cocina y no tiene este tratamiento mobile.
+
 ## Módulos de `kitchen-live.html`
 
 - **Mapa · Mozo** — plano del salón, mesas (libre/ocupada/cuenta pedida),
@@ -49,8 +56,10 @@ cambios reflejarse (con un pequeño polling, no en tiempo real instantáneo).
   en varios medios de pago), movimientos manuales de ingreso/egreso, cierre
   con monto real contado y diferencia.
 - **Cierre** — resumen del día (ventas, productos vendidos, personas,
-  cubiertos, caja, cancelados), exportable a CSV. Se puede **confirmar** un
-  cierre: a partir de ahí, esa fecha queda bloqueada (no se puede tocar el
+  cubiertos, caja, cancelados), exportable a CSV (con secciones separadas
+  por mesa, pagos, items vendidos y resumen de productos, cada dato en su
+  propia celda). Se puede **confirmar** un cierre: a partir de ahí, esa
+  fecha queda bloqueada (no se puede tocar el
   stock).
 - **Config** — zonas del salón (nombre + plano por zona), cantidad de
   cocineros y estaciones, PIN de administrador, carga/borrado de datos de
