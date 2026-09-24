@@ -15,6 +15,12 @@ Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar dato
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
 productos, una caja abierta y pedidos en distintos estados.
 
+La primera vez que se abre `kitchen-live.html` aparece un **tutorial** paso a
+paso que explica cada módulo del sistema (no vuelve a aparecer solo después).
+Se puede reabrir en cualquier momento, junto con un **acceso rápido** con la
+explicación de todas las funciones en una sola lista, desde el botón "Ayuda /
+Tutorial" al pie de la barra lateral.
+
 ## Páginas del sistema
 
 | Archivo | Qué es |

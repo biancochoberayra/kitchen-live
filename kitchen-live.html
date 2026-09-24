@@ -255,6 +255,7 @@ tr:last-child td{border-bottom:none}
     <div class="sidebar-foot">
       <a class="side-link" href="pantalla-cocina.html"><i class="fa-solid fa-tv"></i><span>Pantalla cocina</span></a>
       <a class="side-link" href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a>
+      <button class="side-link" id="btnAyuda" style="border:none;background:none;text-align:left;cursor:pointer;width:100%"><i class="fa-solid fa-circle-question"></i><span>Ayuda / Tutorial</span></button>
       <button class="adminbtn" id="adminToggle">Modo admin</button>
     </div>
   </aside>
@@ -287,6 +288,21 @@ const ROLES = {
   stock: {label:'Encargado de stock', views:['productos','stock']},
 };
 const ROL_KEY = 'restaurantFlowRol';
+const TUTORIAL_SEEN_KEY = 'restaurantFlowTutorialSeen';
+const TUTORIAL_STEPS = [
+  {icon:'fa-hand-sparkles', titulo:'Bienvenido a RestaurantFlow', texto:'Sistema de gestión de restaurante que corre 100% en tu navegador, sin backend: los datos se guardan en este dispositivo (localStorage). Para ver todo funcionando de una: activá el modo admin (abajo a la izquierda, PIN 1234) y andá a Config → Datos de prueba → Cargar datos de prueba.'},
+  {icon:'fa-user-shield', titulo:'Rol y modo administrador', texto:'El selector "Rol" (arriba a la izquierda) filtra qué secciones ves según tu función: Mozo, Cocina, Caja, Encargado de stock o Administrador. Es solo organizativo. El control de acceso real es el "Modo admin" (botón abajo, PIN por defecto 1234), necesario para editar productos, la configuración, cancelar un pedido o confirmar un cierre.'},
+  {icon:'fa-house', titulo:'Mapa · Mozo', texto:'El plano del salón. Tocá una mesa libre para abrir un pedido, o una ocupada para agregar ítems o cobrar. Si hay más de una zona, usá las flechas ‹ › para cambiar de zona, o "Carga rápida" para ir directo a una mesa por su número. En modo admin podés hacer clic en el plano para agregar una mesa, o arrastrar una existente para reubicarla.'},
+  {icon:'fa-receipt', titulo:'Tomar un pedido', texto:'Al abrir una mesa cargás personas y tenedores, y agregás productos con el buscador y el filtro por categoría. Si un producto tiene grupos de opciones (ej. salsa, guarnición) las elegís ahí — algunos grupos permiten un botón "sin elegir" para saltear una opción obligatoria. Un pedido completo se puede cancelar con motivo (requiere modo admin).'},
+  {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara.'},
+  {icon:'fa-tv', titulo:'Pantalla de cocina', texto:'Un tablero grande (enlace "Pantalla cocina" abajo) pensado para tener siempre a la vista en la cocina, con 3 columnas: Pendiente / Preparando / Listo. Tocar un ticket también avanza su estado.'},
+  {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y stock diario por producto. Cada cambio de precio queda guardado en un historial.'},
+  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− por producto para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
+  {icon:'fa-cash-register', titulo:'Caja', texto:'Abrís la caja con un monto inicial, cobrás las mesas (se puede dividir el pago en varios medios) y registrás movimientos manuales de ingreso o egreso. Al cerrar, comparás el monto contado contra el esperado.'},
+  {icon:'fa-chart-pie', titulo:'Cierre del día', texto:'Resumen del día: ventas, productos vendidos, personas, cubiertos, caja y pedidos cancelados. Se puede exportar todo a CSV, y "confirmar" el cierre para bloquear el stock de esa fecha.'},
+  {icon:'fa-gear', titulo:'Config', texto:'Acá se arman las zonas del salón (cada una con su plano), la cantidad de cocineros y estaciones, el PIN de administrador, y se cargan o borran los datos de prueba.'},
+  {icon:'fa-chart-line', titulo:'Dashboard', texto:'Un panel de solo lectura (enlace "Dashboard" abajo) con los KPIs del día: ventas, ocupación de mesas, productos más vendidos, métodos de pago y stock bajo.'},
+];
 const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
 const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
 
@@ -578,6 +594,57 @@ function openModal(html, opts={}){
   document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeModal(); });
 }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* ---------------- TUTORIAL / ACCESO RÁPIDO ---------------- */
+let tutorialStep = 0;
+function openTutorial(startAt){
+  localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
+  tutorialStep = startAt || 0;
+  renderTutorialModal();
+}
+function renderTutorialModal(){
+  const s = TUTORIAL_STEPS[tutorialStep];
+  const last = tutorialStep === TUTORIAL_STEPS.length - 1;
+  openModal(`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;padding-right:26px">
+      <div style="width:42px;height:42px;border-radius:10px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex:none">
+        <i class="fa-solid ${s.icon}" style="color:#fff;font-size:17px"></i>
+      </div>
+      <h3 style="margin:0">${esc(s.titulo)}</h3>
+    </div>
+    <p style="font-size:14px;line-height:1.55;color:var(--ink-soft);margin:14px 0 18px">${esc(s.texto)}</p>
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:16px">
+      ${TUTORIAL_STEPS.map((_,i)=>`<span style="width:${i===tutorialStep?18:7}px;height:7px;border-radius:4px;background:${i===tutorialStep?'var(--brand)':'var(--line)'}"></span>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <button class="btn ghost sm" id="tutPrev" ${tutorialStep===0?'disabled':''}>‹ Anterior</button>
+      <span class="section-sub" style="margin:0">${tutorialStep+1} / ${TUTORIAL_STEPS.length}</span>
+      ${last?`<button class="btn gold sm" id="tutFinish">Listo ✓</button>`:`<button class="btn sm" id="tutNext">Siguiente ›</button>`}
+    </div>
+  `);
+  if(tutorialStep>0) document.getElementById('tutPrev').onclick = ()=>{ tutorialStep--; renderTutorialModal(); };
+  if(!last) document.getElementById('tutNext').onclick = ()=>{ tutorialStep++; renderTutorialModal(); };
+  if(last) document.getElementById('tutFinish').onclick = closeModal;
+}
+function openAccesoRapido(){
+  openModal(`
+    <h3>Acceso rápido</h3>
+    <p class="section-sub">Qué hace cada parte del sistema, de un vistazo.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:58vh;overflow-y:auto;padding-right:4px;margin-top:10px">
+      ${TUTORIAL_STEPS.map(s=>`<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;flex:none;border:1px solid var(--line)">
+          <i class="fa-solid ${s.icon}" style="color:var(--brand-2);font-size:13px"></i>
+        </div>
+        <div><b style="font-size:13.5px">${esc(s.titulo)}</b><div class="prod-meta" style="margin-top:2px">${esc(s.texto)}</div></div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn sm ghost" id="btnVerTutorial">Ver tutorial paso a paso</button>
+    </div>
+  `, {wide:true});
+  document.getElementById('btnVerTutorial').onclick = ()=> openTutorial(0);
+}
+document.getElementById('btnAyuda').addEventListener('click', openAccesoRapido);
 
 /* ---------------- RENDER ROOT ---------------- */
 function render(){
@@ -1976,6 +2043,9 @@ async function wipeAllData(){
 }
 
 boot();
+if(!localStorage.getItem(TUTORIAL_SEEN_KEY)){
+  setTimeout(()=> openTutorial(0), 400);
+}
 </script>
 </body>
 </html>
