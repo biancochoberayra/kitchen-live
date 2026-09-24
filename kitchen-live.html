@@ -123,9 +123,15 @@ header h1{font-size:1.2rem;margin:0}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .iconbtn{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;font-weight:700;color:var(--ink)}
 
+.wrap.wrap-mapa{max-width:1560px}
+.mapa-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px}
+.mapa-toolbar .stationbar{margin:0;flex:1;min-width:200px}
 .mapa-shell{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
   repeating-linear-gradient(45deg, var(--paper) 0 12px, var(--paper-raise) 12px 24px);
   min-height:420px;}
+@media (min-width:900px){
+  .mapa-shell{min-height:min(72vh, 760px)}
+}
 .mapa-shell img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .mesa-chip{
   position:absolute;transform:translate(-50%,-50%);
@@ -192,27 +198,32 @@ tr:last-child td{border-bottom:none}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:100px;font-size:13.5px;font-weight:600;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 
+#mobileMenuBtn{display:none;position:fixed;top:12px;left:12px;z-index:90;width:40px;height:40px;border-radius:50%;
+  align-items:center;justify-content:center;background:var(--paper-raise);border:1px solid var(--line);
+  color:var(--ink);box-shadow:var(--shadow);font-size:15px}
+#asideBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70}
+#asideBackdrop.show{display:block}
 @media (max-width:780px){
   .app-shell{flex-direction:column}
   aside{
-    width:100%;height:auto;position:sticky;top:0;z-index:30;
-    flex-direction:column;border-right:none;border-bottom:1px solid var(--line);
+    position:fixed;top:0;left:0;height:100vh;width:250px;max-width:82vw;
+    transform:translateX(-100%);transition:transform .22s ease;z-index:80;
   }
-  .logo-container{padding:12px 16px;font-size:15px}
-  .nav-links{display:flex;flex-direction:row;gap:2px;padding:8px 10px;overflow-x:auto;flex:none}
-  .nav-links li{margin-bottom:0}
-  .nav-links a{white-space:nowrap}
-  .sidebar-foot{flex-direction:row;justify-content:flex-end;padding:8px 10px}
-  .side-link span{display:none}
-  header{padding:12px 16px}
+  aside.open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.5)}
+  #mobileMenuBtn{display:flex}
+  header{padding:12px 16px 12px 60px}
+  header h1{font-size:1.05rem}
   .wrap{padding:14px 12px 50px}
+  .mapa-toolbar{flex-direction:column;align-items:stretch}
 }
 </style>
 </head>
 <body>
 
+<button id="mobileMenuBtn" aria-label="Menú"><i class="fa-solid fa-bars"></i></button>
+<div id="asideBackdrop"></div>
 <div class="app-shell">
-  <aside>
+  <aside id="asideEl">
     <div class="logo-container brandfont"><i class="fa-solid fa-utensils"></i><span>RestaurantFlow</span></div>
     <div class="rol-picker">
       <label for="rolSelect">Rol</label>
@@ -463,6 +474,38 @@ function cierreConfirmado(fecha){
   return state.cierres.find(c=>c.fecha===fecha) || null;
 }
 
+/* ---------------- ZONAS DEL SALÓN ---------------- */
+function getZonas(){
+  const z = state.config.zonas;
+  if(z && z.length) return z;
+  return [{id:'zona-1', nombre:'Salón', mapaUrl: state.config.mapaUrl||null, mapaAssetId: state.config.mapaAssetId||null}];
+}
+function mesaZonaId(m){
+  return m.zonaId || getZonas()[0].id;
+}
+function goToMesaNumero(valor){
+  const n = parseInt(valor);
+  if(!n){ toast('Ingresá un número de mesa'); return; }
+  const m = state.mesas.find(m=>Number(m.numero)===n);
+  if(!m){ toast('No existe la mesa '+n); return; }
+  if(mesaZonaId(m)!==state.ui.zonaActiva){ state.ui.zonaActiva = mesaZonaId(m); render(); }
+  if(state.adminMode) openMesaAdminMenu(m); else openMesaPanel(m);
+}
+
+/* ---------------- MOBILE MENU (off-canvas) ---------------- */
+function closeMobileMenu(){
+  document.getElementById('asideEl').classList.remove('open');
+  document.getElementById('asideBackdrop').classList.remove('show');
+}
+function openMobileMenu(){
+  document.getElementById('asideEl').classList.add('open');
+  document.getElementById('asideBackdrop').classList.add('show');
+}
+document.getElementById('mobileMenuBtn').addEventListener('click', ()=>{
+  document.getElementById('asideEl').classList.contains('open') ? closeMobileMenu() : openMobileMenu();
+});
+document.getElementById('asideBackdrop').addEventListener('click', closeMobileMenu);
+
 /* ---------------- NAV / ADMIN ---------------- */
 function renderNav(){
   const allowed = (ROLES[state.rol]||ROLES.admin).views;
@@ -471,7 +514,7 @@ function renderNav(){
   nav.innerHTML = VIEWS.filter(v=>allowed.includes(v.id)).map(v=>`<li><a href="#${v.id}" data-view="${v.id}" class="${state.view===v.id?'active':''}"><i class="fa-solid ${v.icon}"></i> ${v.label}</a></li>`).join('');
   nav.querySelectorAll('a').forEach(a=>a.addEventListener('click', (e)=>{
     e.preventDefault();
-    state.view=a.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render();
+    state.view=a.dataset.view; state.ui.placingMesa=false; location.hash=state.view; renderNav(); render(); closeMobileMenu();
   }));
   const at = document.getElementById('adminToggle');
   at.textContent = state.adminMode ? 'Admin activo' : 'Modo admin';
@@ -491,16 +534,16 @@ actualizarReloj();
 document.getElementById('rolSelect').addEventListener('change', (e)=>{
   state.rol = e.target.value;
   localStorage.setItem(ROL_KEY, state.rol);
-  renderNav(); render();
+  renderNav(); render(); closeMobileMenu();
 });
 document.getElementById('adminToggle').addEventListener('click', ()=>{
-  if(state.adminMode){ state.adminMode=false; renderNav(); render(); return; }
+  if(state.adminMode){ state.adminMode=false; renderNav(); render(); closeMobileMenu(); return; }
   const pin = prompt('PIN de administrador:');
   if(pin==null) return;
   const real = (state.config && state.config.adminPin) || '1234';
   if(pin===real){ state.adminMode=true; toast('Modo administrador activado'); }
   else toast('PIN incorrecto');
-  renderNav(); render();
+  renderNav(); render(); closeMobileMenu();
 });
 function requireAdmin(){
   if(state.adminMode) return true;
@@ -524,6 +567,7 @@ function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
 function render(){
   renderNav();
   const app = document.getElementById('app');
+  app.classList.toggle('wrap-mapa', state.view==='mapa');
   if(!state.loaded.config){ app.innerHTML = '<div class="empty">Cargando RestaurantFlow…</div>'; return; }
   if(state.view==='mapa') return renderMapa(app);
   if(state.view==='cocina') return renderCocina(app);
@@ -536,31 +580,51 @@ function render(){
 
 /* ================= MAPA / MOZO ================= */
 function renderMapa(app){
-  const cfg = state.config;
+  const zonas = getZonas();
+  if(!state.ui.zonaActiva || !zonas.find(z=>z.id===state.ui.zonaActiva)) state.ui.zonaActiva = zonas[0].id;
+  const zona = zonas.find(z=>z.id===state.ui.zonaActiva);
+  const mesasZona = state.mesas.filter(m=>mesaZonaId(m)===zona.id);
   app.innerHTML = `
     <h2 class="section-title">Salón</h2>
     <p class="section-sub">Tocá una mesa para abrirla, tomar el pedido o cerrar la cuenta.${state.adminMode?' Modo admin: hacé clic en el plano para agregar una mesa, o arrastrá una mesa para reubicarla.':''}</p>
     <div class="card" style="padding:14px">
+      <div class="mapa-toolbar">
+        ${zonas.length>1?`<div class="stationbar" id="zonaTabs">
+          ${zonas.map(z=>`<button data-zona="${z.id}" class="${z.id===zona.id?'active':''}">${esc(z.nombre)} <span class="badge-count">${state.mesas.filter(m=>mesaZonaId(m)===z.id).length}</span></button>`).join('')}
+        </div>`:''}
+        <div class="field" style="max-width:190px;${zonas.length>1?'margin-left:auto':''}">
+          <label>Carga rápida (N° mesa)</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="fCargaRapida" placeholder="Ej: 12" style="width:100%">
+            <button class="btn sm" id="btnCargaRapida">Ir</button>
+          </div>
+        </div>
+      </div>
       <div class="mapa-shell" id="mapaShell">
-        ${cfg.mapaUrl? `<img src="${cfg.mapaUrl}" alt="Plano del restaurante">` : ''}
-        ${state.mesas.map(m=>mesaChipHtml(m)).join('')}
-        ${state.mesas.length===0 ? `<div class="empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><b>Todavía no hay mesas</b>${state.adminMode? 'Hacé clic en cualquier parte del plano para agregar la primera mesa.':'Pedile a un administrador que configure las mesas.'}</div>`:''}
+        ${zona.mapaUrl? `<img src="${zona.mapaUrl}" alt="Plano del restaurante">` : ''}
+        ${mesasZona.map(m=>mesaChipHtml(m)).join('')}
+        ${mesasZona.length===0 ? `<div class="empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><b>Todavía no hay mesas en esta zona</b>${state.adminMode? 'Hacé clic en cualquier parte del plano para agregar una mesa.':'Pedile a un administrador que configure las mesas.'}</div>`:''}
       </div>
       <div class="legend">
         <span><i style="background:var(--ok)"></i> Libre</span>
         <span><i style="background:var(--busy)"></i> Ocupada</span>
         <span><i style="background:var(--danger)"></i> Cuenta pedida</span>
-        ${!cfg.mapaUrl?'<span style="margin-left:auto">Sin plano cargado — cargá una imagen en Config.</span>':''}
+        ${!zona.mapaUrl?`<span style="margin-left:auto">Sin plano cargado para "${esc(zona.nombre)}" — cargá una imagen en Config.</span>`:''}
       </div>
     </div>
   `;
+  if(zonas.length>1){
+    document.querySelectorAll('#zonaTabs button').forEach(b=>b.onclick=()=>{ state.ui.zonaActiva=b.dataset.zona; render(); });
+  }
+  document.getElementById('btnCargaRapida').onclick = ()=> goToMesaNumero(document.getElementById('fCargaRapida').value);
+  document.getElementById('fCargaRapida').addEventListener('keydown', e=>{ if(e.key==='Enter') goToMesaNumero(e.target.value); });
   const shell = document.getElementById('mapaShell');
   shell.addEventListener('click', (e)=>{
     if(!state.adminMode) return;
     if(e.target.closest('.mesa-chip')) return;
-    addMesaAt(e, shell);
+    addMesaAt(e, shell, zona.id);
   });
-  state.mesas.forEach(m=>{
+  mesasZona.forEach(m=>{
     const el = shell.querySelector(`[data-mesa-id="${m.id}"]`);
     if(!el) return;
     if(state.adminMode){
@@ -598,28 +662,39 @@ function makeDraggable(el, shell, mesa){
     }
   });
 }
-async function addMesaAt(e, shell){
+async function addMesaAt(e, shell, zonaId){
   const rect = shell.getBoundingClientRect();
   let x = ((e.clientX-rect.left)/rect.width)*100;
   let y = ((e.clientY-rect.top)/rect.height)*100;
   x = Math.max(4,Math.min(96,x)); y = Math.max(4,Math.min(94,y));
   const nextNum = (state.mesas.reduce((mx,m)=>Math.max(mx, Number(m.numero)||0),0)) + 1;
   try{
-    await dbCap.collection('mesas').add({numero:nextNum, x, y, estado:'libre', pedidoId:null});
+    await dbCap.collection('mesas').add({numero:nextNum, x, y, estado:'libre', pedidoId:null, zonaId: zonaId||null});
     await dbCap.doc('config/main').update({numMesas: state.mesas.length+1});
     toast('Mesa '+nextNum+' agregada');
   }catch(err){ toast('No se pudo crear la mesa'); }
 }
 function openMesaAdminMenu(m){
+  const zonas = getZonas();
   openModal(`
     <h3>Mesa ${esc(m.numero)}</h3>
     <p class="section-sub">Estado actual: ${m.estado==='libre'?'Libre':m.estado==='cuenta_pedida'?'Cuenta pedida':'Ocupada'}</p>
+    ${zonas.length>1?`<div class="field" style="max-width:220px;margin-bottom:12px">
+      <label>Zona</label>
+      <select id="mAdminZona">${zonas.map(z=>`<option value="${z.id}" ${mesaZonaId(m)===z.id?'selected':''}>${esc(z.nombre)}</option>`).join('')}</select>
+    </div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn ghost" id="mAdminOpen">Abrir pedido</button>
       <button class="btn danger" id="mAdminDel" ${m.estado!=='libre'?'disabled':''}>Eliminar mesa</button>
     </div>
     ${m.estado!=='libre'?'<p class="section-sub" style="margin-top:8px">Solo se pueden eliminar mesas libres.</p>':''}
   `);
+  if(zonas.length>1){
+    document.getElementById('mAdminZona').onchange = async (e)=>{
+      try{ await dbCap.doc('mesas/'+m.id).update({zonaId:e.target.value}); toast('Mesa reasignada de zona'); closeModal(); }
+      catch(err){ toast('No se pudo cambiar la zona'); }
+    };
+  }
   document.getElementById('mAdminOpen').onclick = ()=>{ closeModal(); openMesaPanel(m); };
   document.getElementById('mAdminDel').onclick = async ()=>{
     if(m.estado!=='libre') return;
@@ -1517,10 +1592,13 @@ function renderConfig(app){
     <p class="section-sub">Ajustes generales del restaurante. Solo visibles y editables en modo administrador.</p>
 
     <div class="card" style="padding:16px;margin-bottom:16px">
-      <h3 style="font-size:15px;margin-top:0">Plano del salón</h3>
-      ${cfg.mapaUrl?`<img src="${cfg.mapaUrl}" style="max-width:280px;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:10px">`:''}
-      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="fPlano">
-      <p class="section-sub" style="margin-top:8px">Las mesas se colocan y reubican directamente sobre el plano, en la sección Mapa, con el modo administrador activo. El archivo se guardará en tu navegador.</p>
+      <h3 style="font-size:15px;margin-top:0">Zonas y plano del salón</h3>
+      <p class="section-sub">Dividí el salón en zonas (ej: interior, terraza, planta alta) si el restaurante es grande — cada una puede tener su propio plano. Las mesas se colocan y reubican desde la sección Mapa, con el modo administrador activo.</p>
+      <div id="zonasWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm ghost" id="btnAddZona">+ Agregar zona</button>
+        <button class="btn sm" id="btnSaveZonas">Guardar nombres de zonas</button>
+      </div>
     </div>
 
     <div class="card" style="padding:16px;margin-bottom:16px">
@@ -1561,14 +1639,65 @@ function renderConfig(app){
   document.getElementById('btnDemoData').onclick = loadDemoData;
   document.getElementById('btnWipeData').onclick = wipeAllData;
 
-  document.getElementById('fPlano').onchange = async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    try{
-      const res = await assetsCap.upload(file);
-      await dbCap.doc('config/main').update({mapaAssetId: res.id, mapaUrl: res.url});
-      toast('Plano actualizado localmente');
-    }catch(err){ toast('No se pudo subir la imagen'); }
+  let zonas = JSON.parse(JSON.stringify(getZonas()));
+  function zonaRowHtml(z,i){
+    return `<div class="field-row" data-zi="${i}" style="align-items:flex-end;border:1px dashed var(--line);border-radius:10px;padding:10px;margin:0">
+      <div class="field" style="flex:2;min-width:150px">
+        <label>Nombre de la zona</label>
+        <input class="z-nombre" value="${esc(z.nombre)}">
+      </div>
+      <div class="field" style="flex:2;min-width:200px">
+        <label>Plano (imagen)</label>
+        ${z.mapaUrl?`<img src="${z.mapaUrl}" style="max-width:110px;border-radius:6px;border:1px solid var(--line);display:block;margin-bottom:6px">`:''}
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="z-plano">
+      </div>
+      <button class="iconbtn" data-delzona="${i}" ${zonas.length<=1?'disabled':''} title="Eliminar zona">✕</button>
+    </div>`;
+  }
+  function readZonasFromDOM(){
+    document.querySelectorAll('#zonasWrap > [data-zi]').forEach(el=>{
+      const i = parseInt(el.dataset.zi);
+      zonas[i].nombre = el.querySelector('.z-nombre').value.trim() || zonas[i].nombre;
+    });
+  }
+  function rebindZonas(){
+    document.getElementById('zonasWrap').innerHTML = zonas.map(zonaRowHtml).join('');
+    document.querySelectorAll('[data-delzona]').forEach(b=>b.onclick=async ()=>{
+      if(zonas.length<=1){ toast('Debe quedar al menos una zona'); return; }
+      readZonasFromDOM();
+      const removed = zonas.splice(parseInt(b.dataset.delzona),1)[0];
+      try{
+        await dbCap.doc('config/main').update({zonas});
+        const afectadas = state.mesas.filter(m=>mesaZonaId(m)===removed.id);
+        for(const m of afectadas){ await dbCap.doc('mesas/'+m.id).update({zonaId: zonas[0].id}); }
+        toast('Zona eliminada'+(afectadas.length?`, ${afectadas.length} mesa(s) reasignada(s) a "${zonas[0].nombre}"`:''));
+      }catch(err){ toast('No se pudo eliminar la zona'); }
+      rebindZonas();
+    });
+    document.querySelectorAll('.z-plano').forEach(inp=>inp.addEventListener('change', async (e)=>{
+      const i = parseInt(inp.closest('[data-zi]').dataset.zi);
+      const file = e.target.files[0];
+      if(!file) return;
+      try{
+        const res = await assetsCap.upload(file);
+        readZonasFromDOM();
+        zonas[i].mapaUrl = res.url; zonas[i].mapaAssetId = res.id;
+        await dbCap.doc('config/main').update({zonas});
+        toast('Plano de zona actualizado');
+      }catch(err){ toast('No se pudo subir la imagen'); }
+      rebindZonas();
+    }));
+  }
+  rebindZonas();
+  document.getElementById('btnAddZona').onclick = ()=>{
+    readZonasFromDOM();
+    zonas.push({id:'zona-'+uidLocal(), nombre:'Nueva zona', mapaUrl:null, mapaAssetId:null});
+    rebindZonas();
+  };
+  document.getElementById('btnSaveZonas').onclick = async ()=>{
+    readZonasFromDOM();
+    try{ await dbCap.doc('config/main').update({zonas}); toast('Nombres de zonas guardados'); }
+    catch(err){ toast('No se pudieron guardar los nombres'); }
   };
 
   let estaciones = JSON.parse(JSON.stringify(cfg.estaciones||[]));
@@ -1628,7 +1757,11 @@ async function loadDemoData(){
       {id:'bebidas', nombre:'Bebidas'},
       {id:'postres', nombre:'Postres'},
     ];
-    await dbCap.doc('config/main').update({cocineros:5, estaciones});
+    const zonasDemo = [
+      {id:'zona-salon', nombre:'Salón principal', mapaUrl:null, mapaAssetId:null},
+      {id:'zona-terraza', nombre:'Terraza', mapaUrl:null, mapaAssetId:null},
+    ];
+    await dbCap.doc('config/main').update({cocineros:5, estaciones, zonas:zonasDemo});
 
     const productosDef = [
       // Calientes
@@ -1696,15 +1829,15 @@ async function loadDemoData(){
       prodRefs[p.nombre] = {id:ref.id, ...p};
     }
 
-    // 12 Mesas en lugar de 8
+    // 12 Mesas: 8 en el salón principal, 4 en la terraza (para mostrar las zonas)
     const mesasDef = [
-      {numero:1, x:15, y:22}, {numero:2, x:38, y:22}, {numero:3, x:61, y:22}, {numero:4, x:84, y:22},
-      {numero:5, x:15, y:45}, {numero:6, x:38, y:45}, {numero:7, x:61, y:45}, {numero:8, x:84, y:45},
-      {numero:9, x:15, y:70}, {numero:10, x:38, y:70}, {numero:11, x:61, y:70}, {numero:12, x:84, y:70},
+      {numero:1, x:15, y:22, zonaId:'zona-salon'}, {numero:2, x:38, y:22, zonaId:'zona-salon'}, {numero:3, x:61, y:22, zonaId:'zona-salon'}, {numero:4, x:84, y:22, zonaId:'zona-salon'},
+      {numero:5, x:15, y:45, zonaId:'zona-salon'}, {numero:6, x:38, y:45, zonaId:'zona-salon'}, {numero:7, x:61, y:45, zonaId:'zona-salon'}, {numero:8, x:84, y:45, zonaId:'zona-salon'},
+      {numero:9, x:20, y:35, zonaId:'zona-terraza'}, {numero:10, x:50, y:35, zonaId:'zona-terraza'}, {numero:11, x:20, y:65, zonaId:'zona-terraza'}, {numero:12, x:50, y:65, zonaId:'zona-terraza'},
     ];
     const mesaRefs = [];
     for(const m of mesasDef){
-      const ref = await dbCap.collection('mesas').add({numero:m.numero, x:m.x, y:m.y, estado:'libre', pedidoId:null});
+      const ref = await dbCap.collection('mesas').add({numero:m.numero, x:m.x, y:m.y, estado:'libre', pedidoId:null, zonaId:m.zonaId});
       mesaRefs.push({id:ref.id, ...m});
     }
 

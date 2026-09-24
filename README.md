@@ -33,7 +33,11 @@ cambios reflejarse (con un pequeño polling, no en tiempo real instantáneo).
 
 - **Mapa · Mozo** — plano del salón, mesas (libre/ocupada/cuenta pedida),
   toma de pedidos con opciones y observaciones, cancelación de pedidos con
-  motivo.
+  motivo. Soporta **zonas** (salón, terraza, planta alta, etc.), cada una con
+  su propio plano, útil para restaurantes grandes. Tiene un buscador de
+  **carga rápida** para abrir una mesa por número sin buscarla visualmente.
+  En pantallas chicas, el rol y la navegación se guardan en un botón
+  minimizado en la esquina para dejarle más espacio al mapa.
 - **Cocina** — comandas en vivo por estación, avance de estado
   (pendiente → preparando → listo).
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
@@ -48,8 +52,9 @@ cambios reflejarse (con un pequeño polling, no en tiempo real instantáneo).
   cubiertos, caja, cancelados), exportable a CSV. Se puede **confirmar** un
   cierre: a partir de ahí, esa fecha queda bloqueada (no se puede tocar el
   stock).
-- **Config** — plano del salón, cantidad de cocineros y estaciones, PIN de
-  administrador, carga/borrado de datos de prueba.
+- **Config** — zonas del salón (nombre + plano por zona), cantidad de
+  cocineros y estaciones, PIN de administrador, carga/borrado de datos de
+  prueba.
 
 Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja / Encargado
 de stock / Administrador) filtra qué pestañas ve cada uno. Es solo
