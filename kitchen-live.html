@@ -249,15 +249,14 @@ const VIEWS = [
   {id:'productos', label:'Productos', icon:'fa-burger', titulo:'Productos'},
   {id:'stock', label:'Stock', icon:'fa-boxes-stacked', titulo:'Stock diario'},
   {id:'caja', label:'Caja', icon:'fa-cash-register', titulo:'Caja'},
-  {id:'gastos', label:'Gastos', icon:'fa-receipt', titulo:'Gastos'},
   {id:'cierre', label:'Cierre', icon:'fa-chart-pie', titulo:'Cierre del día'},
   {id:'config', label:'Config', icon:'fa-gear', titulo:'Configuración'},
 ];
 const ROLES = {
-  admin: {label:'Administrador', views:['mapa','cocina','productos','stock','caja','gastos','cierre','config']},
+  admin: {label:'Administrador', views:['mapa','cocina','productos','stock','caja','cierre','config']},
   mozo: {label:'Mozo', views:['mapa','cocina']},
   cocina: {label:'Cocina', views:['cocina']},
-  caja: {label:'Caja', views:['caja','gastos','cierre']},
+  caja: {label:'Caja', views:['caja','cierre']},
   stock: {label:'Encargado de stock', views:['productos','stock']},
 };
 const ROL_KEY = 'restaurantFlowRol';
@@ -271,19 +270,16 @@ let state = {
   mesas: [],
   productos: [],
   pedidos: [],
-  gastos: [],
   movimientosCaja: [],
   movimientosStock: [],
   cierres: [],
   historialPrecios: [],
-  proveedores: [],
   caja: null,
   rol: localStorage.getItem(ROL_KEY) || 'admin',
-  loaded: {config:false, mesas:false, productos:false, pedidos:false, gastos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false, proveedores:false},
+  loaded: {config:false, mesas:false, productos:false, pedidos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false},
   ui: {
     stationTab: null,
     cierreDate: todayStr(),
-    gastosDate: todayStr(),
     stockDate: todayStr(),
     placingMesa: false,
   }
@@ -322,7 +318,7 @@ const DB_KEY = 'restaurantFlowLocalDB';
 let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
 
 function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
-const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], gastos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[], historialPrecios:[], proveedores:[] };
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[], historialPrecios:[] };
 function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
 
 const dbCap = {
@@ -433,12 +429,6 @@ async function boot(){
     render();
   });
 
-  dbCap.collection('gastos').onSnapshot(snap=>{
-    state.gastos = snap.docs.map(d=>({id:d.id, ...d.data}));
-    state.loaded.gastos = true;
-    render();
-  });
-
   dbCap.collection('movimientosCaja').onSnapshot(snap=>{
     state.movimientosCaja = snap.docs.map(d=>({id:d.id, ...d.data}));
     state.loaded.movimientosCaja = true;
@@ -466,12 +456,6 @@ async function boot(){
   dbCap.collection('historialPrecios').onSnapshot(snap=>{
     state.historialPrecios = snap.docs.map(d=>({id:d.id, ...d.data}));
     state.loaded.historialPrecios = true;
-    render();
-  });
-
-  dbCap.collection('proveedores').onSnapshot(snap=>{
-    state.proveedores = snap.docs.map(d=>({id:d.id, ...d.data}));
-    state.loaded.proveedores = true;
     render();
   });
 }
@@ -546,7 +530,6 @@ function render(){
   if(state.view==='productos') return renderProductos(app);
   if(state.view==='stock') return renderStock(app);
   if(state.view==='caja') return renderCaja(app);
-  if(state.view==='gastos') return renderGastos(app);
   if(state.view==='cierre') return renderCierre(app);
   if(state.view==='config') return renderConfig(app);
 }
@@ -1197,7 +1180,7 @@ function openProductEditor(prod){
 }
 
 /* ================= STOCK ================= */
-const TIPO_MOV_LABEL = {entrada:'Entrada', ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
+const TIPO_MOV_LABEL = {ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
 function renderStock(app){
   const fecha = state.ui.stockDate || todayStr();
   const conStock = state.productos.filter(p=>p.stockDiario!=null);
@@ -1207,7 +1190,7 @@ function renderStock(app){
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Stock de productos terminados, entradas, ajustes y ventas del día.</p></div>
+      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador de stock por producto. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
     </div>
     ${agotados.length>0?`<div class="card" style="padding:14px;margin-bottom:16px;border-color:var(--danger)">
       <b style="color:var(--danger)">${agotados.length} producto(s) agotado(s):</b>
@@ -1215,20 +1198,25 @@ function renderStock(app){
     </div>`:''}
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table>
-        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th></tr></thead>
         <tbody>
-          ${conStock.length===0?'<tr><td colspan="6"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
+          ${conStock.length===0?'<tr><td colspan="5"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
             conStock.map(p=>`<tr>
               <td><b>${esc(p.nombre)}</b></td>
               <td>${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</td>
               <td>${p.stockDiario}</td>
-              <td>${p.stockRestante||0}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <button class="iconbtn" data-count="${p.id}|-1" ${bloqueadoHoy?'disabled':''}>−</button>
+                  <b style="min-width:22px;text-align:center;display:inline-block;font-size:15px">${p.stockRestante||0}</b>
+                  <button class="iconbtn" data-count="${p.id}|1" ${bloqueadoHoy?'disabled':''}>+</button>
+                </div>
+              </td>
               <td>${(p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
-              <td>${bloqueadoHoy?'':`<button class="btn sm ghost" data-stockmov="${p.id}">+ Movimiento</button>`}</td>
             </tr>`).join('')}
         </tbody>
       </table>
-      ${bloqueadoHoy?'<p class="section-sub" style="margin-top:10px">El cierre de hoy ya está confirmado — no se pueden registrar más movimientos de stock.</p>':''}
+      ${bloqueadoHoy?'<p class="section-sub" style="margin-top:10px">El cierre de hoy ya está confirmado — el contador queda bloqueado.</p>':''}
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
       <h3 style="font-size:15px;margin:0">Historial de movimientos</h3>
@@ -1236,47 +1224,28 @@ function renderStock(app){
     </div>
     <div class="card" style="overflow-x:auto;margin-top:10px">
       <table>
-        <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr></thead>
+        <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th></tr></thead>
         <tbody>
-          ${movsDia.length===0?'<tr><td colspan="5"><div class="empty">Sin movimientos de stock para esta fecha.</div></td></tr>':
+          ${movsDia.length===0?'<tr><td colspan="4"><div class="empty">Sin movimientos de stock para esta fecha.</div></td></tr>':
             movsDia.map(mv=>`<tr>
               <td>${fmtTime(mv.creado)}</td>
               <td>${esc(mv.productoNombre)}</td>
               <td><span class="pill ${mv.delta>=0?'ok':'danger'}">${TIPO_MOV_LABEL[mv.tipo]||mv.tipo}</span></td>
               <td>${mv.delta>0?'+':''}${mv.delta}</td>
-              <td>${esc(mv.motivo||'—')}</td>
             </tr>`).join('')}
         </tbody>
       </table>
     </div>
   `;
   document.getElementById('fFechaStock').onchange = e=>{ state.ui.stockDate = e.target.value; render(); };
-  document.querySelectorAll('[data-stockmov]').forEach(b=>b.onclick=()=>{
-    const prod = state.productos.find(p=>p.id===b.dataset.stockmov);
-    if(prod) openStockMovModal(prod);
+  document.querySelectorAll('[data-count]').forEach(b=>b.onclick=async ()=>{
+    const [prodId, deltaStr] = b.dataset.count.split('|');
+    const delta = parseInt(deltaStr);
+    const prod = state.productos.find(p=>p.id===prodId);
+    if(!prod) return;
+    if(delta<0 && (prod.stockRestante||0)<=0) return;
+    await registrarMovimientoStock(prod.id, prod.nombre, 'ajuste', delta, 'Contador manual');
   });
-}
-function openStockMovModal(prod){
-  openModal(`
-    <h3>Movimiento de stock — ${esc(prod.nombre)}</h3>
-    <p class="section-sub">Stock restante actual: <b>${prod.stockRestante||0}</b> de ${prod.stockDiario}</p>
-    <div class="field-row">
-      <div class="field"><label>Tipo</label><select id="mvTipoStock"><option value="entrada">Entrada (repone stock)</option><option value="ajuste">Ajuste (corrección de conteo)</option></select></div>
-      <div class="field"><label>Cantidad</label><input type="number" id="mvCantStock" placeholder="Ej: 10 o -3"></div>
-    </div>
-    <p class="section-sub" style="margin-top:-4px">Usá un número positivo para sumar stock, negativo para restar.</p>
-    <div class="field"><label>Motivo</label><input id="mvMotivoStock" placeholder="Ej: compra a proveedor, recuento físico..."></div>
-    <button class="btn" id="btnGuardarMovStock" style="margin-top:10px">Guardar movimiento</button>
-  `);
-  document.getElementById('btnGuardarMovStock').onclick = async ()=>{
-    const tipo = document.getElementById('mvTipoStock').value;
-    const cantidad = parseFloat(document.getElementById('mvCantStock').value);
-    const motivo = document.getElementById('mvMotivoStock').value.trim();
-    if(!cantidad){ toast('Ingresá una cantidad distinta de 0'); return; }
-    if(!motivo){ toast('El motivo es obligatorio'); return; }
-    await registrarMovimientoStock(prod.id, prod.nombre, tipo, cantidad, motivo);
-    closeModal(); toast('Movimiento de stock registrado');
-  };
 }
 
 /* ================= CAJA ================= */
@@ -1312,12 +1281,10 @@ function renderCaja(app){
   });
   const ventasHoy = state.pedidos.filter(p=>p.estado==='cerrado' && dateOf(p.cerrado)===today);
   const totalVentasHoy = ventasHoy.reduce((s,p)=>s+(p.total||0),0);
-  const gastosHoy = state.gastos.filter(g=>dateOf(g.creado)===today);
-  const totalGastosHoy = gastosHoy.reduce((s,g)=>s+(g.monto||0),0);
   const movHoy = state.movimientosCaja.filter(mv=>dateOf(mv.creado)===today);
   const ingresosManuales = movHoy.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+mv.monto,0);
   const egresosManuales = movHoy.filter(mv=>mv.tipo==='egreso').reduce((s,mv)=>s+mv.monto,0);
-  const totalEsperado = (cfg.montoInicial||0) + totalVentasHoy + ingresosManuales - totalGastosHoy - egresosManuales;
+  const totalEsperado = (cfg.montoInicial||0) + totalVentasHoy + ingresosManuales - egresosManuales;
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
@@ -1328,7 +1295,6 @@ function renderCaja(app){
     <div class="grid-cards" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Monto inicial</div><div class="prod-price" style="font-size:20px">${fmtMoney(cfg.montoInicial)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas cobradas hoy</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentasHoy)}</div></div>
-      <div class="card" style="padding:14px"><div class="prod-meta">Gastos hoy</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastosHoy)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Total esperado en caja</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalEsperado)}</div></div>
     </div>
 
@@ -1419,90 +1385,6 @@ function openCerrarCajaModal(totalEsperado){
   };
 }
 
-/* ================= GASTOS ================= */
-const CATEGORIAS_GASTO = ['Limpieza','Mantenimiento','Servicios','Compras','Descartables','Reparaciones','Otros'];
-function renderGastos(app){
-  const fecha = state.ui.gastosDate;
-  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha).sort((a,b)=>b.creado-a.creado);
-  const total = gastosDia.reduce((s,g)=>s+g.monto,0);
-  const bloqueado = !!cierreConfirmado(fecha);
-  app.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <div><h2 class="section-title">Gastos</h2><p class="section-sub">Registro de gastos y compras del restaurante.</p></div>
-      <div style="display:flex;gap:10px;align-items:flex-end">
-        <div class="field"><label>Fecha</label><input type="date" id="fFechaGastos" value="${fecha}"></div>
-        <button class="btn" id="btnNuevoGasto">+ Nuevo gasto</button>
-      </div>
-    </div>
-    <div class="card" style="padding:14px;margin:14px 0;max-width:260px">
-      <div class="prod-meta">Total gastado</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(total)}</div>
-    </div>
-    <div class="card" style="overflow-x:auto">
-      <table>
-        <thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Proveedor</th><th>Medio</th><th>Monto</th><th></th></tr></thead>
-        <tbody>
-          ${gastosDia.length===0?`<tr><td colspan="7"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>`:
-            gastosDia.map(g=>`<tr>
-              <td>${fmtTime(g.creado)}</td>
-              <td>${esc(g.categoria)}</td>
-              <td>${esc(g.descripcion)}</td>
-              <td>${esc(g.proveedor||'—')}</td>
-              <td>${esc(g.medioPago)}</td>
-              <td>${fmtMoney(g.monto)}</td>
-              <td>${bloqueado?'':`<button class="iconbtn" data-delgasto="${g.id}">✕</button>`}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-      ${bloqueado?'<p class="section-sub" style="margin-top:10px">Este día tiene el cierre confirmado — los gastos ya no se pueden borrar.</p>':''}
-    </div>
-  `;
-  document.getElementById('fFechaGastos').onchange = e=>{ state.ui.gastosDate = e.target.value; render(); };
-  document.getElementById('btnNuevoGasto').onclick = openNuevoGastoModal;
-  document.querySelectorAll('[data-delgasto]').forEach(b=>b.onclick=async ()=>{
-    if(!confirm('¿Eliminar este gasto?')) return;
-    try{ await dbCap.doc('gastos/'+b.dataset.delgasto).delete(); toast('Gasto eliminado'); }catch(e){ toast('No se pudo eliminar'); }
-  });
-}
-function openNuevoGastoModal(){
-  openModal(`
-    <h3>Nuevo gasto</h3>
-    <div class="field-row">
-      <div class="field"><label>Categoría</label><select id="gCategoria">${CATEGORIAS_GASTO.map(c=>`<option>${c}</option>`).join('')}</select></div>
-      <div class="field"><label>Medio de pago</label><select id="gMedio"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select></div>
-    </div>
-    <div class="field"><label>Descripción</label><input id="gDescripcion" placeholder="Ej: Detergente y lavandina"></div>
-    <div class="field-row">
-      <div class="field"><label>Monto</label><input type="number" min="0" value="0" id="gMonto"></div>
-      <div class="field"><label>Proveedor (opcional)</label>
-        <select id="gProveedor">
-          <option value="">Sin proveedor</option>
-          ${state.proveedores.map(pv=>`<option value="${esc(pv.nombre)}">${esc(pv.nombre)}</option>`).join('')}
-          <option value="__otro">Otro (escribir)</option>
-        </select>
-      </div>
-    </div>
-    <div class="field" id="gProveedorOtroWrap" style="display:none"><label>Nombre del proveedor</label><input id="gProveedorOtro"></div>
-    <button class="btn" id="btnGuardarGasto" style="margin-top:10px">Guardar gasto</button>
-  `);
-  document.getElementById('gProveedor').onchange = (e)=>{
-    document.getElementById('gProveedorOtroWrap').style.display = e.target.value==='__otro' ? '' : 'none';
-  };
-  document.getElementById('btnGuardarGasto').onclick = async ()=>{
-    const categoria = document.getElementById('gCategoria').value;
-    const medioPago = document.getElementById('gMedio').value;
-    const descripcion = document.getElementById('gDescripcion').value.trim();
-    const monto = parseFloat(document.getElementById('gMonto').value)||0;
-    const provSel = document.getElementById('gProveedor').value;
-    const proveedor = provSel==='__otro' ? document.getElementById('gProveedorOtro').value.trim() : provSel;
-    if(!descripcion){ toast('La descripción es obligatoria'); return; }
-    if(monto<=0){ toast('El monto debe ser mayor a 0'); return; }
-    try{
-      await dbCap.collection('gastos').add({categoria, medioPago, descripcion, monto, proveedor, creado:Date.now()});
-      closeModal(); toast('Gasto registrado');
-    }catch(e){ toast('No se pudo registrar el gasto'); }
-  };
-}
-
 /* ================= CIERRE ================= */
 function renderCierre(app){
   const fecha = state.ui.cierreDate;
@@ -1516,14 +1398,12 @@ function renderCierre(app){
     productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad;
   }));
   const aggList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
-  const gastosDia = state.gastos.filter(g=>dateOf(g.creado)===fecha);
-  const totalGastos = gastosDia.reduce((s,g)=>s+g.monto,0);
   const cajaDelDia = (state.caja && state.caja.fecha===fecha) ? state.caja : null;
   const confirmado = cierreConfirmado(fecha);
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
-      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, gastos, productos vendidos, personas y cubiertos.</p></div>
+      <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, productos vendidos, personas y cubiertos.</p></div>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
         <button class="btn ghost" id="btnExportarCSV">Exportar CSV</button>
@@ -1535,7 +1415,6 @@ function renderCierre(app){
     </div>`:''}
     <div class="grid-cards" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas totales</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentas)}</div></div>
-      <div class="card" style="padding:14px"><div class="prod-meta">Gastos totales</div><div class="prod-price" style="font-size:20px;color:var(--danger)">${fmtMoney(totalGastos)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Mesas cerradas</div><div class="prod-price" style="font-size:20px">${cerrados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Pedidos cancelados</div><div class="prod-price" style="font-size:20px">${cancelados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Personas atendidas</div><div class="prod-price" style="font-size:20px">${totalPersonas}</div></div>
@@ -1550,13 +1429,6 @@ function renderCierre(app){
       <table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>
         ${aggList.length===0?'<tr><td colspan="2"><div class="empty">Sin ventas cerradas para esta fecha.</div></td></tr>':
           aggList.map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}
-      </tbody></table>
-    </div>
-    <h3 style="font-size:15px">Gastos del día</h3>
-    <div class="card" style="overflow-x:auto;margin-bottom:18px">
-      <table><thead><tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Monto</th></tr></thead><tbody>
-        ${gastosDia.length===0?'<tr><td colspan="4"><div class="empty">Sin gastos registrados para esta fecha.</div></td></tr>':
-          gastosDia.map(g=>`<tr><td>${fmtTime(g.creado)}</td><td>${esc(g.categoria)}</td><td>${esc(g.descripcion)}</td><td>${fmtMoney(g.monto)}</td></tr>`).join('')}
       </tbody></table>
     </div>
     <h3 style="font-size:15px">Detalle por mesa</h3>
@@ -1579,13 +1451,13 @@ function renderCierre(app){
       ${state.adminMode && !confirmado?`<div class="card" style="padding:14px;flex:1;min-width:260px"><b>Reinicio de stock diario</b><p class="section-sub">Restaura el stock de todos los productos al valor configurado (usar al iniciar el día).</p><button class="btn gold" id="btnResetStock">Reiniciar stock del día</button></div>`:''}
       ${state.adminMode?`<div class="card" style="padding:14px;flex:1;min-width:260px">
         <b>Confirmar cierre del día</b>
-        <p class="section-sub">${confirmado?'Este día ya fue confirmado y no admite más cambios.':'Una vez confirmado, no se van a poder borrar gastos ni reiniciar el stock de esta fecha.'}</p>
+        <p class="section-sub">${confirmado?'Este día ya fue confirmado y no admite más cambios.':'Una vez confirmado, no se va a poder reiniciar el stock de esta fecha.'}</p>
         <button class="btn ${confirmado?'':'danger'}" id="btnConfirmarCierre" ${confirmado?'disabled':''}>${confirmado?'Cierre ya confirmado':'Confirmar cierre'}</button>
       </div>`:''}
     </div>
   `;
   document.getElementById('fFecha').onchange = (e)=>{ state.ui.cierreDate = e.target.value; render(); };
-  document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreCSV(fecha, cerrados, gastosDia, totalVentas, totalGastos);
+  document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreCSV(fecha, cerrados, totalVentas);
   const rb = document.getElementById('btnResetStock');
   if(rb) rb.onclick = async ()=>{
     if(!confirm('¿Reiniciar el stock de todos los productos?')) return;
@@ -1605,7 +1477,7 @@ function renderCierre(app){
     if(!confirm('¿Confirmar el cierre del día '+fecha+'? Ya no se va a poder modificar.')) return;
     try{
       await dbCap.doc('cierres/'+fecha).set({
-        fecha, confirmadoEn: Date.now(), totalVentas, totalGastos,
+        fecha, confirmadoEn: Date.now(), totalVentas,
         mesasCerradas: cerrados.length, cajaDiferencia: cajaDelDia?cajaDelDia.diferencia:null
       });
       toast('Cierre confirmado');
@@ -1617,18 +1489,13 @@ function csvEscape(v){
   if(/[",\n]/.test(v)) v = '"'+v.replace(/"/g,'""')+'"';
   return v;
 }
-function exportarCierreCSV(fecha, cerrados, gastosDia, totalVentas, totalGastos){
+function exportarCierreCSV(fecha, cerrados, totalVentas){
   const rows = [];
   rows.push(['Cierre del día', fecha]);
   rows.push(['Ventas totales', totalVentas]);
-  rows.push(['Gastos totales', totalGastos]);
   rows.push([]);
   rows.push(['Mesa','Personas','Tenedores','Medio de pago','Detalle de pago','Total','Hora cierre','Items']);
   cerrados.forEach(p=>rows.push([p.mesaNumero, p.personas, p.tenedores, p.medioPago||'', (p.pagos||[]).map(pg=>pg.medio+' '+pg.monto).join(' | '), p.total, fmtTime(p.cerrado), (p.items||[]).map(it=>it.cantidad+'x '+it.nombre).join(' | ')]));
-  rows.push([]);
-  rows.push(['Gastos']);
-  rows.push(['Hora','Categoría','Descripción','Monto']);
-  gastosDia.forEach(g=>rows.push([fmtTime(g.creado), g.categoria, g.descripcion, g.monto]));
   const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
   const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -1684,22 +1551,6 @@ function renderConfig(app){
       <button class="btn sm" id="btnSavePin" style="margin-top:6px">Guardar PIN</button>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
-      <h3 style="font-size:15px;margin-top:0">Proveedores</h3>
-      <p class="section-sub">Lista simple para asociar a los gastos y compras. Sin datos de contacto: solo el nombre.</p>
-      <div id="provWrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-        ${state.proveedores.length===0?'<div class="section-sub" style="margin:0">Todavía no hay proveedores cargados.</div>':
-          state.proveedores.map(pv=>`<div class="field-row" style="align-items:center">
-            <span style="flex:1">${esc(pv.nombre)}</span>
-            <button class="iconbtn" data-delprov="${pv.id}">✕</button>
-          </div>`).join('')}
-      </div>
-      <div class="field-row">
-        <div class="field"><input id="fNuevoProveedor" placeholder="Nombre del proveedor"></div>
-        <button class="btn sm ghost" id="btnAddProveedor">+ Agregar</button>
-      </div>
-    </div>
-
     <div class="card" style="padding:16px;border:1px dashed var(--gold)">
       <h3 style="font-size:15px;margin-top:0">Datos de prueba</h3>
       <p class="section-sub">Carga mesas, productos, estaciones y pedidos de ejemplo (en distintos estados) para ver cómo se ve el sistema en uso. Pensado para demostraciones, no para un restaurante en producción.</p>
@@ -1709,17 +1560,6 @@ function renderConfig(app){
   `;
   document.getElementById('btnDemoData').onclick = loadDemoData;
   document.getElementById('btnWipeData').onclick = wipeAllData;
-  document.getElementById('btnAddProveedor').onclick = async ()=>{
-    const input = document.getElementById('fNuevoProveedor');
-    const nombre = input.value.trim();
-    if(!nombre){ toast('Ingresá un nombre'); return; }
-    try{ await dbCap.collection('proveedores').add({nombre, creado:Date.now()}); input.value=''; toast('Proveedor agregado'); }
-    catch(e){ toast('No se pudo agregar'); }
-  };
-  document.querySelectorAll('[data-delprov]').forEach(b=>b.onclick=async ()=>{
-    if(!confirm('¿Eliminar este proveedor?')) return;
-    try{ await dbCap.doc('proveedores/'+b.dataset.delprov).delete(); toast('Proveedor eliminado'); }catch(e){ toast('No se pudo eliminar'); }
-  });
 
   document.getElementById('fPlano').onchange = async (e)=>{
     const file = e.target.files[0];
@@ -1921,18 +1761,9 @@ async function loadDemoData(){
       });
     }
 
-    // --- PROVEEDORES, CAJA Y GASTOS DE EJEMPLO ---
-    for(const nombre of ['Distribuidora Sur','Bebidas del Litoral','Gas Metropolitano']){
-      await dbCap.collection('proveedores').add({nombre, creado:Date.now()});
-    }
+    // --- CAJA DE EJEMPLO ---
     await dbCap.doc('caja/main').set({abierta:true, fecha:todayStr(), montoInicial:20000, abiertaEn:Date.now()-6*3600000, cerradaEn:null, montoRealCierre:null, diferencia:null});
     await dbCap.collection('movimientosCaja').add({tipo:'egreso', medioPago:'Efectivo', concepto:'Cambio para mozos', monto:5000, creado:Date.now()-5*3600000});
-    const gastosDef = [
-      {categoria:'Descartables', medioPago:'Efectivo', descripcion:'Vasos y servilletas', monto:4200, proveedor:'Distribuidora Sur', creado:Date.now()-4*3600000},
-      {categoria:'Servicios', medioPago:'Transferencia', descripcion:'Garrafa de gas', monto:9500, proveedor:'Gas Metropolitano', creado:Date.now()-2*3600000},
-      {categoria:'Limpieza', medioPago:'Efectivo', descripcion:'Detergente y lavandina', monto:2100, proveedor:'', creado:Date.now()-1*3600000},
-    ];
-    for(const g of gastosDef){ await dbCap.collection('gastos').add(g); }
 
     toast('Datos de prueba cargados con éxito');
   }catch(e){
@@ -1948,12 +1779,10 @@ async function wipeAllData(){
     for(const m of state.mesas) await dbCap.doc('mesas/'+m.id).delete();
     for(const p of state.productos) await dbCap.doc('productos/'+p.id).delete();
     for(const p of state.pedidos) await dbCap.doc('pedidos/'+p.id).delete();
-    for(const g of state.gastos) await dbCap.doc('gastos/'+g.id).delete();
     for(const mv of state.movimientosCaja) await dbCap.doc('movimientosCaja/'+mv.id).delete();
     for(const mv of state.movimientosStock) await dbCap.doc('movimientosStock/'+mv.id).delete();
     for(const c of state.cierres) await dbCap.doc('cierres/'+c.id).delete();
     for(const h of state.historialPrecios) await dbCap.doc('historialPrecios/'+h.id).delete();
-    for(const pv of state.proveedores) await dbCap.doc('proveedores/'+pv.id).delete();
     await dbCap.doc('caja/main').delete();
     await dbCap.doc('config/main').update({numMesas:0});
     toast('Datos borrados');

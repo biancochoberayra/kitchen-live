@@ -3,7 +3,7 @@
 Sistema de gestión para restaurante, pensado para funcionar **sin backend**: todo
 corre en el navegador y los datos se guardan en `localStorage`. Sirve para
 probar el flujo completo de un restaurante (mesas, pedidos, cocina, caja,
-stock, gastos, cierres) con datos de prueba, sin instalar nada.
+stock, cierres) con datos de prueba, sin instalar nada.
 
 ## Cómo usarlo
 
@@ -13,8 +13,7 @@ navegador bloquea `file://`).
 
 Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar datos
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
-productos, proveedores, una caja abierta, gastos y pedidos en distintos
-estados.
+productos, una caja abierta y pedidos en distintos estados.
 
 ## Páginas del sistema
 
@@ -39,19 +38,18 @@ cambios reflejarse (con un pequeño polling, no en tiempo real instantáneo).
   (pendiente → preparando → listo).
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
-- **Stock** — entradas, ajustes, ventas y anulaciones de stock por producto,
-  con motivo e historial por fecha; aviso de productos agotados.
+- **Stock** — contador de stock por producto: botones +/− para ajustar a
+  mano, además del descuento/restitución automático por ventas y
+  anulaciones. Historial de movimientos por fecha y aviso de agotados.
 - **Caja** — apertura con monto inicial, cobro de mesas (con pago dividido
   en varios medios de pago), movimientos manuales de ingreso/egreso, cierre
   con monto real contado y diferencia.
-- **Gastos** — categoría, descripción, monto, medio de pago y proveedor
-  (lista simple gestionable desde Config).
-- **Cierre** — resumen del día (ventas, gastos, productos vendidos,
-  personas, cubiertos, caja, cancelados), exportable a CSV. Se puede
-  **confirmar** un cierre: a partir de ahí, esa fecha queda bloqueada
-  (no se pueden borrar gastos ni tocar el stock).
-- **Config** — plano del salón, cantidad de cocineros y estaciones,
-  proveedores, PIN de administrador, carga/borrado de datos de prueba.
+- **Cierre** — resumen del día (ventas, productos vendidos, personas,
+  cubiertos, caja, cancelados), exportable a CSV. Se puede **confirmar** un
+  cierre: a partir de ahí, esa fecha queda bloqueada (no se puede tocar el
+  stock).
+- **Config** — plano del salón, cantidad de cocineros y estaciones, PIN de
+  administrador, carga/borrado de datos de prueba.
 
 Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja / Encargado
 de stock / Administrador) filtra qué pestañas ve cada uno. Es solo
