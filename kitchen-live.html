@@ -192,6 +192,14 @@ tr:last-child td{border-bottom:none}
 
 .mesa-item-row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .opts-editor-group{border:1px dashed var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.zona-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap}
+.zona-thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex:none}
+.zona-thumb-ph{width:42px;height:42px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex:none;font-size:14px}
+.zona-row .z-nombre{flex:1;min-width:110px}
+.zona-row .z-plano{flex:1;min-width:150px;max-width:230px}
+.zona-cols{display:flex;gap:10px;padding:0 10px 4px;font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px}
+.zona-cols span:first-child{width:42px}
+.zona-cols span{flex:1}
 .chip-toggle{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:100px;padding:5px 11px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--paper-raise)}
 .chip-toggle.sel{background:var(--brand);border-color:var(--brand);color:#fff}
 .badge-count{background:var(--gold-soft);color:var(--gold);border-radius:100px;padding:2px 8px;font-size:11px;font-weight:800}
@@ -1627,7 +1635,8 @@ function renderConfig(app){
     <div class="card" style="padding:16px;margin-bottom:16px">
       <h3 style="font-size:15px;margin-top:0">Zonas y plano del salón</h3>
       <p class="section-sub">Dividí el salón en zonas (ej: interior, terraza, planta alta) si el restaurante es grande — cada una puede tener su propio plano. Las mesas se colocan y reubican desde la sección Mapa, con el modo administrador activo.</p>
-      <div id="zonasWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="zona-cols"><span></span><span>Nombre</span><span>Plano</span><span style="flex:none;width:30px"></span></div>
+      <div id="zonasWrap" style="display:flex;flex-direction:column;gap:8px"></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn sm ghost" id="btnAddZona">+ Agregar zona</button>
         <button class="btn sm" id="btnSaveZonas">Guardar nombres de zonas</button>
@@ -1674,16 +1683,10 @@ function renderConfig(app){
 
   let zonas = JSON.parse(JSON.stringify(getZonas()));
   function zonaRowHtml(z,i){
-    return `<div class="field-row" data-zi="${i}" style="align-items:flex-end;border:1px dashed var(--line);border-radius:10px;padding:10px;margin:0">
-      <div class="field" style="flex:2;min-width:150px">
-        <label>Nombre de la zona</label>
-        <input class="z-nombre" value="${esc(z.nombre)}">
-      </div>
-      <div class="field" style="flex:2;min-width:200px">
-        <label>Plano (imagen)</label>
-        ${z.mapaUrl?`<img src="${z.mapaUrl}" style="max-width:110px;border-radius:6px;border:1px solid var(--line);display:block;margin-bottom:6px">`:''}
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="z-plano">
-      </div>
+    return `<div class="zona-row" data-zi="${i}">
+      ${z.mapaUrl?`<img src="${z.mapaUrl}" class="zona-thumb" alt="Plano de ${esc(z.nombre)}">`:`<div class="zona-thumb-ph"><i class="fa-solid fa-image"></i></div>`}
+      <input class="z-nombre" value="${esc(z.nombre)}">
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="z-plano">
       <button class="iconbtn" data-delzona="${i}" ${zonas.length<=1?'disabled':''} title="Eliminar zona">✕</button>
     </div>`;
   }
@@ -1793,6 +1796,7 @@ async function loadDemoData(){
     const zonasDemo = [
       {id:'zona-salon', nombre:'Salón principal', mapaUrl:null, mapaAssetId:null},
       {id:'zona-terraza', nombre:'Terraza', mapaUrl:null, mapaAssetId:null},
+      {id:'zona-barra', nombre:'Barra', mapaUrl:null, mapaAssetId:null},
     ];
     await dbCap.doc('config/main').update({cocineros:5, estaciones, zonas:zonasDemo});
 
@@ -1862,11 +1866,12 @@ async function loadDemoData(){
       prodRefs[p.nombre] = {id:ref.id, ...p};
     }
 
-    // 12 Mesas: 8 en el salón principal, 4 en la terraza (para mostrar las zonas)
+    // 12 Mesas repartidas en 3 zonas: salón principal, terraza y barra (para mostrar las zonas)
     const mesasDef = [
-      {numero:1, x:15, y:22, zonaId:'zona-salon'}, {numero:2, x:38, y:22, zonaId:'zona-salon'}, {numero:3, x:61, y:22, zonaId:'zona-salon'}, {numero:4, x:84, y:22, zonaId:'zona-salon'},
-      {numero:5, x:15, y:45, zonaId:'zona-salon'}, {numero:6, x:38, y:45, zonaId:'zona-salon'}, {numero:7, x:61, y:45, zonaId:'zona-salon'}, {numero:8, x:84, y:45, zonaId:'zona-salon'},
-      {numero:9, x:20, y:35, zonaId:'zona-terraza'}, {numero:10, x:50, y:35, zonaId:'zona-terraza'}, {numero:11, x:20, y:65, zonaId:'zona-terraza'}, {numero:12, x:50, y:65, zonaId:'zona-terraza'},
+      {numero:1, x:15, y:22, zonaId:'zona-salon'}, {numero:2, x:38, y:22, zonaId:'zona-salon'}, {numero:3, x:61, y:22, zonaId:'zona-salon'},
+      {numero:4, x:15, y:45, zonaId:'zona-salon'}, {numero:5, x:38, y:45, zonaId:'zona-salon'}, {numero:6, x:61, y:45, zonaId:'zona-salon'},
+      {numero:7, x:20, y:35, zonaId:'zona-terraza'}, {numero:8, x:50, y:35, zonaId:'zona-terraza'}, {numero:9, x:20, y:65, zonaId:'zona-terraza'}, {numero:10, x:50, y:65, zonaId:'zona-terraza'},
+      {numero:11, x:30, y:30, zonaId:'zona-barra'}, {numero:12, x:65, y:30, zonaId:'zona-barra'},
     ];
     const mesaRefs = [];
     for(const m of mesasDef){
