@@ -294,7 +294,7 @@ const TUTORIAL_STEPS = [
   {icon:'fa-user-shield', titulo:'Rol y modo administrador', texto:'El selector "Rol" (arriba a la izquierda) filtra qué secciones ves según tu función: Mozo, Cocina, Caja, Encargado de stock o Administrador. Es solo organizativo. El control de acceso real es el "Modo admin" (botón abajo, PIN por defecto 1234), necesario para editar productos, la configuración, cancelar un pedido o confirmar un cierre.'},
   {icon:'fa-house', titulo:'Mapa · Mozo', texto:'El plano del salón. Tocá una mesa libre para abrir un pedido, o una ocupada para agregar ítems o cobrar. Si hay más de una zona, usá las flechas ‹ › para cambiar de zona, o "Carga rápida" para ir directo a una mesa por su número. En modo admin podés hacer clic en el plano para agregar una mesa, o arrastrar una existente para reubicarla.'},
   {icon:'fa-receipt', titulo:'Tomar un pedido', texto:'Al abrir una mesa cargás personas y tenedores, y agregás productos con el buscador y el filtro por categoría. Si un producto tiene grupos de opciones (ej. salsa, guarnición) las elegís ahí — algunos grupos permiten un botón "sin elegir" para saltear una opción obligatoria. Un pedido completo se puede cancelar con motivo (requiere modo admin).'},
-  {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara.'},
+  {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara. Cuando un ítem queda Listo, el mozo (o el admin) ve ahí mismo un botón "Retirado ✓" para marcarlo como entregado sin tener que ir a buscarlo a la mesa.'},
   {icon:'fa-tv', titulo:'Pantalla de cocina', texto:'Un tablero grande (enlace "Pantalla cocina" abajo) pensado para tener siempre a la vista en la cocina, con 3 columnas: Pendiente / Preparando / Listo. Tocar un ticket también avanza su estado.'},
   {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y stock diario por producto. Cada cambio de precio queda guardado en un historial.'},
   {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− por producto para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
@@ -1150,10 +1150,21 @@ function renderCocina(app){
       try{ await dbCap.doc('pedidos/'+pedidoId).update({items:newItems}); }catch(e){ toast('Error al actualizar'); }
     };
   });
+  document.querySelectorAll('[data-retirar]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const [pedidoId,itemId] = btn.dataset.retirar.split('|');
+      const pedido = state.pedidos.find(p=>p.id===pedidoId);
+      if(!pedido) return;
+      const newItems = pedido.items.map(it=> it.id===itemId? {...it, estado:'entregado'}: it);
+      try{ await dbCap.doc('pedidos/'+pedidoId).update({items:newItems}); toast('Ítem retirado'); }
+      catch(e){ toast('Error al actualizar'); }
+    };
+  });
 }
 function ticketCardHtml(it){
   const stColor = it.estado==='listo'?'ok':it.estado==='preparando'?'warn':'busy';
   const canAdvance = it.estado!=='listo';
+  const puedeRetirar = it.estado==='listo' && (state.rol==='mozo' || state.rol==='admin');
   return `<div class="ticket">
     <div class="ticket-head"><span class="ticket-mesa">Mesa ${esc(it.mesaNumero)}</span><span class="ticket-time">${fmtTime(it.creado)}</span></div>
     <div class="ticket-item">${it.cantidad}× ${esc(it.nombre)}</div>
@@ -1161,7 +1172,9 @@ function ticketCardHtml(it){
     ${it.observaciones?`<div class="ticket-obs">"${esc(it.observaciones)}"</div>`:''}
     <span class="pill ${stColor}" style="align-self:flex-start">${ESTADO_LABEL[it.estado]}</span>
     <div class="ticket-actions">
-      ${canAdvance?`<button class="btn sm" data-advance="${it.pedidoId}|${it.id}">${it.estado==='pendiente'?'Empezar a preparar':'Marcar listo'}</button>`:'<span class="pill neutral">Esperando al mozo</span>'}
+      ${canAdvance?`<button class="btn sm" data-advance="${it.pedidoId}|${it.id}">${it.estado==='pendiente'?'Empezar a preparar':'Marcar listo'}</button>`:
+        puedeRetirar?`<button class="btn sm gold" data-retirar="${it.pedidoId}|${it.id}">Retirado ✓</button>`:
+        '<span class="pill neutral">Esperando al mozo</span>'}
     </div>
   </div>`;
 }

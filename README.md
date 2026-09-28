@@ -52,7 +52,9 @@ cocina y no tiene este tratamiento mobile.
   En pantallas chicas, el rol y la navegación se guardan en un botón
   minimizado en la esquina para dejarle más espacio al mapa.
 - **Cocina** — comandas en vivo por estación, avance de estado
-  (pendiente → preparando → listo).
+  (pendiente → preparando → listo). Un ítem "listo" muestra un botón
+  "Retirado ✓" para el mozo (o el admin), que lo marca como entregado sin
+  pasar por la mesa.
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
 - **Stock** — contador de stock por producto: botones +/− para ajustar a
