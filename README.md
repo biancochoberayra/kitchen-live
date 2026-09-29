@@ -50,7 +50,10 @@ cocina y no tiene este tratamiento mobile.
   su propio plano, útil para restaurantes grandes. Tiene un buscador de
   **carga rápida** para abrir una mesa por número sin buscarla visualmente.
   En pantallas chicas, el rol y la navegación se guardan en un botón
-  minimizado en la esquina para dejarle más espacio al mapa.
+  minimizado en la esquina para dejarle más espacio al mapa. Una vez que se
+  pide la cuenta de una mesa, quitar un ítem de la comanda pasa a requerir
+  modo administrador (antes de pedir la cuenta, el mozo puede seguir
+  quitando ítems pendientes libremente).
 - **Cocina** — comandas en vivo por estación, avance de estado
   (pendiente → preparando → listo). Un ítem "listo" muestra un botón
   "Retirado ✓" para el mozo (o el admin), que lo marca como entregado sin
