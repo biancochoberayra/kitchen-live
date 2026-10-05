@@ -27,7 +27,7 @@ Tutorial" al pie de la barra lateral.
 |---|---|
 | `kitchen-live.html` | La aplicación principal. Todo el flujo operativo. |
 | `dashboard.html` | Panel de KPIs (ventas, ocupación, productos top, etc.), de solo lectura. |
-| `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Tocable para avanzar el estado de una mesa. |
+| `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Clic izquierdo para avanzar un ítem un paso; clic derecho para retroceder un paso, por si se tocó por accidente. |
 | `a.html`, `cocina-ordu.html` | Prototipos previos, se mantienen como referencia histórica. |
 
 Las tres páginas activas están enlazadas entre sí y leen/escriben la misma
@@ -47,17 +47,23 @@ cocina y no tiene este tratamiento mobile.
 - **Mapa · Mozo** — plano del salón, mesas (libre/ocupada/cuenta pedida),
   toma de pedidos con opciones y observaciones, cancelación de pedidos con
   motivo. Soporta **zonas** (salón, terraza, planta alta, etc.), cada una con
-  su propio plano, útil para restaurantes grandes. Tiene un buscador de
-  **carga rápida** para abrir una mesa por número sin buscarla visualmente.
-  En pantallas chicas, el rol y la navegación se guardan en un botón
-  minimizado en la esquina para dejarle más espacio al mapa. Una vez que se
-  pide la cuenta de una mesa, quitar un ítem de la comanda pasa a requerir
-  modo administrador (antes de pedir la cuenta, el mozo puede seguir
-  quitando ítems pendientes libremente).
-- **Cocina** — comandas en vivo por estación, avance de estado
-  (pendiente → preparando → listo). Un ítem "listo" muestra un botón
-  "Retirado ✓" para el mozo (o el admin), que lo marca como entregado sin
-  pasar por la mesa.
+  su propio plano, útil para restaurantes grandes, con flechas ‹ › para
+  cambiar de zona. Tiene un buscador de **carga rápida** para abrir una mesa
+  por número sin buscarla visualmente. Al abrir una mesa (o en cualquier
+  momento mientras está ocupada) se puede elegir qué **mozo** la está
+  atendiendo, de la lista cargada en Config. En pantallas chicas, el rol y
+  la navegación se guardan en un botón minimizado en la esquina para
+  dejarle más espacio al mapa. Una vez que se pide la cuenta de una mesa,
+  quitar un ítem de la comanda pasa a requerir modo administrador (antes de
+  pedir la cuenta, el mozo puede seguir quitando ítems pendientes
+  libremente).
+- **Cocina** — comandas en vivo por estación, con el mozo asignado a cada
+  mesa visible en cada ticket. El avance de estado (pendiente → preparando →
+  listo) es solo para el rol Cocina (o el admin); el rol Mozo no puede
+  tocarlo, solo ve "A cargo de cocina". Cuando un ítem queda "listo", recién
+  ahí el mozo (o el admin) ve el botón "Retirado ✓" para marcarlo como
+  entregado sin tener que ir hasta la mesa — es la única acción que el mozo
+  puede hacer en esta sección.
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
 - **Stock** — contador de stock por producto: botones +/− para ajustar a
@@ -70,17 +76,20 @@ cocina y no tiene este tratamiento mobile.
   cubiertos, caja, cancelados), exportable a CSV (con secciones separadas
   por mesa, pagos, items vendidos y resumen de productos, cada dato en su
   propia celda). Se puede **confirmar** un cierre: a partir de ahí, esa
-  fecha queda bloqueada (no se puede tocar el
-  stock).
-- **Config** — zonas del salón (nombre + plano por zona), cantidad de
-  cocineros y estaciones, PIN de administrador, carga/borrado de datos de
-  prueba.
+  fecha queda bloqueada (no se puede tocar el stock).
+- **Config** — zonas del salón (nombre + plano por zona), nombres de
+  **mozos** (para asignarlos a las mesas), cantidad de cocineros y
+  estaciones, PIN de administrador, carga/borrado de datos de prueba.
 
 Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja / Encargado
-de stock / Administrador) filtra qué pestañas ve cada uno. Es solo
-organizativo — no reemplaza al **modo admin** (PIN), que es el único control
-de acceso real del sistema (protege edición de productos, config y acciones
-sensibles como cancelar un pedido o confirmar un cierre).
+de stock / Administrador) filtra qué pestañas ve cada uno, y además
+condiciona qué puede tocar dentro de Cocina (avanzar estados vs. marcar
+"Retirado") y dentro de una comanda con cuenta pedida (quitar ítems). Es
+solo organizativo — no reemplaza al **modo admin** (PIN), que es el único
+control de acceso real del sistema (protege edición de productos, config y
+acciones sensibles como cancelar un pedido o confirmar un cierre). Elegir
+qué mozo atiende una mesa tampoco es un login: es solo una etiqueta sobre
+el pedido, cualquiera con el rol correspondiente puede cambiarla.
 
 ## Qué NO tiene (a propósito)
 

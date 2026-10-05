@@ -188,6 +188,7 @@ tr:last-child td{border-bottom:none}
 .ticket{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-raise);display:flex;flex-direction:column;gap:8px}
 .ticket-head{display:flex;justify-content:space-between;align-items:baseline}
 .ticket-mesa{font-weight:800;font-size:14px}
+.ticket-mozo{font-weight:600;color:var(--ink-soft);font-size:12.5px}
 .ticket-time{font-size:11.5px;color:var(--ink-soft)}
 .ticket-item{font-size:13.5px;font-weight:700}
 .ticket-opts{font-size:12px;color:var(--ink-soft);margin-top:-4px}
@@ -524,6 +525,13 @@ function goToMesaNumero(valor){
   if(state.adminMode) openMesaAdminMenu(m); else openMesaPanel(m);
 }
 
+/* ---------------- MOZOS ---------------- */
+function mozoOptionsHtml(selectedId){
+  const mozos = state.config.mozos || [];
+  return `<option value="">Sin asignar</option>` +
+    mozos.map(mz=>`<option value="${mz.id}" ${mz.id===selectedId?'selected':''}>${esc(mz.nombre)}</option>`).join('');
+}
+
 /* ---------------- MOBILE MENU (off-canvas) ---------------- */
 function closeMobileMenu(){
   document.getElementById('asideEl').classList.remove('open');
@@ -803,16 +811,20 @@ function openMesaPanel(m){
       <div class="field-row">
         <div class="field"><label>Personas</label><input type="number" min="1" value="2" id="fPersonas"></div>
         <div class="field"><label>Tenedores</label><input type="number" min="1" value="2" id="fTenedores"></div>
+        ${(state.config.mozos||[]).length?`<div class="field"><label>Mozo</label><select id="fMozo">${mozoOptionsHtml(null)}</select></div>`:''}
       </div>
       <button class="btn" id="btnAbrir">Abrir mesa y tomar pedido</button>
     `);
     document.getElementById('btnAbrir').onclick = async ()=>{
       const personas = parseInt(document.getElementById('fPersonas').value)||1;
       const tenedores = parseInt(document.getElementById('fTenedores').value)||1;
+      const fMozo = document.getElementById('fMozo');
+      const mozoId = fMozo ? fMozo.value : '';
+      const mozoNombre = mozoId ? ((state.config.mozos||[]).find(mz=>mz.id===mozoId)||{}).nombre : null;
       try{
         const ped = await dbCap.collection('pedidos').add({
           mesaId:m.id, mesaNumero:m.numero, personas, tenedores, items:[], estado:'abierto',
-          creado: Date.now(), total:0
+          creado: Date.now(), total:0, mozoId: mozoId||null, mozoNombre: mozoNombre||null
         });
         await dbCap.doc('mesas/'+m.id).update({estado:'ocupada', pedidoId: ped.id});
         closeModal();
@@ -832,6 +844,10 @@ function renderMesaOrderModal(m, pedido){
   openModal(`
     <h3>Mesa ${esc(m.numero)} ${m.estado==='cuenta_pedida'?'<span class="pill danger">Cuenta pedida</span>':''}</h3>
     <p class="section-sub">${pedido.personas} personas · ${pedido.tenedores} tenedores · abierta ${fmtTime(pedido.creado)}hs</p>
+    ${(state.config.mozos||[]).length?`<div class="field" style="max-width:220px;margin-bottom:10px">
+      <label>Mozo asignado</label>
+      <select id="fMozoAsignado">${mozoOptionsHtml(pedido.mozoId)}</select>
+    </div>`:''}
     <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
       ${items.length===0? '<div class="empty">Sin ítems todavía. Agregá productos a la comanda.</div>' :
         items.map(it=>mesaItemRow(it, m)).join('')}
@@ -847,6 +863,13 @@ function renderMesaOrderModal(m, pedido){
     </div>
   `, {wide:true});
   document.getElementById('btnAddItem').onclick = ()=> openAddItemModal(m, pedido);
+  const selMozo = document.getElementById('fMozoAsignado');
+  if(selMozo) selMozo.onchange = async (e)=>{
+    const mozoId = e.target.value;
+    const mozoNombre = mozoId ? ((state.config.mozos||[]).find(mz=>mz.id===mozoId)||{}).nombre : null;
+    try{ await dbCap.doc('pedidos/'+pedido.id).update({mozoId: mozoId||null, mozoNombre}); toast('Mozo actualizado'); }
+    catch(err){ toast('No se pudo actualizar el mozo'); }
+  };
   const bpc = document.getElementById('btnPedirCuenta');
   if(bpc) bpc.onclick = async ()=>{
     try{ await dbCap.doc('mesas/'+m.id).update({estado:'cuenta_pedida'}); closeModal(); toast('Cuenta pedida'); }
@@ -1126,7 +1149,7 @@ function renderCocina(app){
   const allItems = [];
   abiertos.forEach(p=>{
     (p.items||[]).forEach(it=>{
-      if(it.estado!=='entregado') allItems.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id});
+      if(it.estado!=='entregado') allItems.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id, mozoNombre:p.mozoNombre});
     });
   });
   const filtered = allItems.filter(it=>(it.estacionId||'general')===state.ui.stationTab).sort((a,b)=>a.creado-b.creado);
@@ -1167,18 +1190,19 @@ function renderCocina(app){
 }
 function ticketCardHtml(it){
   const stColor = it.estado==='listo'?'ok':it.estado==='preparando'?'warn':'busy';
-  const canAdvance = it.estado!=='listo';
+  const puedeAvanzar = it.estado!=='listo' && (state.rol==='cocina' || state.rol==='admin');
   const puedeRetirar = it.estado==='listo' && (state.rol==='mozo' || state.rol==='admin');
   return `<div class="ticket">
-    <div class="ticket-head"><span class="ticket-mesa">Mesa ${esc(it.mesaNumero)}</span><span class="ticket-time">${fmtTime(it.creado)}</span></div>
+    <div class="ticket-head"><span class="ticket-mesa">Mesa ${esc(it.mesaNumero)}${it.mozoNombre?` <span class="ticket-mozo">· ${esc(it.mozoNombre)}</span>`:''}</span><span class="ticket-time">${fmtTime(it.creado)}</span></div>
     <div class="ticket-item">${it.cantidad}× ${esc(it.nombre)}</div>
     ${it.opcionesTexto?`<div class="ticket-opts">${esc(it.opcionesTexto)}</div>`:''}
     ${it.observaciones?`<div class="ticket-obs">"${esc(it.observaciones)}"</div>`:''}
     <span class="pill ${stColor}" style="align-self:flex-start">${ESTADO_LABEL[it.estado]}</span>
     <div class="ticket-actions">
-      ${canAdvance?`<button class="btn sm" data-advance="${it.pedidoId}|${it.id}">${it.estado==='pendiente'?'Empezar a preparar':'Marcar listo'}</button>`:
+      ${puedeAvanzar?`<button class="btn sm" data-advance="${it.pedidoId}|${it.id}">${it.estado==='pendiente'?'Empezar a preparar':'Marcar listo'}</button>`:
         puedeRetirar?`<button class="btn sm gold" data-retirar="${it.pedidoId}|${it.id}">Retirado ✓</button>`:
-        '<span class="pill neutral">Esperando al mozo</span>'}
+        it.estado==='listo'?'<span class="pill neutral">Esperando al mozo</span>':
+        '<span class="pill neutral">A cargo de cocina</span>'}
     </div>
   </div>`;
 }
@@ -1748,6 +1772,19 @@ function renderConfig(app){
     </div>
 
     <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Mozos</h3>
+      <p class="section-sub">Nombres del equipo de mozos, para poder elegir quién atiende cada mesa desde el Mapa y verlo en Cocina.</p>
+      <div id="mozosWrap" style="display:flex;flex-direction:column;gap:6px">
+        ${(cfg.mozos||[]).map((mz,i)=>`<div class="field-row" data-mzi="${i}" style="align-items:center">
+          <input class="mz-nombre" value="${esc(mz.nombre)}" style="flex:1">
+          <button class="iconbtn" data-delmozo="${i}">✕</button>
+        </div>`).join('')}
+      </div>
+      <button class="btn sm ghost" id="btnAddMozo" style="margin-top:8px">+ Agregar mozo</button>
+      <div style="margin-top:14px"><button class="btn sm" id="btnSaveMozos">Guardar mozos</button></div>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
       <h3 style="font-size:15px;margin-top:0">Cocina</h3>
       <div class="field-row">
         <div class="field"><label>Cantidad de cocineros</label><input type="number" min="0" id="fCocineros" value="${cfg.cocineros||0}"></div>
@@ -1835,6 +1872,36 @@ function renderConfig(app){
     catch(err){ toast('No se pudieron guardar los nombres'); }
   };
 
+  let mozos = JSON.parse(JSON.stringify(cfg.mozos||[]));
+  function rebindMozos(){
+    document.getElementById('mozosWrap').innerHTML = mozos.map((mz,i)=>`<div class="field-row" data-mzi="${i}" style="align-items:center">
+      <input class="mz-nombre" value="${esc(mz.nombre)}" style="flex:1">
+      <button class="iconbtn" data-delmozo="${i}">✕</button>
+    </div>`).join('');
+    document.querySelectorAll('[data-delmozo]').forEach(b=>b.onclick=()=>{
+      readMozosFromDOM();
+      mozos.splice(parseInt(b.dataset.delmozo),1);
+      rebindMozos();
+    });
+  }
+  function readMozosFromDOM(){
+    document.querySelectorAll('#mozosWrap [data-mzi]').forEach(el=>{
+      const i = parseInt(el.dataset.mzi);
+      mozos[i].nombre = el.querySelector('.mz-nombre').value;
+    });
+  }
+  rebindMozos();
+  document.getElementById('btnAddMozo').onclick = ()=>{
+    readMozosFromDOM();
+    mozos.push({id:uidLocal(), nombre:'Nuevo mozo'});
+    rebindMozos();
+  };
+  document.getElementById('btnSaveMozos').onclick = async ()=>{
+    readMozosFromDOM();
+    try{ await dbCap.doc('config/main').update({mozos}); toast('Mozos guardados'); }
+    catch(err){ toast('No se pudieron guardar los mozos'); }
+  };
+
   let estaciones = JSON.parse(JSON.stringify(cfg.estaciones||[]));
   function rebindEst(){
     document.getElementById('estWrap').innerHTML = estaciones.map((e,i)=>`<div class="field-row" data-ei="${i}" style="align-items:center">
@@ -1897,7 +1964,12 @@ async function loadDemoData(){
       {id:'zona-terraza', nombre:'Terraza', mapaUrl:null, mapaAssetId:null},
       {id:'zona-barra', nombre:'Barra', mapaUrl:null, mapaAssetId:null},
     ];
-    await dbCap.doc('config/main').update({cocineros:5, estaciones, zonas:zonasDemo});
+    const mozosDemo = [
+      {id:'mozo-1', nombre:'Lucía'},
+      {id:'mozo-2', nombre:'Martín'},
+      {id:'mozo-3', nombre:'Sofía'},
+    ];
+    await dbCap.doc('config/main').update({cocineros:5, estaciones, zonas:zonasDemo, mozos:mozosDemo});
 
     const productosDef = [
       // Calientes
@@ -1993,7 +2065,7 @@ async function loadDemoData(){
       itemFrom('Parrillada para 2', 1, 'pendiente', 'Punto de cocción: A punto'),
       itemFrom('Cerveza Artesanal IPA', 2, 'pendiente'),
     ];
-    const ped2 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[1].id, mesaNumero:mesaRefs[1].numero, personas:2, tenedores:2, items:items2, estado:'abierto', creado:Date.now()-5*60000, total:0});
+    const ped2 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[1].id, mesaNumero:mesaRefs[1].numero, personas:2, tenedores:2, items:items2, estado:'abierto', creado:Date.now()-5*60000, total:0, mozoId:'mozo-1', mozoNombre:'Lucía'});
     await dbCap.doc('mesas/'+mesaRefs[1].id).update({estado:'ocupada', pedidoId:ped2.id});
 
     // Mesa 6: en preparación
@@ -2002,7 +2074,7 @@ async function loadDemoData(){
       itemFrom('Empanadas (docena)', 1, 'preparando', '', 'Mitad carne, mitad jamón y queso'),
       itemFrom('Gaseosa línea Coca-Cola', 4, 'entregado')
     ];
-    const ped6 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[5].id, mesaNumero:mesaRefs[5].numero, personas:4, tenedores:4, items:items6, estado:'abierto', creado:Date.now()-20*60000, total:0});
+    const ped6 = await dbCap.collection('pedidos').add({mesaId:mesaRefs[5].id, mesaNumero:mesaRefs[5].numero, personas:4, tenedores:4, items:items6, estado:'abierto', creado:Date.now()-20*60000, total:0, mozoId:'mozo-2', mozoNombre:'Martín'});
     await dbCap.doc('mesas/'+mesaRefs[5].id).update({estado:'ocupada', pedidoId:ped6.id});
 
     // Mesa 10: cuenta pedida

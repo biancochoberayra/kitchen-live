@@ -96,6 +96,9 @@ body {
     font-size: 0.65em; font-weight: 800; padding: 3px 12px; border-radius: 100px;
     background: rgba(255,255,255,.1);
 }
+.mesa-block-mozo {
+    font-size: 0.65em; font-weight: 600; color: var(--text-muted);
+}
 .mesa-block-items { display: flex; flex-direction: column; gap: 2px; padding: 10px; }
 
 /* --- INSIGNIA DE TIPO DE PLATO --- */
@@ -230,7 +233,7 @@ function computeBoard(){
       const mesaGrupos = gruposPorMesa[it.estado];
       if(!mesaGrupos) return;
       const key = p.mesaNumero;
-      if(!mesaGrupos[key]) mesaGrupos[key] = { mesaNumero: p.mesaNumero, items: [] };
+      if(!mesaGrupos[key]) mesaGrupos[key] = { mesaNumero: p.mesaNumero, mozoNombre: p.mozoNombre, items: [] };
       mesaGrupos[key].items.push({
         pedidoId: p.id,
         itemId: it.id,
@@ -268,14 +271,28 @@ function advanceItem(pedidoId, itemId, colKey){
   render();
 }
 
+// Clic derecho: retrocede un ítem un paso, por si se tocó por accidente.
+function retreatItem(pedidoId, itemId, colKey){
+  const prevEstado = colKey==='preparando' ? 'pendiente' : colKey==='listo' ? 'preparando' : null;
+  if(!prevEstado) return;
+  const db = loadDB();
+  const pedido = db.pedidos && db.pedidos[pedidoId];
+  if(!pedido) return;
+  pedido.items = (pedido.items||[]).map(it=> it.id===itemId ? {...it, estado:prevEstado} : it);
+  saveDB(db);
+  render();
+}
+
 const TIPO_LABEL = { entrada: 'Entrada', comida: 'Comida', postre: 'Postre' };
 
 function tileHtml(entry, colKey){
   const mins = minutosDesde(entry.creado);
   const urgent = colKey==='pendiente' && mins >= URGENTE_MIN;
   const tappable = colKey==='pendiente' || colKey==='preparando';
-  const hint = colKey==='pendiente' ? 'Toca: empezar a preparar' : colKey==='preparando' ? 'Toca: marcar listo' : 'Esperando al mozo';
-  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" ${tappable?`data-pedido-id="${entry.pedidoId}" data-item-id="${entry.itemId}" data-col="${colKey}"`:''}>
+  const hint = colKey==='pendiente' ? 'Toca: empezar a preparar' :
+    colKey==='preparando' ? 'Toca: marcar listo · clic derecho: volver' :
+    'Esperando al mozo · clic derecho: volver';
+  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" data-pedido-id="${entry.pedidoId}" data-item-id="${entry.itemId}" data-col="${colKey}">
     <span class="tipo-badge tipo-${entry.tipo}">${TIPO_LABEL[entry.tipo]}</span>
     <div class="item-name">${entry.cantidad}× ${esc(entry.nombre)}</div>
     ${entry.opcionesTexto?`<div class="item-opts">${esc(entry.opcionesTexto)}</div>`:''}
@@ -290,7 +307,7 @@ function tileHtml(entry, colKey){
 function blockHtml(grupo, colKey){
   return `<div class="mesa-block">
     <div class="mesa-block-head">
-      <span><i class="fa-solid fa-utensils"></i> Mesa ${esc(grupo.mesaNumero)}</span>
+      <span><i class="fa-solid fa-utensils"></i> Mesa ${esc(grupo.mesaNumero)}${grupo.mozoNombre?` <span class="mesa-block-mozo">· ${esc(grupo.mozoNombre)}</span>`:''}</span>
       <span class="mesa-block-count">${grupo.items.length}</span>
     </div>
     <div class="mesa-block-items">
@@ -339,6 +356,12 @@ function render(){
 
   document.querySelectorAll('.tile.tappable').forEach(el=>{
     el.addEventListener('click', ()=> advanceItem(el.dataset.pedidoId, el.dataset.itemId, el.dataset.col));
+  });
+  document.querySelectorAll('.tile').forEach(el=>{
+    el.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      retreatItem(el.dataset.pedidoId, el.dataset.itemId, el.dataset.col);
+    });
   });
 }
 
