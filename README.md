@@ -15,6 +15,12 @@ Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar dato
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
 productos, una caja abierta y pedidos en distintos estados.
 
+La primera vez que se abre `kitchen-live.html` aparece un **tutorial** paso a
+paso que explica cada módulo del sistema (no vuelve a aparecer solo después).
+Se puede reabrir en cualquier momento, junto con un **acceso rápido** con la
+explicación de todas las funciones en una sola lista, desde el botón "Ayuda /
+Tutorial" al pie de la barra lateral.
+
 ## Páginas del sistema
 
 | Archivo | Qué es |
@@ -44,9 +50,14 @@ cocina y no tiene este tratamiento mobile.
   su propio plano, útil para restaurantes grandes. Tiene un buscador de
   **carga rápida** para abrir una mesa por número sin buscarla visualmente.
   En pantallas chicas, el rol y la navegación se guardan en un botón
-  minimizado en la esquina para dejarle más espacio al mapa.
+  minimizado en la esquina para dejarle más espacio al mapa. Una vez que se
+  pide la cuenta de una mesa, quitar un ítem de la comanda pasa a requerir
+  modo administrador (antes de pedir la cuenta, el mozo puede seguir
+  quitando ítems pendientes libremente).
 - **Cocina** — comandas en vivo por estación, avance de estado
-  (pendiente → preparando → listo).
+  (pendiente → preparando → listo). Un ítem "listo" muestra un botón
+  "Retirado ✓" para el mozo (o el admin), que lo marca como entregado sin
+  pasar por la mesa.
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
 - **Stock** — contador de stock por producto: botones +/− para ajustar a
