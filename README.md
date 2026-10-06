@@ -66,20 +66,16 @@ cocina y no tiene este tratamiento mobile.
   puede hacer en esta sección.
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
-- **Stock** — contador +/− para **todo el catálogo**, no solo los productos
-  con un límite diario configurado (los que no tienen límite muestran "Sin
-  límite" y el contador funciona igual, como registro de movimientos). Las
-  ventas y anulaciones lo ajustan solas. Incluye una tabla de **más vendido
-  por categoría**, calculada para la fecha elegida a partir de las ventas
-  del día, además del historial de movimientos y el aviso de agotados.
+- **Stock** — contador de stock por producto: botones +/− para ajustar a
+  mano, además del descuento/restitución automático por ventas y
+  anulaciones. Historial de movimientos por fecha y aviso de agotados.
 - **Caja** — apertura con monto inicial, cobro de mesas (con pago dividido
   en varios medios de pago), movimientos manuales de ingreso/egreso, cierre
   con monto real contado y diferencia.
 - **Cierre** — resumen del día (ventas, productos vendidos, personas,
-  cubiertos, caja, cancelados), exportable a **Excel** (`.xls`, con
-  secciones en colores distintos, filas con ancho/alto propio, medios de
-  pago resaltados con su propio color y el producto más vendido destacado —
-  no un CSV plano). Se puede **confirmar** un cierre: a partir de ahí, esa
+  cubiertos, caja, cancelados), exportable a CSV (con secciones separadas
+  por mesa, pagos, items vendidos y resumen de productos, cada dato en su
+  propia celda). Se puede **confirmar** un cierre: a partir de ahí, esa
   fecha queda bloqueada (no se puede tocar el stock).
 - **Config** — zonas del salón (nombre + plano por zona), nombres de
   **mozos** (para asignarlos a las mesas), cantidad de cocineros y
