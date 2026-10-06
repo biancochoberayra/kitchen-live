@@ -1,5 +1,90 @@
 # kitchen-live
 Hola, Este documento contiene prompts ordenados por fases para construir RestaurantFlow de manera progresiva. Se recomienda usar un prompt por vez, revisar el resultado y recién después continuar con el siguiente.
+
+ESTADO REAL DE LA IMPLEMENTACIÓN (actualizado)
+
+Este documento fue el plan original pedido para RestaurantFlow como un sistema completo cliente-servidor (FastAPI + PostgreSQL, login real, WebSockets, instalación en red local). Lo que efectivamente se construyó y funciona hoy es una versión reducida pensada para demostrar el flujo operativo completo con datos de prueba, sin backend: corre entera en el navegador y guarda todo en localStorage. Esta sección resume, módulo por módulo, qué tiene realmente el sistema. El resto del documento (fases, prompts, checklist original) se conserva como el plan original de referencia; no todas las fases se implementaron tal cual están descriptas ahí abajo.
+
+Archivos del sistema:
+- kitchen-live.html: la aplicación principal. Todo el flujo operativo (Mapa, Cocina, Productos, Stock, Caja, Cierre, Config).
+- dashboard.html: panel de KPIs de solo lectura (ventas del día, ocupación de mesas, pedidos pendientes, producto más vendido, personas atendidas, ventas por método de pago, estado de cocina, stock bajo).
+- pantalla-cocina.html: pantalla grande tipo tablero de cocina (KDS), 3 columnas (Pendiente / En preparación / Listo). Clic izquierdo avanza un ítem un paso; clic derecho lo retrocede un paso, por si se tocó por accidente.
+- a.html, cocina-ordu.html: prototipos previos, se mantienen solo como referencia histórica.
+
+Las tres páginas activas leen y escriben la misma base de datos en localStorage (clave restaurantFlowLocalDB) y están enlazadas entre sí.
+
+Mapa · Mozo:
+- Plano del salón con mesas (libre / ocupada / cuenta pedida); tocar una mesa para abrir pedido o cobrar.
+- Zonas: el salón se puede dividir en varias zonas (ej. interior, terraza, planta alta), cada una con su propio plano, con flechas ‹ › para cambiar de zona — pensado para restaurantes grandes.
+- "Carga rápida": campo para abrir una mesa directamente por su número, sin buscarla en el plano.
+- Se puede elegir qué mozo (de una lista cargada en Config) está atendiendo cada mesa, al abrirla o en cualquier momento mientras está ocupada.
+- Tomar pedido con productos, grupos de opciones (incluye un botón "sin elegir" para saltear una opción obligatoria) y observaciones libres.
+- Cancelar un pedido completo con motivo (requiere modo admin).
+- Una vez pedida la cuenta de una mesa, quitar un ítem de la comanda pasa a requerir modo admin (antes de pedir la cuenta, cualquier mozo puede quitar ítems pendientes libremente).
+- En pantallas chicas, el rol y la navegación quedan colapsados en un botón minimizado en la esquina, para dejarle más espacio al mapa.
+
+Cocina:
+- Comandas en vivo agrupadas por estación, con el mozo asignado a cada mesa visible en cada ticket.
+- Avanzar el estado de un ítem (pendiente → preparando → listo) solo lo puede hacer el rol Cocina o el Administrador.
+- El rol Mozo no puede avanzar estados de cocina — solo ve la leyenda "A cargo de cocina". Su única acción posible en esta sección es marcar "Retirado ✓" cuando un ítem queda listo (lo pasa a entregado), sin tener que ir hasta la mesa.
+- No hay asignación de una tarea a un cocinero individual ni bloqueo de "dos cocineros tomando la misma tarea" (eso estaba en el plan original de la Fase 8 y no se implementó).
+- No usa WebSockets: la sincronización entre pestañas/pantallas es por lectura de localStorage, no en tiempo real instantáneo.
+
+Productos:
+- Catálogo con categorías, precio actual + historial de cambios de precio.
+- Grupos de opciones (únicas o múltiples), obligatorias u opcionales, con precio extra por opción, y un interruptor "botón sin elegir" para que una opción obligatoria se pueda saltear.
+- Activar/desactivar productos. Edición solo en modo administrador.
+- Buscador y filtro por categoría al agregar un producto a un pedido.
+
+Stock:
+- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto.
+- Las ventas y anulaciones descuentan o restituyen el stock automáticamente.
+- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados.
+
+Caja:
+- Apertura con monto inicial.
+- Cobro de mesas con pago dividido en varios medios de pago.
+- Movimientos manuales de ingreso/egreso.
+- Cierre con monto real contado y cálculo de diferencia contra lo esperado.
+
+Cierre del día:
+- Resumen: ventas totales, mesas cerradas, pedidos cancelados, personas, cubiertos, caja del día, productos vendidos, detalle por mesa.
+- Exportable a CSV, con secciones separadas en columnas propias (ventas por mesa, detalle de pagos, items vendidos, resumen de productos, cancelados) en vez de texto combinado en una sola celda.
+- Se puede "confirmar" un cierre: a partir de ahí esa fecha queda bloqueada y no se puede tocar el stock.
+- No incluye gastos (ver más abajo) ni exportación a PDF.
+
+Config (solo modo admin):
+- Zonas del salón: nombre + plano propio por zona.
+- Mozos: nombres del equipo, para poder asignarlos a las mesas.
+- Cantidad de cocineros y estaciones de cocina.
+- PIN de administrador.
+- Carga y borrado de datos de prueba.
+
+Roles y acceso:
+- Selector de rol en la barra lateral: Mozo, Cocina, Caja, Encargado de stock, Administrador. Filtra qué secciones ve cada uno y, dentro de Cocina y de una comanda con cuenta pedida, qué acciones puede tocar.
+- El rol es solo una preferencia de interfaz, no un login. El único control de acceso real es el "modo admin" (PIN, por defecto 1234), que protege productos, config y acciones sensibles (cancelar un pedido, confirmar un cierre, quitar ítems con cuenta pedida).
+
+Ayuda dentro de la app:
+- Tutorial paso a paso (12 pasos) que se muestra solo, una vez, la primera vez que se abre kitchen-live.html.
+- Panel de "Acceso rápido" con la misma explicación en formato lista, reabrible en cualquier momento desde el botón "Ayuda / Tutorial" de la barra lateral.
+
+Responsive:
+- kitchen-live.html y dashboard.html: en pantallas chicas, el rol y la navegación se colapsan en un menú tipo cajón detrás de un botón flotante en la esquina; las tablas anchas se desplazan horizontalmente en vez de achicarse.
+- pantalla-cocina.html está pensada para una pantalla grande fija y no tiene este tratamiento mobile.
+
+Lo que NO se implementó (fuera de alcance de esta versión, a propósito):
+- Backend real (FastAPI) ni base de datos externa (PostgreSQL): no hay servidor, todo vive en localStorage del navegador del dispositivo.
+- Login con usuarios reales, contraseñas o JWT: el "rol" es una preferencia de UI, y el "modo admin" es un PIN simple sin backend.
+- WebSockets / tiempo real instantáneo entre dispositivos.
+- Asignación de una tarea de cocina a un cocinero específico, ni bloqueo de tareas tomadas por dos cocineros a la vez.
+- Gastos, proveedores y compras: se llegaron a implementar en una etapa intermedia del proyecto y después se eliminaron a pedido explícito, junto con Proveedores, para simplificar Stock a un contador.
+- Estados de mesa "reservada", "en limpieza" o "deshabilitada" (solo existen libre / ocupada / cuenta pedida).
+- Instalación en red local, despliegue en producción, backups.
+- Suite de pruebas automatizada formal (cada funcionalidad se probó manualmente con Playwright durante el desarrollo, sin dejar los tests en el repositorio).
+- Manual técnico y manual de usuario separados (hay un README.md y el tutorial/ayuda dentro de la app, pero no documentación formal dividida).
+
+A partir de acá, el resto del documento es el plan original tal como se escribió al principio del proyecto. Se conserva como referencia histórica de lo que se pidió, aunque el resultado final haya tomado un camino distinto (más chico, sin backend, con algunas funciones extra que no estaban pedidas como zonas, carga rápida y asignación de mozos).
+
 Reglas generales para usar todos los prompts
 •	No generar todo el sistema de una sola vez: trabajar por módulos y fases.
 •	No cambiar nombres de archivos, variables, rutas o tablas existentes sin explicar primero el motivo.
@@ -669,27 +754,37 @@ Orden recomendado de uso
 •	Guardar una copia de seguridad antes de cambiar la base de datos.
 •	Trabajar en una rama Git por módulo o fase.
 •	Probar primero en una PC local y luego desde otro dispositivo de la red.
-Checklist final del sistema
-•	Login funcionando.
-•	Roles y permisos funcionando.
-•	Productos administrables.
-•	Historial de precios funcionando.
-•	Opciones y especificaciones funcionando.
-•	Mesas configurables.
-•	Mapa del restaurante cargable.
-•	Pedidos desde mesa.
-•	Comandas digitales.
-•	Cocina en tiempo real.
-•	Cocineros configurables.
-•	Pagos manuales.
-•	Caja y cierres.
-•	Stock diario.
-•	Gastos y compras.
-•	Cantidad de productos vendidos.
-•	Cantidad de personas.
-•	Cantidad de tenedores.
-•	Reportes.
-•	Backups.
-•	Pruebas.
-•	Instalación en red local.
-•	Documentación.
+Checklist final del sistema (original)
+
+Checklist final del sistema — ESTADO REAL
+❌ Login funcionando — no implementado. Hay un selector de rol (solo UI) y un modo admin con PIN simple, no es un login real.
+⚠️ Roles y permisos funcionando — el rol filtra qué vistas se ven y qué se puede tocar en Cocina y en una comanda con cuenta pedida; no es un control de acceso real (sin backend que lo imponga).
+✅ Productos administrables.
+✅ Historial de precios funcionando.
+✅ Opciones y especificaciones funcionando (incluye un botón "sin elegir" para opciones obligatorias).
+✅ Mesas configurables (agregar, mover y eliminar desde el Mapa en modo admin).
+✅ Mapa del restaurante cargable — ampliado con zonas: varios planos, uno por zona, con flechas para cambiar entre ellas.
+✅ Pedidos desde mesa.
+✅ Comandas digitales.
+⚠️ Cocina en tiempo real — la sincronización es por lectura de localStorage, no por WebSockets; no hay asignación de tareas a un cocinero individual.
+✅ Cocineros configurables (cantidad y estaciones; no asignación individual de tareas).
+✅ Pagos manuales (incluye pago dividido en varios medios por mesa).
+✅ Caja y cierres.
+✅ Stock diario — rediseñado como un contador +/- manual por producto, no como jornada con apertura/cierre.
+❌ Gastos y compras — se implementó en una etapa intermedia y se eliminó después a pedido explícito, junto con Proveedores.
+✅ Cantidad de productos vendidos.
+✅ Cantidad de personas.
+✅ Cantidad de tenedores.
+✅ Reportes — Cierre del día (exportable a CSV) y Dashboard.
+❌ Backups — no aplica: no hay backend ni servidor, los datos viven solo en el localStorage de ese navegador.
+⚠️ Pruebas — probado manualmente con Playwright durante el desarrollo de cada funcionalidad; no hay una suite automatizada formal en el repositorio.
+❌ Instalación en red local — no aplica: es una app estática que se abre directo en el navegador (o con un servidor HTTP simple local).
+⚠️ Documentación — hay un README.md y un tutorial/acceso rápido dentro de la app; no hay manual técnico y manual de usuario separados.
+
+Funcionalidades agregadas que no estaban en el plan original
+✅ Zonas del salón: varios planos, uno por zona, con selector de flechas.
+✅ "Carga rápida": abrir una mesa por número sin buscarla en el plano.
+✅ Asignación de mozo por mesa, visible en los tickets de Cocina.
+✅ Tutorial paso a paso y panel de "Acceso rápido" dentro de la app.
+✅ Diseño responsive con menú colapsable en mobile (kitchen-live.html y dashboard.html).
+✅ Clic derecho en pantalla-cocina.html para deshacer un paso por error.
