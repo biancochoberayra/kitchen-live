@@ -37,9 +37,10 @@ Productos:
 - Buscador y filtro por categoría al agregar un producto a un pedido.
 
 Stock:
-- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto.
-- Las ventas y anulaciones descuentan o restituyen el stock automáticamente.
-- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados.
+- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto, aplicado a TODO el catálogo (antes solo a los productos con un límite diario configurado; los que no tienen límite muestran "Sin límite" y el contador igual registra sus movimientos).
+- Las ventas y anulaciones descuentan o restituyen el stock automáticamente, para cualquier producto, tenga o no un límite diario configurado.
+- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados (esto último solo aplica a productos con límite configurado).
+- Tabla de "más vendido por categoría": para la fecha elegida, calcula qué producto fue el más vendido dentro de cada categoría, a partir de los movimientos de stock de tipo venta.
 
 Caja:
 - Apertura con monto inicial.
@@ -49,7 +50,7 @@ Caja:
 
 Cierre del día:
 - Resumen: ventas totales, mesas cerradas, pedidos cancelados, personas, cubiertos, caja del día, productos vendidos, detalle por mesa.
-- Exportable a CSV, con secciones separadas en columnas propias (ventas por mesa, detalle de pagos, items vendidos, resumen de productos, cancelados) en vez de texto combinado en una sola celda.
+- Exportable a Excel (.xls), no a CSV plano: secciones con su propio color de fondo (ventas por mesa, detalle de pagos, items vendidos, resumen de productos, cancelados), encabezado con tamaños de fuente más grandes, filas con rayado alternado (zebra), medios de pago resaltados con un color propio (verde para efectivo, azul para tarjetas, violeta para MercadoPago) y el producto más vendido del día destacado en color.
 - Se puede "confirmar" un cierre: a partir de ahí esa fecha queda bloqueada y no se puede tocar el stock.
 - No incluye gastos (ver más abajo) ni exportación a PDF.
 
@@ -775,7 +776,7 @@ Checklist final del sistema — ESTADO REAL
 ✅ Cantidad de productos vendidos.
 ✅ Cantidad de personas.
 ✅ Cantidad de tenedores.
-✅ Reportes — Cierre del día (exportable a CSV) y Dashboard.
+✅ Reportes — Cierre del día (exportable a Excel con colores y tamaños, no CSV plano) y Dashboard.
 ❌ Backups — no aplica: no hay backend ni servidor, los datos viven solo en el localStorage de ese navegador.
 ⚠️ Pruebas — probado manualmente con Playwright durante el desarrollo de cada funcionalidad; no hay una suite automatizada formal en el repositorio.
 ❌ Instalación en red local — no aplica: es una app estática que se abre directo en el navegador (o con un servidor HTTP simple local).
