@@ -30,6 +30,26 @@
   --danger-bg:rgba(239,68,68,.16);
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
 }
+:root[data-theme="light"]{
+  --ink:#0f172a;
+  --ink-soft:#64748b;
+  --paper:#f1f5f9;
+  --paper-raise:#ffffff;
+  --line:#e2e8f0;
+  --brand:#0ea5e9;
+  --brand-2:#0284c7;
+  --gold:#d97706;
+  --gold-soft:rgba(217,119,6,.14);
+  --ok:#16a34a;
+  --ok-bg:rgba(22,163,74,.12);
+  --warn:#d97706;
+  --warn-bg:rgba(217,119,6,.12);
+  --busy:#0284c7;
+  --busy-bg:rgba(2,132,199,.12);
+  --danger:#dc2626;
+  --danger-bg:rgba(220,38,38,.12);
+  --shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 24px -12px rgba(15,23,42,.18);
+}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
@@ -234,6 +254,13 @@ tr:last-child td{border-bottom:none}
   table{min-width:480px}
 }
 </style>
+<script>
+  // Aplica el tema guardado antes de pintar, para evitar el parpadeo del tema por defecto.
+  try{
+    const t = localStorage.getItem('restaurantFlowTema');
+    if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  }catch(e){}
+</script>
 </head>
 <body>
 
@@ -289,6 +316,7 @@ const ROLES = {
   stock: {label:'Encargado de stock', views:['productos','stock']},
 };
 const ROL_KEY = 'restaurantFlowRol';
+const TEMA_KEY = 'restaurantFlowTema';
 const TUTORIAL_SEEN_KEY = 'restaurantFlowTutorialSeen';
 const TUTORIAL_STEPS = [
   {icon:'fa-hand-sparkles', titulo:'Bienvenido a RestaurantFlow', texto:'Sistema de gestión de restaurante que corre 100% en tu navegador, sin backend: los datos se guardan en este dispositivo (localStorage). Para ver todo funcionando de una: activá el modo admin (abajo a la izquierda, PIN 1234) y andá a Config → Datos de prueba → Cargar datos de prueba.'},
@@ -298,11 +326,11 @@ const TUTORIAL_STEPS = [
   {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara. Cuando un ítem queda Listo, el mozo (o el admin) ve ahí mismo un botón "Retirado ✓" para marcarlo como entregado sin tener que ir a buscarlo a la mesa.'},
   {icon:'fa-tv', titulo:'Pantalla de cocina', texto:'Un tablero grande (enlace "Pantalla cocina" abajo) pensado para tener siempre a la vista en la cocina, con 3 columnas: Pendiente / Preparando / Listo. Tocar un ticket también avanza su estado.'},
   {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y stock diario por producto. Cada cambio de precio queda guardado en un historial.'},
-  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− por producto para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
+  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− para todo el catálogo (tengan o no un límite diario configurado) para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
   {icon:'fa-cash-register', titulo:'Caja', texto:'Abrís la caja con un monto inicial, cobrás las mesas (se puede dividir el pago en varios medios) y registrás movimientos manuales de ingreso o egreso. Al cerrar, comparás el monto contado contra el esperado.'},
-  {icon:'fa-chart-pie', titulo:'Cierre del día', texto:'Resumen del día: ventas, productos vendidos, personas, cubiertos, caja y pedidos cancelados. Se puede exportar todo a CSV, y "confirmar" el cierre para bloquear el stock de esa fecha.'},
-  {icon:'fa-gear', titulo:'Config', texto:'Acá se arman las zonas del salón (cada una con su plano), la cantidad de cocineros y estaciones, el PIN de administrador, y se cargan o borran los datos de prueba.'},
-  {icon:'fa-chart-line', titulo:'Dashboard', texto:'Un panel de solo lectura (enlace "Dashboard" abajo) con los KPIs del día: ventas, ocupación de mesas, productos más vendidos, métodos de pago y stock bajo.'},
+  {icon:'fa-chart-pie', titulo:'Cierre del día', texto:'Resumen del día: ventas, productos vendidos, personas, cubiertos, caja y pedidos cancelados. Se puede exportar todo a Excel (con colores y secciones bien separadas, no un CSV plano), y "confirmar" el cierre para bloquear el stock de esa fecha.'},
+  {icon:'fa-gear', titulo:'Config', texto:'Acá se arman las zonas del salón (cada una con su plano), los mozos, la cantidad de cocineros y estaciones, el PIN de administrador, el tema oscuro/claro, y se cargan o borran los datos de prueba.'},
+  {icon:'fa-chart-line', titulo:'Dashboard', texto:'Un panel de solo lectura (enlace "Dashboard" abajo) con los KPIs del día (ventas, ocupación, productos más vendidos, métodos de pago, stock bajo) y estadísticas históricas: mejor día de ventas y el producto más vendido de la última semana, mes y año.'},
 ];
 const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
 const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
@@ -320,6 +348,7 @@ let state = {
   historialPrecios: [],
   caja: null,
   rol: localStorage.getItem(ROL_KEY) || 'admin',
+  tema: localStorage.getItem(TEMA_KEY) || 'dark',
   loaded: {config:false, mesas:false, productos:false, pedidos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false},
   ui: {
     stationTab: null,
@@ -437,6 +466,7 @@ const assetsCap = {
 
 /* ---------------- BOOT ---------------- */
 async function boot(){
+  aplicarTema(state.tema);
   const hashView = location.hash.slice(1);
   if(VIEWS.some(v=>v.id===hashView)) state.view = hashView;
   renderNav();
@@ -530,6 +560,13 @@ function mozoOptionsHtml(selectedId){
   const mozos = state.config.mozos || [];
   return `<option value="">Sin asignar</option>` +
     mozos.map(mz=>`<option value="${mz.id}" ${mz.id===selectedId?'selected':''}>${esc(mz.nombre)}</option>`).join('');
+}
+
+/* ---------------- TEMA ---------------- */
+function aplicarTema(tema){
+  state.tema = tema;
+  document.documentElement.setAttribute('data-theme', tema==='light'?'light':'dark');
+  localStorage.setItem(TEMA_KEY, tema);
 }
 
 /* ---------------- MOBILE MENU (off-canvas) ---------------- */
@@ -927,7 +964,7 @@ function mesaItemRow(it, m){
 // delta positivo = suma stock (entrada, anulación), negativo = resta (venta, ajuste a la baja).
 async function registrarMovimientoStock(productoId, productoNombre, tipo, delta, motivo){
   const prod = state.productos.find(p=>p.id===productoId);
-  if(!prod || prod.stockDiario==null) return;
+  if(!prod) return;
   const nuevo = Math.max(0, (prod.stockRestante||0) + delta);
   try{
     await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo});
@@ -1064,9 +1101,7 @@ function openConfigureItemModal(m, pedido, prod){
     try{
       const newItems = [...(pedido.items||[]), item];
       await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
-      if(prod.stockDiario!=null){
-        await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
-      }
+      await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
       toast('Producto agregado a la comanda');
       closeModal();
       setTimeout(()=>{
@@ -1390,14 +1425,14 @@ function openProductEditor(prod){
 const TIPO_MOV_LABEL = {ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
 function renderStock(app){
   const fecha = state.ui.stockDate || todayStr();
-  const conStock = state.productos.filter(p=>p.stockDiario!=null);
-  const agotados = conStock.filter(p=>(p.stockRestante||0)<=0);
+  const todosProductos = state.productos.filter(p=>p.activo!==false);
+  const agotados = todosProductos.filter(p=>p.stockDiario!=null && (p.stockRestante||0)<=0);
   const movsDia = state.movimientosStock.filter(mv=>dateOf(mv.creado)===fecha).sort((a,b)=>b.creado-a.creado);
   const bloqueadoHoy = !!cierreConfirmado(todayStr());
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador de stock por producto. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
+      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador por producto, para todo el catálogo. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
     </div>
     ${agotados.length>0?`<div class="card" style="padding:14px;margin-bottom:16px;border-color:var(--danger)">
       <b style="color:var(--danger)">${agotados.length} producto(s) agotado(s):</b>
@@ -1405,13 +1440,13 @@ function renderStock(app){
     </div>`:''}
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table>
-        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Contador</th><th></th></tr></thead>
         <tbody>
-          ${conStock.length===0?'<tr><td colspan="5"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
-            conStock.map(p=>`<tr>
-              <td><b>${esc(p.nombre)}</b></td>
+          ${todosProductos.length===0?'<tr><td colspan="5"><div class="empty">Todavía no hay productos cargados.</div></td></tr>':
+            todosProductos.map(p=>`<tr>
+              <td><b>${esc(p.nombre)}</b><div class="prod-meta">${esc(p.categoria||'General')}</div></td>
               <td>${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</td>
-              <td>${p.stockDiario}</td>
+              <td>${p.stockDiario!=null?p.stockDiario:'<span class="prod-meta">Sin límite</span>'}</td>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
                   <button class="iconbtn" data-count="${p.id}|-1" ${bloqueadoHoy?'disabled':''}>−</button>
@@ -1419,7 +1454,7 @@ function renderStock(app){
                   <button class="iconbtn" data-count="${p.id}|1" ${bloqueadoHoy?'disabled':''}>+</button>
                 </div>
               </td>
-              <td>${(p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
+              <td>${p.stockDiario!=null && (p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -1613,7 +1648,7 @@ function renderCierre(app){
       <div><h2 class="section-title">Cierre del día</h2><p class="section-sub">Ventas, productos vendidos, personas y cubiertos.</p></div>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${fecha}"></div>
-        <button class="btn ghost" id="btnExportarCSV">Exportar CSV</button>
+        <button class="btn ghost" id="btnExportarCSV">Exportar Excel</button>
       </div>
     </div>
     ${confirmado?`<div class="card" style="padding:12px 16px;margin:14px 0;border-color:var(--ok);display:flex;align-items:center;gap:10px">
@@ -1664,7 +1699,7 @@ function renderCierre(app){
     </div>
   `;
   document.getElementById('fFecha').onchange = (e)=>{ state.ui.cierreDate = e.target.value; render(); };
-  document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreCSV(fecha, cerrados, cancelados, totalVentas);
+  document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreExcel(fecha, cerrados, cancelados, totalVentas);
   const rb = document.getElementById('btnResetStock');
   if(rb) rb.onclick = async ()=>{
     if(!confirm('¿Reiniciar el stock de todos los productos?')) return;
@@ -1691,55 +1726,122 @@ function renderCierre(app){
     }catch(e){ toast('No se pudo confirmar el cierre'); }
   };
 }
-function csvEscape(v){
-  v = String(v==null?'':v);
-  if(/[",\n]/.test(v)) v = '"'+v.replace(/"/g,'""')+'"';
-  return v;
+/* ---- Exportación a Excel (.xls), con colores y tamaños reales por celda ---- */
+function xlsEsc(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-function exportarCierreCSV(fecha, cerrados, cancelados, totalVentas){
+function xlsTd(value, opts={}){
+  const st = [`border:1px solid ${opts.border||'#cbd5e1'}`, 'padding:6px 11px', "font-family:Calibri,Arial,sans-serif"];
+  st.push(`font-size:${opts.size||12}px`);
+  if(opts.bg) st.push(`background:${opts.bg}`);
+  if(opts.color) st.push(`color:${opts.color}`);
+  if(opts.bold) st.push('font-weight:bold');
+  st.push(`text-align:${opts.align||'left'}`);
+  const attrs = opts.colspan?` colspan="${opts.colspan}"`:'';
+  return `<td style="${st.join(';')}"${attrs}>${xlsEsc(value)}</td>`;
+}
+function xlsSectionRow(texto, colspan, bg){
+  return `<tr>${xlsTd(texto, {bg, color:'#ffffff', bold:true, size:15, colspan, border:bg})}</tr>`;
+}
+function xlsHeadRow(cols){
+  return `<tr>${cols.map(c=>xlsTd(c, {bg:'#e2e8f0', color:'#0f172a', bold:true, size:12, border:'#94a3b8'})).join('')}</tr>`;
+}
+const MEDIO_COLOR = {
+  'Efectivo': {bg:'#dcfce7', color:'#166534'},
+  'Tarjeta débito': {bg:'#dbeafe', color:'#1e40af'},
+  'Tarjeta crédito': {bg:'#dbeafe', color:'#1e40af'},
+  'MercadoPago': {bg:'#ede9fe', color:'#5b21b6'},
+  'Mixto': {bg:'#fef3c7', color:'#92400e'},
+};
+function medioEstilo(medio){
+  return MEDIO_COLOR[medio] || {bg:'#f1f5f9', color:'#334155'};
+}
+function exportarCierreExcel(fecha, cerrados, cancelados, totalVentas){
   const rows = [];
-  rows.push(['Cierre del día', fecha]);
-  rows.push(['Ventas totales', totalVentas]);
-  rows.push([]);
+  rows.push(`<tr>${xlsTd('Cierre del día', {bg:'#0f172a', color:'#ffffff', bold:true, size:21, colspan:7, border:'#0f172a'})}</tr>`);
+  rows.push(`<tr>${xlsTd(fecha, {bg:'#1e293b', color:'#94a3b8', bold:true, size:14, colspan:3, border:'#1e293b'})}${xlsTd('Ventas totales: '+fmtMoney(totalVentas), {bg:'#1e293b', color:'#38bdf8', bold:true, size:15, colspan:4, align:'right', border:'#1e293b'})}</tr>`);
+  rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
 
-  rows.push(['VENTAS POR MESA']);
-  rows.push(['Mesa','Personas','Tenedores','Medio de pago','Total','Hora cierre']);
-  cerrados.forEach(p=>rows.push([p.mesaNumero, p.personas, p.tenedores, p.medioPago||'', p.total, fmtTime(p.cerrado)]));
-  rows.push([]);
+  rows.push(xlsSectionRow('VENTAS POR MESA', 6, '#0ea5e9'));
+  rows.push(xlsHeadRow(['Mesa','Personas','Tenedores','Medio de pago','Total','Hora cierre']));
+  cerrados.forEach((p,i)=>{
+    const zebra = i%2===0?'#ffffff':'#f8fafc';
+    const me = medioEstilo(p.medioPago);
+    rows.push(`<tr>
+      ${xlsTd(p.mesaNumero, {bg:zebra, bold:true})}
+      ${xlsTd(p.personas, {bg:zebra, align:'right'})}
+      ${xlsTd(p.tenedores, {bg:zebra, align:'right'})}
+      ${xlsTd(p.medioPago||'', {bg:me.bg, color:me.color, bold:true})}
+      ${xlsTd(p.total, {bg:zebra, align:'right', bold:true})}
+      ${xlsTd(fmtTime(p.cerrado), {bg:zebra})}
+    </tr>`);
+  });
+  rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
 
-  rows.push(['DETALLE DE PAGOS']);
-  rows.push(['Mesa','Medio de pago','Monto']);
+  rows.push(xlsSectionRow('DETALLE DE PAGOS', 3, '#f59e0b'));
+  rows.push(xlsHeadRow(['Mesa','Medio de pago','Monto']));
+  let i2=0;
   cerrados.forEach(p=>{
     const pagos = (p.pagos&&p.pagos.length) ? p.pagos : [{medio:p.medioPago||'', monto:p.total}];
-    pagos.forEach(pg=>rows.push([p.mesaNumero, pg.medio, pg.monto]));
+    pagos.forEach(pg=>{
+      const zebra = i2%2===0?'#ffffff':'#f8fafc'; i2++;
+      const me = medioEstilo(pg.medio);
+      rows.push(`<tr>${xlsTd(p.mesaNumero,{bg:zebra,bold:true})}${xlsTd(pg.medio,{bg:me.bg,color:me.color,bold:true})}${xlsTd(pg.monto,{bg:zebra,align:'right'})}</tr>`);
+    });
   });
-  rows.push([]);
+  rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
 
-  rows.push(['ITEMS VENDIDOS']);
-  rows.push(['Mesa','Producto','Cantidad','Precio unitario','Subtotal','Opciones','Observaciones']);
+  rows.push(xlsSectionRow('ITEMS VENDIDOS', 7, '#22c55e'));
+  rows.push(xlsHeadRow(['Mesa','Producto','Cantidad','Precio unitario','Subtotal','Opciones','Observaciones']));
+  let i3=0;
   cerrados.forEach(p=>(p.items||[]).forEach(it=>{
-    rows.push([p.mesaNumero, it.nombre, it.cantidad, it.precio, (it.precio||0)*(it.cantidad||0), it.opcionesTexto||'', it.observaciones||'']);
+    const zebra = i3%2===0?'#ffffff':'#f8fafc'; i3++;
+    rows.push(`<tr>
+      ${xlsTd(p.mesaNumero, {bg:zebra, bold:true})}
+      ${xlsTd(it.nombre, {bg:zebra, bold:true})}
+      ${xlsTd(it.cantidad, {bg:zebra, align:'right'})}
+      ${xlsTd(it.precio, {bg:zebra, align:'right'})}
+      ${xlsTd((it.precio||0)*(it.cantidad||0), {bg:zebra, align:'right', bold:true})}
+      ${xlsTd(it.opcionesTexto||'', {bg:zebra, size:11, color:'#64748b'})}
+      ${xlsTd(it.observaciones||'', {bg:zebra, size:11, color:'#64748b'})}
+    </tr>`);
   }));
-  rows.push([]);
+  rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
 
   const productoAgg = {};
   cerrados.forEach(p=>(p.items||[]).forEach(it=>{ productoAgg[it.nombre] = (productoAgg[it.nombre]||0) + it.cantidad; }));
-  rows.push(['PRODUCTOS VENDIDOS (resumen)']);
-  rows.push(['Producto','Cantidad total']);
-  Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]).forEach(([nombre,cant])=>rows.push([nombre, cant]));
+  const prodList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
+  const maxCant = prodList.length? prodList[0][1] : 1;
+  rows.push(xlsSectionRow('PRODUCTOS VENDIDOS (resumen)', 2, '#0284c7'));
+  rows.push(xlsHeadRow(['Producto','Cantidad total']));
+  prodList.forEach(([nombre,cant],i)=>{
+    const zebra = i%2===0?'#ffffff':'#f8fafc';
+    const esTop = i===0 && cant===maxCant;
+    rows.push(`<tr>${xlsTd(nombre,{bg:esTop?'#fef3c7':zebra, bold:esTop, color:esTop?'#92400e':undefined})}${xlsTd(cant,{bg:esTop?'#fef3c7':zebra, align:'right', bold:true, color:esTop?'#92400e':undefined})}</tr>`);
+  });
 
   if(cancelados && cancelados.length){
-    rows.push([]);
-    rows.push(['PEDIDOS CANCELADOS']);
-    rows.push(['Hora','Mesa','Motivo']);
-    cancelados.forEach(p=>rows.push([fmtTime(p.canceladoEn), p.mesaNumero, p.motivoCancelacion||'']));
+    rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
+    rows.push(xlsSectionRow('PEDIDOS CANCELADOS', 3, '#ef4444'));
+    rows.push(xlsHeadRow(['Hora','Mesa','Motivo']));
+    cancelados.forEach((p,i)=>{
+      rows.push(`<tr>${xlsTd(fmtTime(p.canceladoEn),{bg:'#fef2f2',color:'#991b1b'})}${xlsTd(p.mesaNumero,{bg:'#fef2f2',color:'#991b1b',bold:true})}${xlsTd(p.motivoCancelacion||'',{bg:'#fef2f2',color:'#991b1b'})}</tr>`);
+    });
   }
 
-  const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Cierre ${xlsEsc(fecha)}</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>table{border-collapse:collapse}</style>
+</head><body><table>${rows.join('')}</table></body></html>`;
+
+  const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `cierre-${fecha}.csv`;
+  a.href = url; a.download = `cierre-${fecha}.xls`;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
@@ -1805,6 +1907,15 @@ function renderConfig(app){
       <div class="field" style="max-width:220px"><label>PIN de administrador</label><input id="fPin" value="${esc(cfg.adminPin||'1234')}"></div>
       <p class="section-sub">Este PIN es un control de acceso simple para el equipo del restaurante, no reemplaza una autenticación real.</p>
       <button class="btn sm" id="btnSavePin" style="margin-top:6px">Guardar PIN</button>
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <h3 style="font-size:15px;margin-top:0">Apariencia</h3>
+      <p class="section-sub">Elegí el tema visual del sistema. Se guarda en este dispositivo.</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm ${state.tema==='dark'?'':'ghost'}" id="btnTemaOscuro"><i class="fa-solid fa-moon"></i> Oscuro</button>
+        <button class="btn sm ${state.tema==='light'?'':'ghost'}" id="btnTemaClaro"><i class="fa-solid fa-sun"></i> Claro</button>
+      </div>
     </div>
 
     <div class="card" style="padding:16px;border:1px dashed var(--gold)">
@@ -1944,6 +2055,8 @@ function renderConfig(app){
     try{ await dbCap.doc('config/main').update({adminPin:pin}); toast('PIN actualizado'); }
     catch(e){ toast('No se pudo actualizar el PIN'); }
   };
+  document.getElementById('btnTemaOscuro').onclick = ()=>{ aplicarTema('dark'); render(); toast('Tema oscuro activado'); };
+  document.getElementById('btnTemaClaro').onclick = ()=>{ aplicarTema('light'); render(); toast('Tema claro activado'); };
 }
 
 /* ================= DEMO DATA ================= */

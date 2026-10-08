@@ -7,7 +7,7 @@ Este documento fue el plan original pedido para RestaurantFlow como un sistema c
 
 Archivos del sistema:
 - kitchen-live.html: la aplicación principal. Todo el flujo operativo (Mapa, Cocina, Productos, Stock, Caja, Cierre, Config).
-- dashboard.html: panel de KPIs de solo lectura (ventas del día, ocupación de mesas, pedidos pendientes, producto más vendido, personas atendidas, ventas por método de pago, estado de cocina, stock bajo).
+- dashboard.html: panel de KPIs de solo lectura (ventas del día, ocupación de mesas, pedidos pendientes, producto más vendido, personas atendidas, ventas por método de pago, estado de cocina, stock bajo), más una sección de estadísticas históricas (mejor día de ventas, producto más vendido de los últimos 7/30/365 días), calculadas sobre todos los pedidos cerrados, no solo los de hoy.
 - pantalla-cocina.html: pantalla grande tipo tablero de cocina (KDS), 3 columnas (Pendiente / En preparación / Listo). Clic izquierdo avanza un ítem un paso; clic derecho lo retrocede un paso, por si se tocó por accidente.
 - a.html, cocina-ordu.html: prototipos previos, se mantienen solo como referencia histórica.
 
@@ -37,9 +37,9 @@ Productos:
 - Buscador y filtro por categoría al agregar un producto a un pedido.
 
 Stock:
-- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto.
-- Las ventas y anulaciones descuentan o restituyen el stock automáticamente.
-- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados.
+- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto, aplicado a TODO el catálogo (no solo a los productos con un límite diario configurado; los que no tienen límite muestran "Sin límite" y el contador igual registra sus movimientos).
+- Las ventas y anulaciones descuentan o restituyen el stock automáticamente, para cualquier producto, tenga o no un límite diario configurado.
+- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados (esto último solo aplica a productos con límite configurado).
 
 Caja:
 - Apertura con monto inicial.
@@ -49,7 +49,7 @@ Caja:
 
 Cierre del día:
 - Resumen: ventas totales, mesas cerradas, pedidos cancelados, personas, cubiertos, caja del día, productos vendidos, detalle por mesa.
-- Exportable a CSV, con secciones separadas en columnas propias (ventas por mesa, detalle de pagos, items vendidos, resumen de productos, cancelados) en vez de texto combinado en una sola celda.
+- Exportable a Excel (.xls), no a CSV plano: secciones con su propio color de fondo (ventas por mesa, detalle de pagos, items vendidos, resumen de productos, cancelados), encabezado con tamaños de fuente más grandes, filas con rayado alternado (zebra), medios de pago resaltados con un color propio (verde para efectivo, azul para tarjetas, violeta para MercadoPago) y el producto más vendido del día destacado en color.
 - Se puede "confirmar" un cierre: a partir de ahí esa fecha queda bloqueada y no se puede tocar el stock.
 - No incluye gastos (ver más abajo) ni exportación a PDF.
 
@@ -58,6 +58,7 @@ Config (solo modo admin):
 - Mozos: nombres del equipo, para poder asignarlos a las mesas.
 - Cantidad de cocineros y estaciones de cocina.
 - PIN de administrador.
+- Tema oscuro/claro: se guarda en localStorage de ese dispositivo y se aplica antes de pintar la página (sin parpadeo).
 - Carga y borrado de datos de prueba.
 
 Roles y acceso:
@@ -770,12 +771,12 @@ Checklist final del sistema — ESTADO REAL
 ✅ Cocineros configurables (cantidad y estaciones; no asignación individual de tareas).
 ✅ Pagos manuales (incluye pago dividido en varios medios por mesa).
 ✅ Caja y cierres.
-✅ Stock diario — rediseñado como un contador +/- manual por producto, no como jornada con apertura/cierre.
+✅ Stock diario — rediseñado como un contador +/- manual por producto para todo el catálogo, no como jornada con apertura/cierre.
 ❌ Gastos y compras — se implementó en una etapa intermedia y se eliminó después a pedido explícito, junto con Proveedores.
 ✅ Cantidad de productos vendidos.
 ✅ Cantidad de personas.
 ✅ Cantidad de tenedores.
-✅ Reportes — Cierre del día (exportable a CSV) y Dashboard.
+✅ Reportes — Cierre del día (exportable a Excel con colores y tamaños, no CSV plano) y Dashboard (con estadísticas históricas: mejor día, más vendido por semana/mes/año).
 ❌ Backups — no aplica: no hay backend ni servidor, los datos viven solo en el localStorage de ese navegador.
 ⚠️ Pruebas — probado manualmente con Playwright durante el desarrollo de cada funcionalidad; no hay una suite automatizada formal en el repositorio.
 ❌ Instalación en red local — no aplica: es una app estática que se abre directo en el navegador (o con un servidor HTTP simple local).
@@ -788,3 +789,5 @@ Funcionalidades agregadas que no estaban en el plan original
 ✅ Tutorial paso a paso y panel de "Acceso rápido" dentro de la app.
 ✅ Diseño responsive con menú colapsable en mobile (kitchen-live.html y dashboard.html).
 ✅ Clic derecho en pantalla-cocina.html para deshacer un paso por error.
+✅ Tema oscuro/claro configurable desde Config, guardado por dispositivo.
+✅ Estadísticas históricas en el Dashboard (mejor día de ventas, más vendido por semana/mes/año).

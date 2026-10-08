@@ -232,13 +232,41 @@ function computeData(){
 
   const stockBajo = productos.filter(p=>p.stockDiario!=null && (p.stockRestante||0) <= Math.max(2, Math.round(p.stockDiario*0.15)));
 
+  // Estadísticas históricas: mejor día de ventas y producto más vendido por período
+  const todosCerrados = pedidos.filter(p=>p.estado==='cerrado');
+  const ventasPorDia = {};
+  todosCerrados.forEach(p=>{ const d = dateOf(p.cerrado); ventasPorDia[d] = (ventasPorDia[d]||0) + (p.total||0); });
+  const diasOrdenados = Object.entries(ventasPorDia).sort((a,b)=>b[1]-a[1]);
+  const mejorDia = diasOrdenados[0] ? {fecha: diasOrdenados[0][0], total: diasOrdenados[0][1]} : null;
+
+  function topProductoDesde(desdeMs){
+    const agg = {};
+    todosCerrados.filter(p=>(p.cerrado||0)>=desdeMs).forEach(p=>(p.items||[]).forEach(it=>{
+      agg[it.nombre] = (agg[it.nombre]||0) + it.cantidad;
+    }));
+    const list = Object.entries(agg).sort((a,b)=>b[1]-a[1]);
+    return list[0] ? {nombre: list[0][0], cantidad: list[0][1]} : null;
+  }
+  const ahoraMs = Date.now();
+  const DIA_MS = 24*3600000;
+  const topSemana = topProductoDesde(ahoraMs - 7*DIA_MS);
+  const topMes = topProductoDesde(ahoraMs - 30*DIA_MS);
+  const topAnio = topProductoDesde(ahoraMs - 365*DIA_MS);
+
   return {
     hasAnyData: mesas.length>0 || productos.length>0 || pedidos.length>0,
     mesas, productos, pedidos, cerradosHoy, abiertos,
     ventasHoy, personasHoy, tenedoresHoy,
     mesasOcupadas, mesasLibres, ocupacionPct,
-    topProductos, productoTop, pagoList, stockBajo
+    topProductos, productoTop, pagoList, stockBajo,
+    mejorDia, topSemana, topMes, topAnio
   };
+}
+function fmtFechaLarga(fecha){
+  if(!fecha) return '—';
+  const [y,m,d] = fecha.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('es-AR', {day:'2-digit', month:'short', year:'numeric'});
 }
 
 function barRows(list, maxLabel){
@@ -305,6 +333,32 @@ function render(){
       <div class="card">
         <div class="section-header"><h2>Ventas por método de pago</h2></div>
         ${barRows(d.pagoList, 20)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><h2><i class="fa-solid fa-chart-column"></i> Estadísticas históricas</h2></div>
+      <div class="summary-cards">
+        <div class="card-summary" style="border-left-color: var(--success)">
+          <div class="label"><i class="fa-solid fa-trophy"></i> Mejor día de ventas</div>
+          <div class="value" style="font-size:1.25rem">${d.mejorDia ? fmtFechaLarga(d.mejorDia.fecha) : '—'}</div>
+          <div class="sub">${d.mejorDia ? fmtMoney(d.mejorDia.total) : 'Sin cierres registrados todavía'}</div>
+        </div>
+        <div class="card-summary" style="border-left-color: var(--accent)">
+          <div class="label"><i class="fa-solid fa-calendar-week"></i> Más vendido (7 días)</div>
+          <div class="value" style="font-size:1.1rem">${d.topSemana ? esc(d.topSemana.nombre) : '—'}</div>
+          <div class="sub">${d.topSemana ? d.topSemana.cantidad+' unidades' : 'Sin ventas en este período'}</div>
+        </div>
+        <div class="card-summary" style="border-left-color: var(--busy, var(--accent))">
+          <div class="label"><i class="fa-solid fa-calendar-days"></i> Más vendido (30 días)</div>
+          <div class="value" style="font-size:1.1rem">${d.topMes ? esc(d.topMes.nombre) : '—'}</div>
+          <div class="sub">${d.topMes ? d.topMes.cantidad+' unidades' : 'Sin ventas en este período'}</div>
+        </div>
+        <div class="card-summary" style="border-left-color: var(--warning)">
+          <div class="label"><i class="fa-solid fa-calendar"></i> Más vendido (365 días)</div>
+          <div class="value" style="font-size:1.1rem">${d.topAnio ? esc(d.topAnio.nombre) : '—'}</div>
+          <div class="sub">${d.topAnio ? d.topAnio.cantidad+' unidades' : 'Sin ventas en este período'}</div>
+        </div>
       </div>
     </div>
 

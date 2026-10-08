@@ -26,7 +26,7 @@ Tutorial" al pie de la barra lateral.
 | Archivo | Qué es |
 |---|---|
 | `kitchen-live.html` | La aplicación principal. Todo el flujo operativo. |
-| `dashboard.html` | Panel de KPIs (ventas, ocupación, productos top, etc.), de solo lectura. |
+| `dashboard.html` | Panel de KPIs del día (ventas, ocupación, productos top, etc.) y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año), de solo lectura. |
 | `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Clic izquierdo para avanzar un ítem un paso; clic derecho para retroceder un paso, por si se tocó por accidente. |
 | `a.html`, `cocina-ordu.html` | Prototipos previos, se mantienen como referencia histórica. |
 
@@ -66,20 +66,24 @@ cocina y no tiene este tratamiento mobile.
   puede hacer en esta sección.
 - **Productos** — catálogo con categorías, precios, grupos de opciones,
   stock diario, e historial de cambios de precio.
-- **Stock** — contador de stock por producto: botones +/− para ajustar a
-  mano, además del descuento/restitución automático por ventas y
-  anulaciones. Historial de movimientos por fecha y aviso de agotados.
+- **Stock** — contador +/− para **todo el catálogo**, no solo los productos
+  con un límite diario configurado (los que no tienen límite muestran "Sin
+  límite" y el contador funciona igual, como registro de movimientos). Las
+  ventas y anulaciones lo ajustan solas. Historial de movimientos por fecha
+  y aviso de agotados.
 - **Caja** — apertura con monto inicial, cobro de mesas (con pago dividido
   en varios medios de pago), movimientos manuales de ingreso/egreso, cierre
   con monto real contado y diferencia.
 - **Cierre** — resumen del día (ventas, productos vendidos, personas,
-  cubiertos, caja, cancelados), exportable a CSV (con secciones separadas
-  por mesa, pagos, items vendidos y resumen de productos, cada dato en su
-  propia celda). Se puede **confirmar** un cierre: a partir de ahí, esa
+  cubiertos, caja, cancelados), exportable a **Excel** (`.xls`, con
+  secciones en colores distintos, filas con ancho/alto propio, medios de
+  pago resaltados con su propio color y el producto más vendido destacado —
+  no un CSV plano). Se puede **confirmar** un cierre: a partir de ahí, esa
   fecha queda bloqueada (no se puede tocar el stock).
 - **Config** — zonas del salón (nombre + plano por zona), nombres de
   **mozos** (para asignarlos a las mesas), cantidad de cocineros y
-  estaciones, PIN de administrador, carga/borrado de datos de prueba.
+  estaciones, PIN de administrador, **tema oscuro/claro**, carga/borrado de
+  datos de prueba.
 
 Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja / Encargado
 de stock / Administrador) filtra qué pestañas ve cada uno, y además
