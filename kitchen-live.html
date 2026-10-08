@@ -326,7 +326,7 @@ const TUTORIAL_STEPS = [
   {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara. Cuando un ítem queda Listo, el mozo (o el admin) ve ahí mismo un botón "Retirado ✓" para marcarlo como entregado sin tener que ir a buscarlo a la mesa.'},
   {icon:'fa-tv', titulo:'Pantalla de cocina', texto:'Un tablero grande (enlace "Pantalla cocina" abajo) pensado para tener siempre a la vista en la cocina, con 3 columnas: Pendiente / Preparando / Listo. Tocar un ticket también avanza su estado.'},
   {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y stock diario por producto. Cada cambio de precio queda guardado en un historial.'},
-  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− para todo el catálogo (tengan o no un límite diario configurado) para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
+  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− por producto para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
   {icon:'fa-cash-register', titulo:'Caja', texto:'Abrís la caja con un monto inicial, cobrás las mesas (se puede dividir el pago en varios medios) y registrás movimientos manuales de ingreso o egreso. Al cerrar, comparás el monto contado contra el esperado.'},
   {icon:'fa-chart-pie', titulo:'Cierre del día', texto:'Resumen del día: ventas, productos vendidos, personas, cubiertos, caja y pedidos cancelados. Se puede exportar todo a Excel (con colores y secciones bien separadas, no un CSV plano), y "confirmar" el cierre para bloquear el stock de esa fecha.'},
   {icon:'fa-gear', titulo:'Config', texto:'Acá se arman las zonas del salón (cada una con su plano), los mozos, la cantidad de cocineros y estaciones, el PIN de administrador, el tema oscuro/claro, y se cargan o borran los datos de prueba.'},
@@ -964,7 +964,7 @@ function mesaItemRow(it, m){
 // delta positivo = suma stock (entrada, anulación), negativo = resta (venta, ajuste a la baja).
 async function registrarMovimientoStock(productoId, productoNombre, tipo, delta, motivo){
   const prod = state.productos.find(p=>p.id===productoId);
-  if(!prod) return;
+  if(!prod || prod.stockDiario==null) return;
   const nuevo = Math.max(0, (prod.stockRestante||0) + delta);
   try{
     await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo});
@@ -1101,7 +1101,9 @@ function openConfigureItemModal(m, pedido, prod){
     try{
       const newItems = [...(pedido.items||[]), item];
       await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
-      await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
+      if(prod.stockDiario!=null){
+        await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
+      }
       toast('Producto agregado a la comanda');
       closeModal();
       setTimeout(()=>{
@@ -1425,14 +1427,14 @@ function openProductEditor(prod){
 const TIPO_MOV_LABEL = {ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
 function renderStock(app){
   const fecha = state.ui.stockDate || todayStr();
-  const todosProductos = state.productos.filter(p=>p.activo!==false);
-  const agotados = todosProductos.filter(p=>p.stockDiario!=null && (p.stockRestante||0)<=0);
+  const conStock = state.productos.filter(p=>p.stockDiario!=null);
+  const agotados = conStock.filter(p=>(p.stockRestante||0)<=0);
   const movsDia = state.movimientosStock.filter(mv=>dateOf(mv.creado)===fecha).sort((a,b)=>b.creado-a.creado);
   const bloqueadoHoy = !!cierreConfirmado(todayStr());
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador por producto, para todo el catálogo. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
+      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador de stock por producto. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
     </div>
     ${agotados.length>0?`<div class="card" style="padding:14px;margin-bottom:16px;border-color:var(--danger)">
       <b style="color:var(--danger)">${agotados.length} producto(s) agotado(s):</b>
@@ -1440,13 +1442,13 @@ function renderStock(app){
     </div>`:''}
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table>
-        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Contador</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th></tr></thead>
         <tbody>
-          ${todosProductos.length===0?'<tr><td colspan="5"><div class="empty">Todavía no hay productos cargados.</div></td></tr>':
-            todosProductos.map(p=>`<tr>
-              <td><b>${esc(p.nombre)}</b><div class="prod-meta">${esc(p.categoria||'General')}</div></td>
+          ${conStock.length===0?'<tr><td colspan="5"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
+            conStock.map(p=>`<tr>
+              <td><b>${esc(p.nombre)}</b></td>
               <td>${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</td>
-              <td>${p.stockDiario!=null?p.stockDiario:'<span class="prod-meta">Sin límite</span>'}</td>
+              <td>${p.stockDiario}</td>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
                   <button class="iconbtn" data-count="${p.id}|-1" ${bloqueadoHoy?'disabled':''}>−</button>
@@ -1454,7 +1456,7 @@ function renderStock(app){
                   <button class="iconbtn" data-count="${p.id}|1" ${bloqueadoHoy?'disabled':''}>+</button>
                 </div>
               </td>
-              <td>${p.stockDiario!=null && (p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
+              <td>${(p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
             </tr>`).join('')}
         </tbody>
       </table>

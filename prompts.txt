@@ -37,9 +37,9 @@ Productos:
 - Buscador y filtro por categoría al agregar un producto a un pedido.
 
 Stock:
-- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto, aplicado a TODO el catálogo (no solo a los productos con un límite diario configurado; los que no tienen límite muestran "Sin límite" y el contador igual registra sus movimientos).
-- Las ventas y anulaciones descuentan o restituyen el stock automáticamente, para cualquier producto, tenga o no un límite diario configurado.
-- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados (esto último solo aplica a productos con límite configurado).
+- A diferencia del plan original (apertura de jornada, entradas, ajustes, cierre de stock), terminó siendo un contador simple +/- por producto.
+- Las ventas y anulaciones descuentan o restituyen el stock automáticamente.
+- Historial de movimientos por fecha (tipo: ajuste manual, venta, anulación, apertura) y aviso de productos agotados.
 
 Caja:
 - Apertura con monto inicial.
@@ -771,7 +771,7 @@ Checklist final del sistema — ESTADO REAL
 ✅ Cocineros configurables (cantidad y estaciones; no asignación individual de tareas).
 ✅ Pagos manuales (incluye pago dividido en varios medios por mesa).
 ✅ Caja y cierres.
-✅ Stock diario — rediseñado como un contador +/- manual por producto para todo el catálogo, no como jornada con apertura/cierre.
+✅ Stock diario — rediseñado como un contador +/- manual por producto, no como jornada con apertura/cierre.
 ❌ Gastos y compras — se implementó en una etapa intermedia y se eliminó después a pedido explícito, junto con Proveedores.
 ✅ Cantidad de productos vendidos.
 ✅ Cantidad de personas.
