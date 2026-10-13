@@ -126,6 +126,7 @@ header {
 .badge.ok { background: rgba(34,197,94,0.2); color: var(--success); }
 .badge.warn { background: rgba(245,158,11,0.2); color: var(--warning); }
 .badge.busy { background: rgba(14,165,233,0.2); color: var(--accent); }
+.badge.danger { background: rgba(239,68,68,0.2); color: var(--danger); }
 
 .empty-state { padding: 40px 20px; text-align: center; color: var(--text-muted); }
 .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; color: var(--border-color); }
@@ -216,7 +217,7 @@ details.viz-table .table-scroll { max-height: 220px; overflow-y: auto; margin-to
         <li><a href="kitchen-live.html#cocina"><i class="fa-solid fa-fire-burner"></i> Cocina</a></li>
         <li><a href="pantalla-cocina.html"><i class="fa-solid fa-tv"></i> Pantalla cocina</a></li>
         <li><a href="kitchen-live.html#productos"><i class="fa-solid fa-burger"></i> Productos</a></li>
-        <li><a href="kitchen-live.html#stock"><i class="fa-solid fa-boxes-stacked"></i> Stock</a></li>
+        <li><a href="kitchen-live.html#inventario"><i class="fa-solid fa-boxes-stacked"></i> Inventario</a></li>
         <li><a href="kitchen-live.html#caja"><i class="fa-solid fa-cash-register"></i> Caja</a></li>
         <li><a href="kitchen-live.html#cierre"><i class="fa-solid fa-chart-pie"></i> Cierre</a></li>
         <li><a href="kitchen-live.html#config"><i class="fa-solid fa-gear"></i> Config</a></li>
@@ -301,7 +302,19 @@ function computeData(){
   });
   const pagoList = Object.entries(pagoAgg).sort((a,b)=>b[1]-a[1]);
 
-  const stockBajo = productos.filter(p=>p.stockDiario!=null && (p.stockRestante||0) <= Math.max(2, Math.round(p.stockDiario*0.15)));
+  // Inventario de insumos: faltantes, valor y costo estimado de lo vendido hoy (según las recetas)
+  const insumosTodos = db.insumos || {};
+  const insumos = asArray(db.insumos).filter(i=>i.activo!==false);
+  const insumosBajo = insumos.filter(i=>(i.stock||0)<=0 || ((i.minimo||0)>0 && i.stock<=i.minimo))
+    .sort((a,b)=>(((a.stock||0)<=0)?0:1)-(((b.stock||0)<=0)?0:1) || a.nombre.localeCompare(b.nombre));
+  const valorInventario = insumos.reduce((t,i)=>t+(i.stock||0)*(i.costo||0),0);
+  const hayRecetas = productos.some(p=>(p.receta||[]).length>0);
+  let costoHoy = 0, sinRecetaHoy = 0;
+  cerradosHoy.forEach(p=>(p.items||[]).forEach(it=>{
+    const pr = (db.productos||{})[it.productoId];
+    if(pr && (pr.receta||[]).length) costoHoy += pr.receta.reduce((t,r)=>{ const i = insumosTodos[r.insumoId]; return t + (i?(i.costo||0)*(r.cantidad||0):0); },0) * (it.cantidad||0);
+    else sinRecetaHoy += (it.cantidad||0);
+  }));
 
   // Estadísticas históricas: mejor día de ventas y producto más vendido por período
   const todosCerrados = pedidos.filter(p=>p.estado==='cerrado');
@@ -329,7 +342,7 @@ function computeData(){
     mesas, productos, pedidos, cerradosHoy, abiertos,
     ventasHoy, personasHoy, tenedoresHoy,
     mesasOcupadas, mesasLibres, ocupacionPct,
-    topProductos, productoTop, pagoList, stockBajo,
+    topProductos, productoTop, pagoList, insumos, insumosBajo, valorInventario, hayRecetas, costoHoy, sinRecetaHoy,
     mejorDia, topSemana, topMes, topAnio
   };
 }
@@ -687,6 +700,11 @@ function render(forzar){
         <div class="value">${d.personasHoy}</div>
         <div class="sub">${d.tenedoresHoy} tenedores usados hoy</div>
       </div>
+      ${d.hayRecetas ? `<div class="card-summary" style="border-left-color: var(--success)">
+        <div class="label"><i class="fa-solid fa-scale-balanced"></i> Margen bruto estimado</div>
+        <div class="value">${fmtMoney(d.ventasHoy - d.costoHoy)}</div>
+        <div class="sub">${d.ventasHoy>0 ? Math.round((1-d.costoHoy/d.ventasHoy)*100)+'% de las ventas · ' : ''}costo ${fmtMoney(d.costoHoy)}${d.sinRecetaHoy?' · '+d.sinRecetaHoy+' unid. sin receta':''}</div>
+      </div>` : ''}
     </div>
 
     <div class="cols-2">
@@ -757,18 +775,30 @@ function render(forzar){
       </div>`}
     </div>
 
-    ${d.stockBajo.length>0 ? `
+    ${d.insumosBajo.length>0 ? `
     <div class="card" style="border-color: var(--warning)">
-      <div class="section-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> Stock bajo</h2></div>
+      <div class="section-header" style="flex-wrap:wrap;gap:8px">
+        <h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> Insumos para reponer</h2>
+        <span style="color:var(--text-muted);font-size:0.8rem">${d.insumos.length} insumos · valor del inventario ${fmtMoney(d.valorInventario)} · <a href="kitchen-live.html#inventario" style="color:var(--accent);font-weight:700;text-decoration:none">Ir al Inventario</a></span>
+      </div>
       <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Producto</th><th>Restante</th><th>Stock diario</th></tr></thead>
+        <thead><tr><th>Insumo</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Proveedor</th></tr></thead>
         <tbody>
-          ${d.stockBajo.map(p=>`<tr><td>${esc(p.nombre)}</td><td>${p.stockRestante||0}</td><td>${p.stockDiario}</td></tr>`).join('')}
+          ${d.insumosBajo.map(i=>{
+            const agot = (i.stock||0)<=0;
+            const q = n=>(Math.round((n||0)*100)/100).toLocaleString('es-AR')+' '+esc(i.unidad||'');
+            return `<tr><td><b>${esc(i.nombre)}</b></td><td>${q(i.stock)}</td><td>${q(i.minimo)}</td>
+              <td><span class="badge ${agot?'danger':'warn'}">${agot?'Agotado':'Bajo mínimo'}</span></td><td>${esc(i.proveedor||'—')}</td></tr>`;
+          }).join('')}
         </tbody>
       </table>
       </div>
-    </div>` : ''}
+    </div>` : (d.insumos.length>0 ? `
+    <div class="card" style="border-color: var(--success)">
+      <div class="section-header"><h2><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> Inventario en orden</h2></div>
+      <div style="color:var(--text-muted);font-size:0.85rem">Ningún insumo está bajo el mínimo · ${d.insumos.length} insumos · valor ${fmtMoney(d.valorInventario)}.</div>
+    </div>` : '')}
   `;
 }
 

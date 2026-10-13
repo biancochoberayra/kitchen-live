@@ -3,7 +3,7 @@
 Sistema de gestión para restaurante, pensado para funcionar **sin backend**: todo
 corre en el navegador y los datos se guardan en `localStorage`. Sirve para
 probar el flujo completo de un restaurante (mesas, pedidos, cocina, caja,
-stock, cierres) con datos de prueba, sin instalar nada.
+inventario, cierres) con datos de prueba, sin instalar nada.
 
 ## Cómo usarlo
 
@@ -29,13 +29,14 @@ activarlo (el tema, el rol y los datos sí se conservan).
 
 Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar datos
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga 16 mesas en 3
-zonas, 4 mozos, 25 productos (con uno agotado, uno con stock bajo y uno
-inactivo), una caja abierta con movimientos, comandas abiertas en todos los
+zonas, 4 mozos, 25 productos con receta, 34 insumos (con compras, mermas,
+conteos y algunos agotados o bajo el mínimo), una caja abierta con
+movimientos, comandas abiertas en todos los
 estados (pendiente, preparando, listo, entregado, cuenta pedida), **unos 60
 días de historial de ventas** (con picos, días flojos, pagos divididos y
 cancelaciones), cierres confirmados de días anteriores (ayer y anteayer
 quedan sin confirmar para probarlo), historial de precios y de movimientos de
-stock. Si ya cargaste datos de prueba antes, conviene "Vaciar todos los
+inventario. Si ya cargaste datos de prueba antes, conviene "Vaciar todos los
 datos" primero, porque cargarlos de nuevo los duplica.
 
 La primera vez que se abre `kitchen-live.html` aparece un **tutorial** paso a
@@ -49,7 +50,7 @@ Tutorial" al pie de la barra lateral.
 | Archivo | Qué es |
 |---|---|
 | `kitchen-live.html` | La aplicación principal. Todo el flujo operativo. |
-| `dashboard.html` | Panel de solo lectura: KPIs del día (ventas, ocupación, productos top, etc.), **gráficos de líneas** (ventas por día, ventas por hora del día, ticket promedio por día, personas atendidas por día), **gráficos de torta** (ventas por medio de pago, por categoría y por mozo, y cancelaciones por motivo) con selector de período de 7/14/30/60 días, tooltips al pasar el mouse y un "Ver datos" con la tabla de cada gráfico, y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año). |
+| `dashboard.html` | Panel de solo lectura: KPIs del día (ventas, ocupación, productos top, margen bruto estimado, etc.), insumos para reponer, **gráficos de líneas** (ventas por día, ventas por hora del día, ticket promedio por día, personas atendidas por día), **gráficos de torta** (ventas por medio de pago, por categoría y por mozo, y cancelaciones por motivo) con selector de período de 7/14/30/60 días, tooltips al pasar el mouse y un "Ver datos" con la tabla de cada gráfico, y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año). |
 | `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Clic izquierdo para avanzar un ítem un paso; clic derecho para retroceder un paso, por si se tocó por accidente. |
 | `a.html`, `cocina-ordu.html` | Prototipos previos, se mantienen como referencia histórica. |
 
@@ -79,7 +80,12 @@ cocina y no tiene este tratamiento mobile.
   momento mientras está ocupada) se puede elegir qué **mozo** la está
   atendiendo, de la lista cargada en Config. En pantallas chicas, el rol y
   la navegación se guardan en un botón minimizado en la esquina para
-  dejarle más espacio al mapa. Una vez que se pide la cuenta de una mesa,
+  dejarle más espacio al mapa. El salón tiene dos vistas, **Plano** y
+  **Lista**: en el celular arranca en Lista (tarjetas grandes por mesa con
+  el mozo, las personas, el tiempo abierta y cuántos ítems están listos para
+  retirar, con filtros Libres / Ocupadas / Cuenta pedida), y la comanda se
+  abre como una hoja desde abajo con botones cómodos para el pulgar. La
+  elección se recuerda en cada dispositivo. Una vez que se pide la cuenta de una mesa,
   quitar un ítem de la comanda pasa a requerir modo administrador (antes de
   pedir la cuenta, el mozo puede seguir quitando ítems pendientes
   libremente).
@@ -89,12 +95,32 @@ cocina y no tiene este tratamiento mobile.
   tocarlo, solo ve "A cargo de cocina". Cuando un ítem queda "listo", recién
   ahí el mozo (o el admin) ve el botón "Retirado ✓" para marcarlo como
   entregado sin tener que ir hasta la mesa — es la única acción que el mozo
-  puede hacer en esta sección.
-- **Productos** — catálogo con categorías, precios, grupos de opciones,
-  stock diario, e historial de cambios de precio.
-- **Stock** — contador de stock por producto: botones +/− para ajustar a
-  mano, además del descuento/restitución automático por ventas y
-  anulaciones. Historial de movimientos por fecha y aviso de agotados.
+  puede hacer en esta sección. Los tickets se muestran en una grilla de 4
+  columnas (3 / 2 / 1 en pantallas más chicas).
+- **Productos** — catálogo con categorías (grilla de 4 columnas, 3 / 2 en
+  pantallas más chicas), precios, grupos de opciones, **receta** (qué
+  insumos y cuánto de cada uno consume una porción, con su costo y margen
+  calculados en vivo) e historial de cambios de precio.
+- **Inventario** — reemplaza al viejo contador de stock por producto: el
+  control se hace sobre los **insumos** (ingredientes), que es lo que
+  realmente se agota en un restaurante.
+  - *Insumos*: stock, mínimo, costo y proveedor de cada uno, con alertas de
+    bajo mínimo / agotado, buscador y filtro. Acciones rápidas: comprar,
+    registrar **merma** (con motivo) y **conteo físico** (registra la
+    diferencia). Alta, edición y baja de insumos solo en modo admin.
+  - *Compras*: registro de compras con varios ítems y proveedor (actualiza
+    el **costo promedio** de cada insumo), **lista de compras sugerida**
+    agrupada por proveedor (con "Copiar pedido" y "Registrar compra"
+    precargado) e historial de compras.
+  - *Costos y margen*: costo, margen y **food cost** de cada plato según su
+    receta, cuántas porciones alcanzan con el stock actual y qué productos
+    todavía no tienen receta.
+  - *Movimientos*: historial por fecha y por tipo (compra, consumo por
+    venta, anulación, merma, conteo), valorizado, con totales del día.
+  Al cargar un producto en una comanda se descuentan solos los insumos de
+  su receta (y se devuelven si se quita o se anula); si faltan insumos el
+  producto aparece como "Sin insumos" y no se puede agregar (el admin puede
+  forzarlo).
 - **Caja** — apertura con monto inicial, cobro de mesas (con pago dividido
   en varios medios de pago), movimientos manuales de ingreso/egreso, cierre
   con monto real contado y diferencia.
@@ -102,15 +128,17 @@ cocina y no tiene este tratamiento mobile.
   cubiertos, caja, cancelados), exportable a **Excel** (`.xls`, con
   secciones en colores distintos, filas con ancho/alto propio, medios de
   pago resaltados con su propio color y el producto más vendido destacado —
-  no un CSV plano). Se puede **confirmar** un cierre: a partir de ahí, esa
-  fecha queda bloqueada (no se puede tocar el stock).
+  no un CSV plano). Incluye el **costo de lo vendido y el margen bruto**
+  estimados según las recetas. Las secciones "Productos vendidos", "Detalle
+  por mesa" y "Pedidos cancelados" se pueden minimizar. Se puede **confirmar**
+  un cierre: a partir de ahí, esa fecha queda bloqueada.
 - **Config** — zonas del salón (nombre + plano por zona), nombres de
   **mozos** (para asignarlos a las mesas), cantidad de cocineros y
   estaciones, PIN de administrador, **tema oscuro/claro**, carga/borrado de
   datos de prueba.
 
-Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja / Encargado
-de stock / Administrador) filtra qué pestañas ve cada uno, y además
+Un selector de **rol** en la barra lateral (Mozo / Cocina / Caja /
+Administrador) filtra qué pestañas ve cada uno, y además
 condiciona qué puede tocar dentro de Cocina (avanzar estados vs. marcar
 "Retirado") y dentro de una comanda con cuenta pedida (quitar ítems). Es
 solo organizativo — no reemplaza al **modo admin** (PIN), que es el único

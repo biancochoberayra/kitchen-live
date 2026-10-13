@@ -122,6 +122,41 @@ header h1{font-size:1.2rem;margin:0}
 .clock{color:var(--ink-soft);font-size:13px;font-weight:600}
 
 .wrap{max-width:1180px;margin:0 auto;padding:18px 26px 60px}
+.wrap.wrap-wide{width:100%}
+/* Grillas de 4 columnas (3 en pantallas medianas, 2 en chicas) para Cocina y Productos */
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1240px){.grid-4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:860px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.grid-4.tickets{grid-template-columns:1fr}}
+
+/* Secciones plegables (Cierre) */
+details.plegable{margin-bottom:14px}
+details.plegable>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;padding:8px 0;user-select:none}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::before{content:'▾';display:inline-block;width:16px;color:var(--ink-soft);transition:transform .15s}
+details.plegable:not([open])>summary::before{transform:rotate(-90deg)}
+details.plegable>summary:hover{color:var(--brand-2)}
+.pleg-resumen{font-weight:600;font-size:12.5px;color:var(--ink-soft)}
+
+/* Salón: selector Plano / Lista y tarjetas de mesa (vista cómoda para celular) */
+.vista-toggle{display:inline-flex;border:1px solid var(--line);border-radius:100px;overflow:hidden;background:var(--paper-raise);flex:none}
+.vista-toggle button{border:0;background:transparent;padding:8px 14px;font-weight:700;font-size:13px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px}
+.vista-toggle button.on{background:var(--brand);color:#fff}
+.mesa-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.mesa-filtros button{border:1px solid var(--line);background:var(--paper-raise);border-radius:100px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.mesa-filtros button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mesas-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.mesa-card{text-align:left;border:1px solid var(--line);border-left:6px solid var(--ok);border-radius:12px;background:var(--paper-raise);
+  padding:12px;display:flex;flex-direction:column;gap:4px;min-height:92px;color:var(--ink)}
+.mesa-card.st-ocupada{border-left-color:var(--busy)}
+.mesa-card.st-cuenta{border-left-color:var(--danger);background:var(--danger-bg)}
+.mesa-card:active{transform:scale(.98)}
+.mc-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.mc-num{font-size:22px;font-weight:800;line-height:1}
+.mc-estado{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft)}
+.mc-info{font-size:12.5px;color:var(--ink-soft)}
+.mc-listo{color:var(--ok)}
+
 .card{background:var(--paper-raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .section-title{font-size:20px;font-weight:800;margin:0 0 4px}
 .section-sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px}
@@ -251,7 +286,26 @@ tr:last-child td{border-bottom:none}
   header h1{font-size:1.05rem}
   .wrap{padding:14px 12px 50px}
   .mapa-toolbar{flex-direction:column;align-items:stretch}
+  .mapa-toolbar .field{max-width:none !important;width:100%}
+  .zona-switcher{min-width:0;width:100%}
+  .vista-toggle{align-self:flex-start}
+  .mapa-shell{min-height:62vh}
+  .mesa-chip{width:48px;height:48px;font-size:14px}
   table{min-width:480px}
+  /* ventanas como "hoja" desde abajo, con botones y campos cómodos para el pulgar */
+  .modal-bg{align-items:flex-end;padding:0}
+  .modal,.modal.wide,.modal.xwide{max-width:none;width:100%;max-height:92vh;border-radius:18px 18px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom))}
+  .modal .btn{flex:1 1 auto;min-height:44px}
+  .btn.sm{min-height:38px}
+  input,select,textarea{font-size:16px}
+  .mesa-item-row{flex-wrap:wrap}
+  .mesa-item-row>div:last-child{align-items:flex-start}
+  .chip-toggle{padding:8px 13px;font-size:13.5px}
+  .stationbar button{padding:9px 15px}
+}
+@media (max-width:520px){
+  .mesas-lista{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mapa-shell{min-height:56vh}
 }
 </style>
 <script>
@@ -276,7 +330,6 @@ tr:last-child td{border-bottom:none}
         <option value="mozo">Mozo</option>
         <option value="cocina">Cocina</option>
         <option value="caja">Caja</option>
-        <option value="stock">Encargado de stock</option>
       </select>
     </div>
     <ul class="nav-links" id="navtabs"></ul>
@@ -303,34 +356,33 @@ const VIEWS = [
   {id:'mapa', label:'Mapa · Mozo', icon:'fa-house', titulo:'Salón'},
   {id:'cocina', label:'Cocina', icon:'fa-fire-burner', titulo:'Cocina'},
   {id:'productos', label:'Productos', icon:'fa-burger', titulo:'Productos'},
-  {id:'stock', label:'Stock', icon:'fa-boxes-stacked', titulo:'Stock diario'},
+  {id:'inventario', label:'Inventario', icon:'fa-boxes-stacked', titulo:'Inventario'},
   {id:'caja', label:'Caja', icon:'fa-cash-register', titulo:'Caja'},
   {id:'cierre', label:'Cierre', icon:'fa-chart-pie', titulo:'Cierre del día'},
   {id:'config', label:'Config', icon:'fa-gear', titulo:'Configuración'},
 ];
 const ROLES = {
-  admin: {label:'Administrador', views:['mapa','cocina','productos','stock','caja','cierre','config']},
+  admin: {label:'Administrador', views:['mapa','cocina','productos','inventario','caja','cierre','config']},
   mozo: {label:'Mozo', views:['mapa','cocina']},
   cocina: {label:'Cocina', views:['cocina']},
   caja: {label:'Caja', views:['caja','cierre']},
-  stock: {label:'Encargado de stock', views:['productos','stock']},
 };
 const ROL_KEY = 'restaurantFlowRol';
 const TEMA_KEY = 'restaurantFlowTema';
 const TUTORIAL_SEEN_KEY = 'restaurantFlowTutorialSeen';
 const TUTORIAL_STEPS = [
   {icon:'fa-hand-sparkles', titulo:'Bienvenido a RestaurantFlow', texto:'Sistema de gestión de restaurante que corre 100% en tu navegador, sin backend: los datos se guardan en este dispositivo (localStorage). Para ver todo funcionando de una: activá el modo admin (abajo a la izquierda, PIN 1234) y andá a Config → Datos de prueba → Cargar datos de prueba.'},
-  {icon:'fa-user-shield', titulo:'Rol y modo administrador', texto:'El selector "Rol" (arriba a la izquierda) filtra qué secciones ves según tu función: Mozo, Cocina, Caja, Encargado de stock o Administrador. Es solo organizativo. El control de acceso real es el "Modo admin" (botón abajo, PIN por defecto 1234), necesario para editar productos, la configuración, cancelar un pedido o confirmar un cierre.'},
+  {icon:'fa-user-shield', titulo:'Rol y modo administrador', texto:'El selector "Rol" (arriba a la izquierda) filtra qué secciones ves según tu función: Mozo, Cocina, Caja o Administrador. Es solo organizativo. El control de acceso real es el "Modo admin" (botón abajo, PIN por defecto 1234), necesario para editar productos, la configuración, cancelar un pedido o confirmar un cierre.'},
   {icon:'fa-house', titulo:'Mapa · Mozo', texto:'El plano del salón. Tocá una mesa libre para abrir un pedido, o una ocupada para agregar ítems o cobrar. Si hay más de una zona, usá las flechas ‹ › para cambiar de zona, o "Carga rápida" para ir directo a una mesa por su número. En modo admin podés hacer clic en el plano para agregar una mesa, o arrastrar una existente para reubicarla.'},
   {icon:'fa-receipt', titulo:'Tomar un pedido', texto:'Al abrir una mesa cargás personas y tenedores, y agregás productos con el buscador y el filtro por categoría. Si un producto tiene grupos de opciones (ej. salsa, guarnición) las elegís ahí — algunos grupos permiten un botón "sin elegir" para saltear una opción obligatoria. Un pedido completo se puede cancelar con motivo (requiere modo admin).'},
   {icon:'fa-fire-burner', titulo:'Cocina', texto:'Comandas en vivo agrupadas por estación (cocina caliente, fría, parrilla, etc). Cada ítem se avanza de Pendiente → Preparando → Listo a medida que se prepara. Cuando un ítem queda Listo, el mozo (o el admin) ve ahí mismo un botón "Retirado ✓" para marcarlo como entregado sin tener que ir a buscarlo a la mesa.'},
   {icon:'fa-tv', titulo:'Pantalla de cocina', texto:'Un tablero grande (enlace "Pantalla cocina" abajo) pensado para tener siempre a la vista en la cocina, con 3 columnas: Pendiente / Preparando / Listo. Tocar un ticket también avanza su estado.'},
-  {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y stock diario por producto. Cada cambio de precio queda guardado en un historial.'},
-  {icon:'fa-boxes-stacked', titulo:'Stock', texto:'Un contador +/− por producto para ajustar el stock a mano. Las ventas y las anulaciones lo descuentan o restituyen solas. Hay un historial de movimientos por fecha y un aviso de productos agotados.'},
+  {icon:'fa-burger', titulo:'Productos', texto:'El catálogo: categorías, precios, grupos de opciones (únicas o múltiples, obligatorias o no, con precio extra por opción) y la receta de cada producto (qué insumos consume por porción, con su costo y margen). Cada cambio de precio queda guardado en un historial.'},
+  {icon:'fa-boxes-stacked', titulo:'Inventario', texto:'El control de insumos (ingredientes): stock, mínimo y costo de cada uno. Cada producto tiene una receta, así que al venderlo se descuentan solos los insumos que usa (y se devuelven si se quita o anula). Desde acá registrás compras (con varios ítems y proveedor, que actualizan el costo promedio), mermas y conteos físicos; ves la lista de compras sugerida por proveedor, el costo y el margen de cada plato, y el historial de movimientos por fecha.'},
   {icon:'fa-cash-register', titulo:'Caja', texto:'Abrís la caja con un monto inicial, cobrás las mesas (se puede dividir el pago en varios medios) y registrás movimientos manuales de ingreso o egreso. Al cerrar, comparás el monto contado contra el esperado.'},
   {icon:'fa-chart-pie', titulo:'Cierre del día', texto:'Resumen del día: ventas, productos vendidos, personas, cubiertos, caja y pedidos cancelados. Se puede exportar todo a Excel (con colores y secciones bien separadas, no un CSV plano), y "confirmar" el cierre para bloquear el stock de esa fecha.'},
   {icon:'fa-gear', titulo:'Config', texto:'Acá se arman las zonas del salón (cada una con su plano), los mozos, la cantidad de cocineros y estaciones, el PIN de administrador, el tema oscuro/claro, y se cargan o borran los datos de prueba.'},
-  {icon:'fa-chart-line', titulo:'Dashboard', texto:'Un panel de solo lectura (enlace "Dashboard" abajo) con los KPIs del día (ventas, ocupación, productos más vendidos, métodos de pago, stock bajo) y estadísticas históricas: mejor día de ventas y el producto más vendido de la última semana, mes y año.'},
+  {icon:'fa-chart-line', titulo:'Dashboard', texto:'Un panel de solo lectura (enlace "Dashboard" abajo) con los KPIs del día (ventas, ocupación, productos más vendidos, métodos de pago, insumos para reponer) y estadísticas históricas: mejor día de ventas y el producto más vendido de la última semana, mes y año.'},
 ];
 const ESTADOS_ITEM = ['pendiente','preparando','listo','entregado'];
 const ESTADO_LABEL = {pendiente:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregado'};
@@ -343,18 +395,20 @@ let state = {
   productos: [],
   pedidos: [],
   movimientosCaja: [],
-  movimientosStock: [],
+  insumos: [],
+  movimientosInsumos: [],
   cierres: [],
   historialPrecios: [],
   caja: null,
-  rol: localStorage.getItem(ROL_KEY) || 'admin',
+  rol: ROLES[localStorage.getItem(ROL_KEY)] ? localStorage.getItem(ROL_KEY) : 'admin',   // si quedó guardado un rol que ya no existe (ej. "stock"), vuelve a admin
   tema: localStorage.getItem(TEMA_KEY) || 'dark',
-  loaded: {config:false, mesas:false, productos:false, pedidos:false, movimientosCaja:false, caja:false, movimientosStock:false, cierres:false, historialPrecios:false},
+  loaded: {config:false, mesas:false, productos:false, pedidos:false, movimientosCaja:false, caja:false, insumos:false, movimientosInsumos:false, cierres:false, historialPrecios:false},
   ui: {
     stationTab: null,
     cierreDate: todayStr(),
-    stockDate: todayStr(),
+    invTab: 'insumos', invBuscar: '', invFiltro: 'todos', invMovFecha: todayStr(), invMovTipo: 'todos',
     placingMesa: false,
+    cierreSecciones: {},
   }
 };
 
@@ -391,7 +445,7 @@ const DB_KEY = 'restaurantFlowLocalDB';
 let dbData = JSON.parse(localStorage.getItem(DB_KEY)) || { config: {}, mesas: {}, productos: {}, pedidos: {} };
 
 function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(dbData)); }
-const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], movimientosCaja:[], caja:[], movimientosStock:[], cierres:[], historialPrecios:[] };
+const dbListeners = { config:[], mesas:[], productos:[], pedidos:[], movimientosCaja:[], caja:[], insumos:[], movimientosInsumos:[], cierres:[], historialPrecios:[] };
 function triggerDB(col) { dbListeners[col].forEach(cb => cb()); }
 
 const dbCap = {
@@ -467,7 +521,8 @@ const assetsCap = {
 /* ---------------- BOOT ---------------- */
 async function boot(){
   aplicarTema(state.tema);
-  const hashView = location.hash.slice(1);
+  let hashView = location.hash.slice(1);
+  if(hashView==='stock') hashView = 'inventario';   // enlaces viejos al Stock
   if(VIEWS.some(v=>v.id===hashView)) state.view = hashView;
   renderNav();
   render();
@@ -515,9 +570,15 @@ async function boot(){
     render();
   });
 
-  dbCap.collection('movimientosStock').onSnapshot(snap=>{
-    state.movimientosStock = snap.docs.map(d=>({id:d.id, ...d.data}));
-    state.loaded.movimientosStock = true;
+  dbCap.collection('insumos').onSnapshot(snap=>{
+    state.insumos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.insumos = true;
+    render();
+  });
+
+  dbCap.collection('movimientosInsumos').onSnapshot(snap=>{
+    state.movimientosInsumos = snap.docs.map(d=>({id:d.id, ...d.data}));
+    state.loaded.movimientosInsumos = true;
     render();
   });
 
@@ -532,6 +593,11 @@ async function boot(){
     state.loaded.historialPrecios = true;
     render();
   });
+}
+// Sección plegable: devuelve la apertura; el cierre es '</div></details>'. El estado abierto/cerrado se recuerda al refrescar.
+function plegAbrir(id, titulo, resumen){
+  const abierta = state.ui.cierreSecciones[id] !== false;
+  return `<details class="plegable" data-plegable="${id}" ${abierta?'open':''}><summary>${esc(titulo)}${resumen?`<span class="pleg-resumen">${esc(resumen)}</span>`:''}</summary><div class="pleg-cuerpo">`;
 }
 function cierreConfirmado(fecha){
   return state.cierres.find(c=>c.fecha===fecha) || null;
@@ -696,25 +762,47 @@ function render(){
   renderNav();
   const app = document.getElementById('app');
   app.classList.toggle('wrap-mapa', state.view==='mapa');
+  app.classList.toggle('wrap-wide', state.view!=='mapa');
   if(!state.loaded.config){ app.innerHTML = '<div class="empty">Cargando RestaurantFlow…</div>'; return; }
   if(state.view==='mapa') return renderMapa(app);
   if(state.view==='cocina') return renderCocina(app);
   if(state.view==='productos') return renderProductos(app);
-  if(state.view==='stock') return renderStock(app);
+  if(state.view==='inventario') return renderInventario(app);
   if(state.view==='caja') return renderCaja(app);
   if(state.view==='cierre') return renderCierre(app);
   if(state.view==='config') return renderConfig(app);
 }
 
 /* ================= MAPA / MOZO ================= */
+function vistaMapaActual(){
+  if(state.ui.mapaVista) return state.ui.mapaVista;
+  let v = null; try{ v = localStorage.getItem('restaurantFlowMapaVista'); }catch(e){}
+  if(v!=='plano' && v!=='lista') v = window.matchMedia('(max-width:780px)').matches ? 'lista' : 'plano';
+  return (state.ui.mapaVista = v);
+}
+function mesaCardHtml(m){
+  const ped = m.pedidoId ? state.pedidos.find(p=>p.id===m.pedidoId) : null;
+  const cls = m.estado==='libre'?'st-libre': m.estado==='cuenta_pedida'?'st-cuenta':'st-ocupada';
+  const label = m.estado==='libre'?'Libre': m.estado==='cuenta_pedida'?'Cuenta':'Ocupada';
+  const mins = ped ? Math.max(0, Math.round((Date.now()-ped.creado)/60000)) : 0;
+  const listos = ped ? (ped.items||[]).filter(it=>it.estado==='listo').length : 0;
+  const tiempo = mins<60 ? mins+' min' : Math.floor(mins/60)+' h '+(mins%60)+' min';
+  return `<button class="mesa-card ${cls}" data-mesa-card="${m.id}">
+    <div class="mc-top"><span class="mc-num">${esc(m.numero)}</span><span class="mc-estado">${label}</span></div>
+    <div class="mc-info">${ped ? esc(ped.mozoNombre||'Sin mozo')+' · '+(ped.personas||0)+' pers.' : 'Disponible'}</div>
+    ${ped?`<div class="mc-info">${tiempo}${listos?` · <b class="mc-listo">${listos} para retirar</b>`:''}</div>`:''}
+  </button>`;
+}
 function renderMapa(app){
+  const vista = vistaMapaActual();
+  const filtro = state.ui.mapaFiltro || 'todas';
   const zonas = getZonas();
   if(!state.ui.zonaActiva || !zonas.find(z=>z.id===state.ui.zonaActiva)) state.ui.zonaActiva = zonas[0].id;
   const zona = zonas.find(z=>z.id===state.ui.zonaActiva);
   const mesasZona = state.mesas.filter(m=>mesaZonaId(m)===zona.id);
   app.innerHTML = `
     <h2 class="section-title">Salón</h2>
-    <p class="section-sub">Tocá una mesa para abrirla, tomar el pedido o cerrar la cuenta.${state.adminMode?' Modo admin: hacé clic en el plano para agregar una mesa, o arrastrá una mesa para reubicarla.':''}</p>
+    <p class="section-sub">Tocá una mesa para abrirla, tomar el pedido o cerrar la cuenta.${state.adminMode?(vista==='plano'?' Modo admin: hacé clic en el plano para agregar una mesa, o arrastrá una mesa para reubicarla.':' Modo admin: para agregar o reubicar mesas pasá a la vista Plano.'):''}</p>
     <div class="card" style="padding:14px">
       <div class="mapa-toolbar">
         ${zonas.length>1?`<div class="zona-switcher">
@@ -722,6 +810,10 @@ function renderMapa(app){
           <div class="zona-switcher-label"><i class="fa-solid fa-layer-group"></i> ${esc(zona.nombre)} <span class="badge-count">${mesasZona.length}</span></div>
           <button id="zonaNext" title="Zona siguiente"><i class="fa-solid fa-chevron-right"></i></button>
         </div>`:''}
+        <div class="vista-toggle" role="group" aria-label="Vista del salón">
+          <button data-vista="plano" class="${vista==='plano'?'on':''}"><i class="fa-solid fa-map"></i> Plano</button>
+          <button data-vista="lista" class="${vista==='lista'?'on':''}"><i class="fa-solid fa-table-cells"></i> Lista</button>
+        </div>
         <div class="field" style="max-width:190px;${zonas.length>1?'margin-left:auto':''}">
           <label>Carga rápida (N° mesa)</label>
           <div style="display:flex;gap:6px">
@@ -730,6 +822,13 @@ function renderMapa(app){
           </div>
         </div>
       </div>
+      ${vista==='lista' ? `
+      <div class="mesa-filtros">
+        ${[['todas','Todas'],['libre','Libres'],['ocupada','Ocupadas'],['cuenta_pedida','Cuenta pedida']].map(([k,l])=>`<button data-mfiltro="${k}" class="${filtro===k?'on':''}">${l} <span class="badge-count">${k==='todas'?mesasZona.length:mesasZona.filter(m=>m.estado===k).length}</span></button>`).join('')}
+      </div>
+      <div class="mesas-lista" id="mapaShell">
+        ${(()=>{ const l = mesasZona.filter(m=>filtro==='todas'||m.estado===filtro); return l.length ? l.map(m=>mesaCardHtml(m)).join('') : '<div class="empty" style="grid-column:1/-1"><b>No hay mesas para mostrar</b>Probá con otro filtro o cambiá de zona.</div>'; })()}
+      </div>` : `
       <div class="mapa-shell" id="mapaShell">
         ${zona.mapaUrl? `<img src="${zona.mapaUrl}" alt="Plano del restaurante">` : ''}
         ${mesasZona.map(m=>mesaChipHtml(m)).join('')}
@@ -740,9 +839,15 @@ function renderMapa(app){
         <span><i style="background:var(--busy)"></i> Ocupada</span>
         <span><i style="background:var(--danger)"></i> Cuenta pedida</span>
         ${!zona.mapaUrl?`<span style="margin-left:auto">Sin plano cargado para "${esc(zona.nombre)}" — cargá una imagen en Config.</span>`:''}
-      </div>
+      </div>`}
     </div>
   `;
+  document.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{
+    state.ui.mapaVista = b.dataset.vista;
+    try{ localStorage.setItem('restaurantFlowMapaVista', b.dataset.vista); }catch(e){}
+    render();
+  });
+  document.querySelectorAll('[data-mfiltro]').forEach(b=>b.onclick=()=>{ state.ui.mapaFiltro = b.dataset.mfiltro; render(); });
   if(zonas.length>1){
     const idxActual = zonas.findIndex(z=>z.id===zona.id);
     document.getElementById('zonaPrev').onclick = ()=>{
@@ -755,6 +860,13 @@ function renderMapa(app){
   document.getElementById('btnCargaRapida').onclick = ()=> goToMesaNumero(document.getElementById('fCargaRapida').value);
   document.getElementById('fCargaRapida').addEventListener('keydown', e=>{ if(e.key==='Enter') goToMesaNumero(e.target.value); });
   const shell = document.getElementById('mapaShell');
+  if(vista==='lista'){
+    shell.querySelectorAll('[data-mesa-card]').forEach(b=>b.onclick=()=>{
+      const m = state.mesas.find(x=>x.id===b.dataset.mesaCard); if(!m) return;
+      if(state.adminMode) openMesaAdminMenu(m); else openMesaPanel(m);
+    });
+    return;
+  }
   shell.addEventListener('click', (e)=>{
     if(!state.adminMode) return;
     if(e.target.closest('.mesa-chip')) return;
@@ -960,25 +1072,6 @@ function mesaItemRow(it, m){
     </div>
   </div>`;
 }
-// Registra un movimiento de stock y actualiza stockRestante del producto.
-// delta positivo = suma stock (entrada, anulación), negativo = resta (venta, ajuste a la baja).
-async function registrarMovimientoStock(productoId, productoNombre, tipo, delta, motivo){
-  const prod = state.productos.find(p=>p.id===productoId);
-  if(!prod || prod.stockDiario==null) return;
-  const nuevo = Math.max(0, (prod.stockRestante||0) + delta);
-  try{
-    await dbCap.doc('productos/'+productoId).update({stockRestante:nuevo});
-    await dbCap.collection('movimientosStock').add({
-      productoId, productoNombre, tipo, delta, motivo: motivo||'', creado: Date.now()
-    });
-  }catch(e){}
-}
-async function restoreStock(productoId, cantidad){
-  const prod = state.productos.find(p=>p.id===productoId);
-  if(!prod) return;
-  await registrarMovimientoStock(productoId, prod.nombre, 'anulacion', cantidad, 'Ítem quitado de la comanda');
-}
-
 /* ---- cancelar pedido completo (con motivo) ---- */
 function openCancelarPedidoModal(m, pedido){
   if(!requireAdmin()) return;
@@ -1043,10 +1136,11 @@ function openAddItemModal(m, pedido){
   }
 }
 function productPickRow(p){
-  const sinStock = p.stockDiario!=null && (p.stockRestante||0)<=0;
+  const disp = porcionesPosibles(p);
+  const sinStock = disp!==null && disp<=0;
   return `<div class="mesa-item-row">
-    <div><div class="ticket-item">${esc(p.nombre)}</div><div class="prod-meta">${esc(p.categoria||'General')} · ${fmtMoney(p.precio)}${p.stockDiario!=null?' · stock: '+(p.stockRestante||0):''}</div></div>
-    <button class="btn sm" data-pick="${p.id}" ${sinStock?'disabled':''}>${sinStock?'Sin stock':'Elegir'}</button>
+    <div><div class="ticket-item">${esc(p.nombre)}</div><div class="prod-meta">${esc(p.categoria||'General')} · ${fmtMoney(p.precio)}${disp!==null && disp<=15 ? ' · alcanza para '+disp : ''}</div></div>
+    <button class="btn sm" data-pick="${p.id}" ${sinStock?'disabled':''}>${sinStock?'Sin insumos':'Elegir'}</button>
   </div>`;
 }
 function openConfigureItemModal(m, pedido, prod){
@@ -1092,7 +1186,11 @@ function openConfigureItemModal(m, pedido, prod){
       }
     });
     if(missingRequired){ toast('Completá las opciones obligatorias'); return; }
-    if(prod.stockDiario!=null && (prod.stockRestante||0) < cantidad){ toast('Stock insuficiente'); return; }
+    const falta = faltantesPara(prod, cantidad);
+    if(falta.length){
+      const detalle = falta.map(f=>f.i.nombre+' (hay '+fmtQty(f.i.stock,f.i.unidad)+', hacen falta '+fmtQty(f.necesita,f.i.unidad)+')').join(', ');
+      if(!(state.adminMode && confirm('Faltan insumos: '+detalle+'.\n\n¿Agregar igual? El inventario quedará en 0 para esos insumos.'))){ toast('Insumos insuficientes: '+detalle); return; }
+    }
     const item = {
       id: uidLocal(), productoId: prod.id, nombre: prod.nombre, cantidad,
       precio: (prod.precio||0)+extra, opcionesTexto: optTextParts.join(' · '),
@@ -1101,9 +1199,7 @@ function openConfigureItemModal(m, pedido, prod){
     try{
       const newItems = [...(pedido.items||[]), item];
       await dbCap.doc('pedidos/'+pedido.id).update({items:newItems});
-      if(prod.stockDiario!=null){
-        await registrarMovimientoStock(prod.id, prod.nombre, 'venta', -cantidad, 'Mesa '+m.numero);
-      }
+      await consumirReceta(prod, cantidad, 'Mesa '+m.numero+' · '+prod.nombre);
       toast('Producto agregado a la comanda');
       closeModal();
       setTimeout(()=>{
@@ -1197,7 +1293,7 @@ function renderCocina(app){
     <div class="stationbar">
       ${estaciones.map(e=>`<button data-st="${e.id}" class="${state.ui.stationTab===e.id?'active':''}">${esc(e.nombre)} <span class="badge-count">${allItems.filter(it=>(it.estacionId||'general')===e.id).length}</span></button>`).join('')}
     </div>
-    <div class="grid-cards" id="ticketGrid">
+    <div class="grid-4 tickets" id="ticketGrid">
       ${filtered.length===0? '<div class="empty" style="grid-column:1/-1"><b>Sin comandas pendientes</b>Los pedidos de esta estación aparecerán acá en tiempo real.</div>' :
         filtered.map(it=>ticketCardHtml(it)).join('')}
     </div>
@@ -1255,7 +1351,7 @@ function renderProductos(app){
     ${cats.length===0? '<div class="card empty"><b>Todavía no hay productos</b>'+(state.adminMode?'Creá el primero con el botón de arriba.':'Un administrador debe cargarlos.')+'</div>':
     cats.map(cat=>`
       <h3 style="margin:18px 0 8px;font-size:15px">${esc(cat)}</h3>
-      <div class="grid-cards">
+      <div class="grid-4">
         ${state.productos.filter(p=>(p.categoria||'General')===cat).map(p=>prodCardHtml(p)).join('')}
       </div>
     `).join('')}
@@ -1269,7 +1365,9 @@ function prodCardHtml(p){
     <div class="prod-name">${esc(p.nombre)}</div>
     <div class="prod-price">${fmtMoney(p.precio)}</div>
     <div class="prod-meta">Estación: ${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</div>
-    ${p.stockDiario!=null?`<div class="prod-meta">Stock: ${p.stockRestante||0} / ${p.stockDiario}</div>`:'<div class="prod-meta">Sin control de stock</div>'}
+    ${(p.receta&&p.receta.length)?(()=>{ const c = costoReceta(p), disp = porcionesPosibles(p);
+      return `<div class="prod-meta">${state.adminMode?'Costo '+fmtMoney(c)+' · margen '+(p.precio>0?Math.round((1-c/p.precio)*100):0)+'%':'Receta: '+p.receta.length+' insumo(s)'}${disp!==null && disp<=15?' · alcanza para '+disp:''}</div>`; })()
+      :'<div class="prod-meta">Sin receta (no descuenta insumos)</div>'}
     ${(p.grupos&&p.grupos.length)?`<div class="prod-meta">${p.grupos.length} grupo(s) de opciones</div>`:''}
     ${state.adminMode?`<button class="btn sm ghost" data-editprod="${p.id}" style="margin-top:4px">Editar</button>`:''}
     ${p.activo===false?'<span class="pill neutral">Inactivo</span>':''}
@@ -1278,7 +1376,7 @@ function prodCardHtml(p){
 function openProductEditor(prod){
   if(!requireAdmin()) return;
   const isNew = !prod;
-  prod = prod || {nombre:'', categoria:'', precio:0, estacionId:(state.config.estaciones[0]||{}).id||'general', stockDiario:null, activo:true, grupos:[]};
+  prod = prod || {nombre:'', categoria:'', precio:0, estacionId:(state.config.estaciones[0]||{}).id||'general', activo:true, grupos:[], receta:[]};
   const grupos = JSON.parse(JSON.stringify(prod.grupos||[]));
   function gruposHtml(){
     return grupos.map((g,gi)=>`
@@ -1313,7 +1411,6 @@ function openProductEditor(prod){
     <div class="field-row">
       <div class="field"><label>Precio</label><input id="pPrecio" type="number" min="0" value="${prod.precio}"></div>
       <div class="field"><label>Estación de cocina</label><select id="pEstacion">${state.config.estaciones.map(e=>`<option value="${e.id}" ${e.id===prod.estacionId?'selected':''}>${esc(e.nombre)}</option>`).join('')}</select></div>
-      <div class="field"><label>Stock diario</label><input id="pStock" type="number" min="0" value="${prod.stockDiario==null?'':prod.stockDiario}" placeholder="vacío = sin control"></div>
       <div class="field"><label>Activo</label><select id="pActivo"><option value="1" ${prod.activo!==false?'selected':''}>Sí</option><option value="0" ${prod.activo===false?'selected':''}>No</option></select></div>
     </div>
     ${!isNew?(()=>{
@@ -1323,6 +1420,13 @@ function openProductEditor(prod){
         <div class="section-sub" style="margin:4px 0 0">${hist.map(h=>`${fmtMoney(h.precioAnterior)} → ${fmtMoney(h.precioNuevo)} (${dateOf(h.creado)})`).join(' · ')}</div>
       </div>`;
     })():''}
+    <h3 style="font-size:14px;margin-top:14px">Receta (insumos por porción)</h3>
+    <p class="section-sub">Qué insumos consume cada porción. Al cargar el producto en una comanda se descuentan solos del Inventario, y con eso se calcula el costo y el margen. Es opcional.</p>
+    <div id="recetaWrap"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <button class="btn sm ghost" id="btnAddInsumoReceta">+ Agregar insumo</button>
+      <span class="section-sub" id="recetaResumen" style="margin:0"></span>
+    </div>
     <h3 style="font-size:14px;margin-top:14px">Opciones del producto</h3>
     <p class="section-sub">Ej: grupo "Salsa" (elección única) o "Extras" (múltiple). Las observaciones libres ya están disponibles siempre al pedir.</p>
     <div id="gruposWrap">${gruposHtml()}</div>
@@ -1332,6 +1436,42 @@ function openProductEditor(prod){
       <button class="btn" id="btnSaveProd">Guardar</button>
     </div>
   `, {wide:true});
+
+  const receta = JSON.parse(JSON.stringify(prod.receta||[]));
+  const insumosSel = state.insumos.filter(i=>i.activo!==false || receta.some(r=>r.insumoId===i.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const recetaWrap = document.getElementById('recetaWrap');
+  function readReceta(){
+    recetaWrap.querySelectorAll('[data-ri]').forEach(el=>{
+      const i = +el.dataset.ri;
+      receta[i].insumoId = el.querySelector('.r-ins').value;
+      receta[i].cantidad = parseFloat(el.querySelector('.r-cant').value)||0;
+    });
+  }
+  function resumenReceta(){
+    readReceta();
+    const costo = receta.reduce((t,r)=>{ const i = insumoPorId(r.insumoId); return t + (i?(i.costo||0)*(r.cantidad||0):0); },0);
+    const precio = parseFloat(document.getElementById('pPrecio').value)||0;
+    document.getElementById('recetaResumen').innerHTML = receta.length ? `Costo por porción <b>${fmtMoney(costo)}</b> · margen <b>${precio>0?Math.round((1-costo/precio)*100):0}%</b>` : '';
+  }
+  function pintarReceta(){
+    recetaWrap.innerHTML = receta.length===0 ? '<p class="section-sub" style="margin:0 0 8px">Sin receta: este producto no descuenta insumos.</p>' : receta.map((r,i)=>{
+      const ins = insumoPorId(r.insumoId)||{};
+      return `<div class="field-row" data-ri="${i}" style="align-items:flex-end">
+        <div class="field" style="flex:2"><label>Insumo</label><select class="r-ins">${insumosSel.map(x=>`<option value="${x.id}" ${x.id===r.insumoId?'selected':''}>${esc(x.nombre)} (${esc(x.unidad)})</option>`).join('')}</select></div>
+        <div class="field" style="max-width:170px"><label>Cantidad por porción (${esc(ins.unidad||'')})</label><input class="r-cant" type="number" min="0" step="any" value="${r.cantidad}"></div>
+        <button class="iconbtn" data-delr="${i}">✕</button></div>`;
+    }).join('');
+    recetaWrap.querySelectorAll('.r-ins').forEach(sel=>sel.onchange=()=>{ readReceta(); pintarReceta(); });
+    recetaWrap.querySelectorAll('.r-cant').forEach(inp=>inp.oninput=resumenReceta);
+    recetaWrap.querySelectorAll('[data-delr]').forEach(b=>b.onclick=()=>{ readReceta(); receta.splice(+b.dataset.delr,1); pintarReceta(); });
+    resumenReceta();
+  }
+  document.getElementById('btnAddInsumoReceta').onclick = ()=>{
+    if(!insumosSel.length){ toast('Primero cargá insumos en Inventario'); return; }
+    readReceta(); receta.push({insumoId:insumosSel[0].id, cantidad:0}); pintarReceta();
+  };
+  document.getElementById('pPrecio').oninput = resumenReceta;
+  pintarReceta();
 
   function readGruposFromDOM(){
     document.querySelectorAll('#gruposWrap [data-gi]').forEach(gEl=>{
@@ -1396,20 +1536,18 @@ function openProductEditor(prod){
     const nombre = document.getElementById('pNombre').value.trim();
     if(!nombre){ toast('El nombre es obligatorio'); return; }
     const precio = parseFloat(document.getElementById('pPrecio').value)||0;
-    const stockRaw = document.getElementById('pStock').value;
-    const stockDiario = stockRaw===''? null : parseInt(stockRaw);
+    readReceta();
     const data = {
       nombre, categoria: document.getElementById('pCategoria').value.trim()||'General',
       precio, estacionId: document.getElementById('pEstacion').value,
-      stockDiario, activo: document.getElementById('pActivo').value==='1',
-      grupos
+      activo: document.getElementById('pActivo').value==='1',
+      grupos, receta: receta.filter(r=>r.insumoId && r.cantidad>0),
+      stockDiario:null, stockRestante:null   // el contador de stock por producto ya no existe: se controla por insumos
     };
     try{
       if(isNew){
-        data.stockRestante = stockDiario;
         await dbCap.collection('productos').add(data);
       } else {
-        if(stockDiario!=null && (prod.stockRestante==null || prod.stockDiario!==stockDiario)) data.stockRestante = stockDiario;
         if(precio!==prod.precio){
           await dbCap.collection('historialPrecios').add({
             productoId: prod.id, productoNombre: nombre,
@@ -1423,74 +1561,455 @@ function openProductEditor(prod){
   };
 }
 
-/* ================= STOCK ================= */
-const TIPO_MOV_LABEL = {ajuste:'Ajuste', venta:'Venta', anulacion:'Anulación', apertura:'Apertura de jornada'};
-function renderStock(app){
-  const fecha = state.ui.stockDate || todayStr();
-  const conStock = state.productos.filter(p=>p.stockDiario!=null);
-  const agotados = conStock.filter(p=>(p.stockRestante||0)<=0);
-  const movsDia = state.movimientosStock.filter(mv=>dateOf(mv.creado)===fecha).sort((a,b)=>b.creado-a.creado);
-  const bloqueadoHoy = !!cierreConfirmado(todayStr());
+/* ================= INVENTARIO (insumos, recetas, compras y costos) ================= */
+const UNIDADES = ['kg','g','l','ml','un'];
+const TIPO_MOV_LABEL = {compra:'Compra', consumo:'Consumo por venta', anulacion:'Anulación', merma:'Merma', ajuste:'Conteo / ajuste', inicial:'Stock inicial'};
+const TIPO_MOV_CLASS = {compra:'ok', consumo:'busy', anulacion:'neutral', merma:'danger', ajuste:'warn', inicial:'neutral'};
+const MOTIVOS_MERMA = ['Vencido / en mal estado','Se cayó o se derramó','Error de cocina','Cortesía o degustación','Otro'];
+const INV_TABS = [['insumos','Insumos'],['compras','Compras'],['costos','Costos y margen'],['movimientos','Movimientos']];
 
-  app.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <div><h2 class="section-title">Stock diario</h2><p class="section-sub">Contador de stock por producto. Las ventas y anulaciones lo ajustan solas; usá +/− para sumar o restar a mano.</p></div>
-    </div>
-    ${agotados.length>0?`<div class="card" style="padding:14px;margin-bottom:16px;border-color:var(--danger)">
-      <b style="color:var(--danger)">${agotados.length} producto(s) agotado(s):</b>
-      <span class="section-sub" style="margin:0"> ${agotados.map(p=>esc(p.nombre)).join(', ')}</span>
-    </div>`:''}
-    <div class="card" style="overflow-x:auto;margin-bottom:18px">
-      <table>
-        <thead><tr><th>Producto</th><th>Estación</th><th>Stock diario</th><th>Restante</th><th></th></tr></thead>
-        <tbody>
-          ${conStock.length===0?'<tr><td colspan="5"><div class="empty">Ningún producto tiene control de stock configurado. Activalo desde Productos.</div></td></tr>':
-            conStock.map(p=>`<tr>
-              <td><b>${esc(p.nombre)}</b></td>
-              <td>${esc((state.config.estaciones.find(e=>e.id===p.estacionId)||{}).nombre||'—')}</td>
-              <td>${p.stockDiario}</td>
-              <td>
-                <div style="display:flex;align-items:center;gap:10px">
-                  <button class="iconbtn" data-count="${p.id}|-1" ${bloqueadoHoy?'disabled':''}>−</button>
-                  <b style="min-width:22px;text-align:center;display:inline-block;font-size:15px">${p.stockRestante||0}</b>
-                  <button class="iconbtn" data-count="${p.id}|1" ${bloqueadoHoy?'disabled':''}>+</button>
-                </div>
-              </td>
-              <td>${(p.stockRestante||0)<=0?'<span class="pill danger">Agotado</span>':''}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-      ${bloqueadoHoy?'<p class="section-sub" style="margin-top:10px">El cierre de hoy ya está confirmado — el contador queda bloqueado.</p>':''}
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap">
-      <h3 style="font-size:15px;margin:0">Historial de movimientos</h3>
-      <div class="field"><label>Fecha</label><input type="date" id="fFechaStock" value="${fecha}"></div>
-    </div>
-    <div class="card" style="overflow-x:auto;margin-top:10px">
-      <table>
-        <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th></tr></thead>
-        <tbody>
-          ${movsDia.length===0?'<tr><td colspan="4"><div class="empty">Sin movimientos de stock para esta fecha.</div></td></tr>':
-            movsDia.map(mv=>`<tr>
-              <td>${fmtTime(mv.creado)}</td>
-              <td>${esc(mv.productoNombre)}</td>
-              <td><span class="pill ${mv.delta>=0?'ok':'danger'}">${TIPO_MOV_LABEL[mv.tipo]||mv.tipo}</span></td>
-              <td>${mv.delta>0?'+':''}${mv.delta}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-  document.getElementById('fFechaStock').onchange = e=>{ state.ui.stockDate = e.target.value; render(); };
-  document.querySelectorAll('[data-count]').forEach(b=>b.onclick=async ()=>{
-    const [prodId, deltaStr] = b.dataset.count.split('|');
-    const delta = parseInt(deltaStr);
-    const prod = state.productos.find(p=>p.id===prodId);
-    if(!prod) return;
-    if(delta<0 && (prod.stockRestante||0)<=0) return;
-    await registrarMovimientoStock(prod.id, prod.nombre, 'ajuste', delta, 'Contador manual');
+function redondear(n, d){ const f = Math.pow(10, d==null?3:d); return Math.round((Number(n)||0)*f)/f; }
+function fmtQty(n, unidad){ return redondear(n,3).toLocaleString('es-AR',{maximumFractionDigits:3})+' '+(unidad||''); }
+function fmtDM(ts){ const d = new Date(ts); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+fmtTime(ts); }
+function insumoPorId(id){ return state.insumos.find(i=>i.id===id); }
+function estadoInsumo(i){ const s = i.stock||0; if(s<=0) return 'agotado'; if((i.minimo||0)>0 && s<=i.minimo) return 'bajo'; return 'ok'; }
+function pillEstadoInsumo(i){
+  const e = estadoInsumo(i);
+  return e==='agotado' ? '<span class="pill danger">Agotado</span>' : e==='bajo' ? '<span class="pill warn">Bajo mínimo</span>' : '<span class="pill ok">OK</span>';
+}
+function costoReceta(prod){
+  return (prod.receta||[]).reduce((t,r)=>{ const i = insumoPorId(r.insumoId); return t + (i ? (i.costo||0)*(r.cantidad||0) : 0); },0);
+}
+// Cuántas porciones se pueden preparar con el stock actual (null si el producto no tiene receta).
+function porcionesPosibles(prod){
+  let min = Infinity;
+  (prod.receta||[]).forEach(r=>{
+    const i = insumoPorId(r.insumoId);
+    if(i && r.cantidad>0) min = Math.min(min, Math.floor((i.stock||0)/r.cantidad + 1e-9));
+  });
+  return min===Infinity ? null : min;
+}
+function faltantesPara(prod, cantidad){
+  return (prod.receta||[]).map(r=>({i:insumoPorId(r.insumoId), necesita:(r.cantidad||0)*cantidad}))
+    .filter(x=>x.i && (x.i.stock||0) < x.necesita - 1e-9);
+}
+// Costo (estimado, con el costo actual de cada insumo) de lo vendido en una lista de pedidos cerrados.
+function costoVendido(pedidos){
+  let costo = 0, sinReceta = 0;
+  pedidos.forEach(p=>(p.items||[]).forEach(it=>{
+    const prod = state.productos.find(x=>x.id===it.productoId);
+    if(prod && (prod.receta||[]).length) costo += costoReceta(prod)*(it.cantidad||0); else sinReceta += (it.cantidad||0);
+  }));
+  return {costo, sinReceta};
+}
+
+// Mueve el stock de un insumo y deja registro. delta > 0 suma, delta < 0 resta (nunca baja de 0).
+async function moverInsumo(insumoId, tipo, delta, motivo, extra){
+  extra = extra || {};
+  const ins = insumoPorId(insumoId);
+  if(!ins) return;
+  const actual = ins.stock||0;
+  const nuevo = redondear(Math.max(0, actual + delta));
+  const upd = {stock:nuevo};
+  if(extra.costoNuevo!=null) upd.costo = extra.costoNuevo;
+  await dbCap.doc('insumos/'+insumoId).update(upd);
+  await dbCap.collection('movimientosInsumos').add({
+    insumoId, insumoNombre:ins.nombre, unidad:ins.unidad, tipo, delta:redondear(nuevo-actual), motivo:motivo||'',
+    costoUnit: extra.costoUnit!=null ? extra.costoUnit : (ins.costo||0),
+    total: extra.total!=null ? extra.total : null, proveedor: extra.proveedor||'', creado: Date.now()
   });
 }
+// Al cargar un producto en una comanda: descuenta los insumos de su receta.
+async function consumirReceta(prod, cantidad, motivo){
+  for(const r of (prod.receta||[])){
+    if(insumoPorId(r.insumoId)) await moverInsumo(r.insumoId, 'consumo', -(r.cantidad*cantidad), motivo);
+  }
+}
+// Al quitar un ítem o anular una comanda: devuelve los insumos.
+async function restoreStock(productoId, cantidad){
+  const prod = state.productos.find(p=>p.id===productoId);
+  if(!prod) return;
+  for(const r of (prod.receta||[])){
+    if(insumoPorId(r.insumoId)) await moverInsumo(r.insumoId, 'anulacion', r.cantidad*cantidad, 'Ítem quitado de la comanda');
+  }
+}
+
+function renderInventario(app){
+  const tab = state.ui.invTab || 'insumos';
+  const activos = state.insumos.filter(i=>i.activo!==false);
+  const valor = activos.reduce((t,i)=>t+(i.stock||0)*(i.costo||0),0);
+  const bajos = activos.filter(i=>estadoInsumo(i)==='bajo').length;
+  const agot = activos.filter(i=>estadoInsumo(i)==='agotado').length;
+  const kpi = (label, val, sub, color)=>`<div class="card" style="padding:14px"><div class="prod-meta">${label}</div><div class="prod-price" style="font-size:20px;${color?'color:'+color:''}">${val}</div>${sub?`<div class="prod-meta">${sub}</div>`:''}</div>`;
+  app.innerHTML = `
+    <div><h2 class="section-title">Inventario</h2><p class="section-sub">Insumos (ingredientes), recetas, compras y costos. Cada venta descuenta del inventario los insumos de la receta del producto.</p></div>
+    <div class="grid-cards" style="margin:14px 0">
+      ${kpi('Insumos activos', activos.length)}
+      ${kpi('Valor del inventario', fmtMoney(valor), 'a costo promedio')}
+      ${kpi('Bajo el mínimo', bajos, bajos?'conviene reponer':'todo en orden', bajos?'var(--warn)':'')}
+      ${kpi('Agotados', agot, agot?'hay platos que no se pueden hacer':'', agot?'var(--danger)':'')}
+    </div>
+    <div class="stationbar">
+      ${INV_TABS.map(([id,label])=>`<button data-invtab="${id}" class="${tab===id?'active':''}">${label}${id==='insumos'&&(bajos+agot)?` <span class="badge-count">${bajos+agot}</span>`:''}</button>`).join('')}
+    </div>
+    <div id="invBody"></div>`;
+  document.querySelectorAll('[data-invtab]').forEach(b=>b.onclick=()=>{ state.ui.invTab = b.dataset.invtab; render(); });
+  const body = document.getElementById('invBody');
+  if(tab==='compras') invTabCompras(body, activos);
+  else if(tab==='costos') invTabCostos(body);
+  else if(tab==='movimientos') invTabMovimientos(body);
+  else invTabInsumos(body, activos);
+}
+
+/* ---- pestaña Insumos ---- */
+function invTabInsumos(body, activos){
+  const q = (state.ui.invBuscar||'').trim().toLowerCase();
+  const filtro = state.ui.invFiltro || 'todos';
+  const inactivos = state.insumos.filter(i=>i.activo===false);
+  let list = (filtro==='inactivos' ? inactivos : activos).filter(i=>!q || (i.nombre+' '+(i.rubro||'')+' '+(i.proveedor||'')).toLowerCase().includes(q));
+  if(filtro==='bajos') list = list.filter(i=>estadoInsumo(i)!=='ok');
+  const orden = {agotado:0, bajo:1, ok:2};
+  list.sort((a,b)=>orden[estadoInsumo(a)]-orden[estadoInsumo(b)] || (a.rubro||'').localeCompare(b.rubro||'') || a.nombre.localeCompare(b.nombre));
+  body.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+      <div class="field" style="max-width:280px"><label>Buscar</label><input id="invBuscar" value="${esc(state.ui.invBuscar||'')}" placeholder="Insumo, rubro o proveedor"></div>
+      <div class="field" style="max-width:240px"><label>Mostrar</label><select id="invFiltro">
+        <option value="todos" ${filtro==='todos'?'selected':''}>Todos</option>
+        <option value="bajos" ${filtro==='bajos'?'selected':''}>Solo faltantes (bajo mínimo o agotados)</option>
+        ${inactivos.length?`<option value="inactivos" ${filtro==='inactivos'?'selected':''}>Desactivados (${inactivos.length})</option>`:''}</select></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="btnInvCompra">+ Registrar compra</button>
+        ${state.adminMode?'<button class="btn" id="btnNuevoInsumo">+ Nuevo insumo</button>':''}
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><table>
+      <thead><tr><th>Insumo</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Costo unit.</th><th>Valor</th><th>Proveedor</th><th></th></tr></thead>
+      <tbody>
+        ${state.insumos.length===0 ? `<tr><td colspan="8"><div class="empty"><b>Todavía no hay insumos</b>${state.adminMode?'Creá el primero con "+ Nuevo insumo", o usá Config → Cargar datos de prueba.':'Un administrador debe cargarlos.'}</div></td></tr>` :
+          list.length===0 ? '<tr><td colspan="8"><div class="empty">Ningún insumo coincide con el filtro.</div></td></tr>' :
+          list.map(i=>`<tr>
+            <td><b>${esc(i.nombre)}</b><div class="prod-meta">${esc(i.rubro||'Sin rubro')}</div></td>
+            <td><b>${fmtQty(i.stock,i.unidad)}</b></td>
+            <td>${(i.minimo||0)>0?fmtQty(i.minimo,i.unidad):'—'}</td>
+            <td>${pillEstadoInsumo(i)}</td>
+            <td>${fmtMoney(i.costo)} / ${esc(i.unidad)}</td>
+            <td>${fmtMoney((i.stock||0)*(i.costo||0))}</td>
+            <td>${esc(i.proveedor||'—')}</td>
+            <td style="white-space:nowrap">
+              <button class="btn sm ghost" data-compra="${i.id}">Comprar</button>
+              <button class="btn sm ghost" data-merma="${i.id}">Merma</button>
+              <button class="btn sm ghost" data-conteo="${i.id}">Contar</button>
+              ${state.adminMode?`<button class="iconbtn" data-editins="${i.id}" title="Editar">✎</button>`:''}
+            </td></tr>`).join('')}
+      </tbody></table></div>`;
+  const bi = document.getElementById('invBuscar');
+  bi.oninput = e=>{
+    state.ui.invBuscar = e.target.value; const pos = e.target.selectionStart; render();
+    const n = document.getElementById('invBuscar'); if(n){ n.focus(); n.setSelectionRange(pos,pos); }
+  };
+  document.getElementById('invFiltro').onchange = e=>{ state.ui.invFiltro = e.target.value; render(); };
+  document.getElementById('btnInvCompra').onclick = ()=> openCompraModal();
+  const bn = document.getElementById('btnNuevoInsumo'); if(bn) bn.onclick = ()=> openInsumoEditor(null);
+  document.querySelectorAll('[data-compra]').forEach(b=>b.onclick=()=>openCompraModal({insumoId:b.dataset.compra}));
+  document.querySelectorAll('[data-merma]').forEach(b=>b.onclick=()=>openMermaModal(insumoPorId(b.dataset.merma)));
+  document.querySelectorAll('[data-conteo]').forEach(b=>b.onclick=()=>openConteoModal(insumoPorId(b.dataset.conteo)));
+  document.querySelectorAll('[data-editins]').forEach(b=>b.onclick=()=>openInsumoEditor(insumoPorId(b.dataset.editins)));
+}
+
+/* ---- pestaña Compras ---- */
+function invTabCompras(body, activos){
+  const sugeridos = activos.filter(i=>estadoInsumo(i)!=='ok').map(i=>{
+    const ideal = (i.ideal||0)>0 ? i.ideal : (i.minimo||0)*2;
+    const falta = Math.max(0, ideal-(i.stock||0));
+    return {i, sug: ['un','g','ml'].includes(i.unidad) ? Math.ceil(falta-1e-9) : redondear(Math.ceil(falta*2-1e-9)/2, 1)};
+  }).filter(x=>x.sug>0);
+  const grupos = {};
+  sugeridos.forEach(x=>{ const k = x.i.proveedor || 'Sin proveedor asignado'; (grupos[k] = grupos[k]||[]).push(x); });
+  const hace30 = Date.now()-30*86400000;
+  const compras = state.movimientosInsumos.filter(m=>m.tipo==='compra').sort((a,b)=>b.creado-a.creado);
+  const total30 = compras.filter(m=>m.creado>=hace30).reduce((t,m)=>t+(m.total||0),0);
+  body.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <div><h3 style="font-size:15px;margin:0">Lista de compras sugerida</h3>
+        <p class="section-sub" style="margin:2px 0 0">Insumos bajo el mínimo o agotados, agrupados por proveedor. Se sugiere reponer hasta el stock ideal.</p></div>
+      <button class="btn ghost" id="btnCompraNueva">+ Registrar compra</button>
+    </div>
+    ${Object.keys(grupos).length===0 ? '<div class="card empty" style="margin-bottom:18px"><b>Todo en orden</b>Ningún insumo está por debajo del mínimo.</div>' :
+      Object.entries(grupos).map(([prov,list],gi)=>{
+        const est = list.reduce((t,x)=>t+x.sug*(x.i.costo||0),0);
+        return `<div class="card" style="padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+            <div><b>${esc(prov)}</b><div class="prod-meta">${list.length} insumo(s) · costo estimado ${fmtMoney(est)}</div></div>
+            <div style="display:flex;gap:6px"><button class="btn sm ghost" data-copiar="${gi}">Copiar pedido</button><button class="btn sm" data-regcompra="${gi}">Registrar compra</button></div>
+          </div>
+          <div style="overflow-x:auto"><table><thead><tr><th>Insumo</th><th>Stock</th><th>Pedir</th><th>Costo est.</th></tr></thead><tbody>
+            ${list.map(x=>`<tr><td><b>${esc(x.i.nombre)}</b> ${pillEstadoInsumo(x.i)}</td><td>${fmtQty(x.i.stock,x.i.unidad)}</td><td><b>${fmtQty(x.sug,x.i.unidad)}</b></td><td>${fmtMoney(x.sug*(x.i.costo||0))}</td></tr>`).join('')}
+          </tbody></table></div></div>`;
+      }).join('')}
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:18px 0 8px">
+      <h3 style="font-size:15px;margin:0">Últimas compras</h3>
+      <span class="section-sub" style="margin:0">Gastado en los últimos 30 días: <b style="color:var(--ink)">${fmtMoney(total30)}</b></span>
+    </div>
+    <div class="card" style="overflow-x:auto"><table>
+      <thead><tr><th>Fecha</th><th>Proveedor</th><th>Insumo</th><th>Cantidad</th><th>Costo unit.</th><th>Total</th></tr></thead>
+      <tbody>${compras.length===0?'<tr><td colspan="6"><div class="empty">Todavía no se registraron compras.</div></td></tr>':
+        compras.slice(0,30).map(m=>`<tr><td>${fmtDM(m.creado)}</td><td>${esc(m.proveedor||'—')}</td><td>${esc(m.insumoNombre)}</td><td>${fmtQty(m.delta,m.unidad)}</td><td>${fmtMoney(m.costoUnit)}</td><td><b>${fmtMoney(m.total)}</b></td></tr>`).join('')}</tbody></table></div>`;
+  const provs = Object.keys(grupos);
+  document.getElementById('btnCompraNueva').onclick = ()=> openCompraModal();
+  document.querySelectorAll('[data-regcompra]').forEach(b=>b.onclick=()=>{
+    const prov = provs[+b.dataset.regcompra];
+    openCompraModal({proveedor: prov==='Sin proveedor asignado'?'':prov, lineas: grupos[prov].map(x=>({insumoId:x.i.id, cantidad:x.sug}))});
+  });
+  document.querySelectorAll('[data-copiar]').forEach(b=>b.onclick=()=>{
+    const prov = provs[+b.dataset.copiar];
+    const txt = 'Pedido para '+prov+'\n'+grupos[prov].map(x=>'- '+x.i.nombre+': '+fmtQty(x.sug,x.i.unidad)).join('\n');
+    copiarTexto(txt);
+  });
+}
+function copiarTexto(txt){
+  const fallback = ()=>{
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('Pedido copiado'); }catch(e){ toast('No se pudo copiar'); }
+    ta.remove();
+  };
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(()=>toast('Pedido copiado'), fallback);
+  else fallback();
+}
+
+/* ---- pestaña Costos y margen ---- */
+function invTabCostos(body){
+  const rows = state.productos.filter(p=>p.activo!==false).map(p=>{
+    const costo = costoReceta(p), tiene = (p.receta||[]).length>0;
+    return {p, costo, tiene, margen:(p.precio||0)-costo, fc:(p.precio>0 ? costo/p.precio*100 : 0), disp:porcionesPosibles(p)};
+  });
+  const con = rows.filter(r=>r.tiene).sort((a,b)=>b.fc-a.fc);
+  const sin = rows.filter(r=>!r.tiene);
+  const fcProm = con.length ? con.reduce((t,r)=>t+r.fc,0)/con.length : 0;
+  const peor = con[0], mejor = con.length ? con[con.length-1] : null;
+  const claseFc = fc => fc<=35 ? 'ok' : fc<=45 ? 'warn' : 'danger';
+  const kpi = (label, val, sub)=>`<div class="card" style="padding:14px"><div class="prod-meta">${label}</div><div class="prod-price" style="font-size:20px">${val}</div>${sub?`<div class="prod-meta">${sub}</div>`:''}</div>`;
+  body.innerHTML = `
+    <p class="section-sub">El <b>costo</b> sale de la receta de cada producto (cantidad de cada insumo × su costo promedio). El <b>food cost</b> es el costo dividido el precio de venta: en gastronomía un valor sano suele rondar el 28–35%.</p>
+    <div class="grid-cards" style="margin-bottom:14px">
+      ${kpi('Productos con receta', con.length+' / '+rows.length, sin.length?sin.length+' sin receta':'todos con receta')}
+      ${kpi('Food cost promedio', con.length?Math.round(fcProm)+'%':'—')}
+      ${kpi('Mayor food cost', peor?Math.round(peor.fc)+'%':'—', peor?esc(peor.p.nombre):'')}
+      ${kpi('Mejor margen', mejor?Math.round(100-mejor.fc)+'%':'—', mejor?esc(mejor.p.nombre):'')}
+    </div>
+    <div class="card" style="overflow-x:auto"><table>
+      <thead><tr><th>Producto</th><th>Precio</th><th>Costo</th><th>Margen</th><th>Food cost</th><th>Alcanza para</th><th></th></tr></thead>
+      <tbody>
+        ${rows.length===0?'<tr><td colspan="7"><div class="empty">No hay productos cargados.</div></td></tr>':''}
+        ${con.map(r=>`<tr>
+          <td><b>${esc(r.p.nombre)}</b><div class="prod-meta">${esc(r.p.categoria||'General')} · ${r.p.receta.length} insumo(s)</div></td>
+          <td>${fmtMoney(r.p.precio)}</td><td>${fmtMoney(r.costo)}</td>
+          <td><b>${fmtMoney(r.margen)}</b> <span class="prod-meta">(${Math.round(100-r.fc)}%)</span></td>
+          <td><span class="pill ${claseFc(r.fc)}">${r.fc.toFixed(0)}%</span></td>
+          <td>${r.disp==null?'—':(r.disp<=0?'<span class="pill danger">Sin insumos</span>':r.disp+' porc.')}</td>
+          <td>${state.adminMode?`<button class="btn sm ghost" data-editprodinv="${r.p.id}">Receta</button>`:''}</td></tr>`).join('')}
+        ${sin.map(r=>`<tr>
+          <td><b>${esc(r.p.nombre)}</b><div class="prod-meta">${esc(r.p.categoria||'General')}</div></td>
+          <td>${fmtMoney(r.p.precio)}</td><td>—</td><td>—</td><td><span class="pill neutral">Sin receta</span></td><td>—</td>
+          <td>${state.adminMode?`<button class="btn sm ghost" data-editprodinv="${r.p.id}">Cargar receta</button>`:''}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  document.querySelectorAll('[data-editprodinv]').forEach(b=>b.onclick=()=>openProductEditor(state.productos.find(p=>p.id===b.dataset.editprodinv)));
+}
+
+/* ---- pestaña Movimientos ---- */
+function invTabMovimientos(body){
+  const fecha = state.ui.invMovFecha || todayStr();
+  const tipo = state.ui.invMovTipo || 'todos';
+  const delDia = state.movimientosInsumos.filter(m=>dateOf(m.creado)===fecha);
+  const movs = delDia.filter(m=>tipo==='todos'||m.tipo===tipo).sort((a,b)=>b.creado-a.creado);
+  const valor = m => Math.abs(m.delta||0)*(m.costoUnit||0);
+  const suma = t => delDia.filter(m=>m.tipo===t).reduce((s,m)=>s+(t==='compra'?(m.total||0):valor(m)),0);
+  const kpi = (label, val, sub, color)=>`<div class="card" style="padding:14px"><div class="prod-meta">${label}</div><div class="prod-price" style="font-size:20px;${color?'color:'+color:''}">${val}</div>${sub?`<div class="prod-meta">${sub}</div>`:''}</div>`;
+  body.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+      <div class="field" style="max-width:190px"><label>Fecha</label><input type="date" id="fInvFecha" value="${fecha}"></div>
+      <div class="field" style="max-width:220px"><label>Tipo</label><select id="fInvTipo">
+        <option value="todos">Todos</option>${Object.entries(TIPO_MOV_LABEL).map(([k,l])=>`<option value="${k}" ${tipo===k?'selected':''}>${l}</option>`).join('')}</select></div>
+    </div>
+    <div class="grid-cards" style="margin-bottom:14px">
+      ${kpi('Compras del día', fmtMoney(suma('compra')), delDia.filter(m=>m.tipo==='compra').length+' ingreso(s)')}
+      ${kpi('Consumo por ventas', fmtMoney(suma('consumo')), 'a costo de los insumos')}
+      ${kpi('Mermas', fmtMoney(suma('merma')), delDia.filter(m=>m.tipo==='merma').length+' registro(s)', suma('merma')>0?'var(--danger)':'')}
+    </div>
+    <div class="card" style="overflow-x:auto"><table>
+      <thead><tr><th>Hora</th><th>Insumo</th><th>Tipo</th><th>Cantidad</th><th>Valor</th><th>Detalle</th></tr></thead>
+      <tbody>${movs.length===0?'<tr><td colspan="6"><div class="empty">Sin movimientos para esta fecha.</div></td></tr>':
+        movs.slice(0,150).map(m=>`<tr><td>${fmtTime(m.creado)}</td><td>${esc(m.insumoNombre)}</td>
+          <td><span class="pill ${TIPO_MOV_CLASS[m.tipo]||'neutral'}">${TIPO_MOV_LABEL[m.tipo]||m.tipo}</span></td>
+          <td>${m.delta>0?'+':''}${fmtQty(m.delta,m.unidad)}</td><td>${fmtMoney(m.tipo==='compra'?(m.total||0):valor(m))}</td>
+          <td>${esc([m.proveedor, m.motivo].filter(Boolean).join(' · ')||'—')}</td></tr>`).join('')}</tbody></table></div>
+    ${movs.length>150?`<p class="section-sub" style="margin-top:8px">Mostrando los últimos 150 de ${movs.length} movimientos. Filtrá por tipo para ver el resto.</p>`:''}`;
+  document.getElementById('fInvFecha').onchange = e=>{ state.ui.invMovFecha = e.target.value || todayStr(); render(); };
+  document.getElementById('fInvTipo').onchange = e=>{ state.ui.invMovTipo = e.target.value; render(); };
+}
+
+/* ---- modales ---- */
+function openCompraModal(preset){
+  preset = preset || {};
+  const insumos = state.insumos.filter(i=>i.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if(!insumos.length){ toast('Primero cargá insumos'); return; }
+  let lineas = (preset.lineas && preset.lineas.length ? preset.lineas : [{insumoId:preset.insumoId||insumos[0].id, cantidad:''}])
+    .map(l=>({insumoId:l.insumoId, cantidad:l.cantidad, costo:(insumoPorId(l.insumoId)||{}).costo||0}));
+  const proveedores = [...new Set(state.insumos.map(i=>i.proveedor).filter(Boolean))];
+  openModal(`
+    <h3>Registrar compra</h3>
+    <p class="section-sub">Suma los insumos al inventario y actualiza su costo promedio con el precio de esta compra.</p>
+    <div class="field"><label>Proveedor</label><input id="cProveedor" list="listaProv" value="${esc(preset.proveedor||'')}" placeholder="Opcional"><datalist id="listaProv">${proveedores.map(p=>`<option value="${esc(p)}">`).join('')}</datalist></div>
+    <div id="lineasWrap"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn sm ghost" id="btnAddLinea">+ Agregar insumo</button>
+      <span class="section-sub" style="margin:0">Total: <b id="compraTotal" style="color:var(--ink)">$0</b></span>
+    </div>
+    <button class="btn gold" id="btnGuardarCompra" style="margin-top:14px">Guardar compra</button>
+  `, {wide:true});
+  const wrap = document.getElementById('lineasWrap');
+  function leer(){
+    wrap.querySelectorAll('[data-li]').forEach(el=>{
+      const i = +el.dataset.li;
+      lineas[i].insumoId = el.querySelector('.l-ins').value;
+      lineas[i].cantidad = el.querySelector('.l-cant').value;
+      lineas[i].costo = parseFloat(el.querySelector('.l-costo').value)||0;
+    });
+  }
+  function total(){ leer(); const t = lineas.reduce((s,l)=>s+(parseFloat(l.cantidad)||0)*(l.costo||0),0); document.getElementById('compraTotal').textContent = fmtMoney(t); }
+  function pintar(){
+    wrap.innerHTML = lineas.map((l,i)=>{
+      const ins = insumoPorId(l.insumoId)||{};
+      return `<div class="field-row" data-li="${i}" style="align-items:flex-end">
+        <div class="field" style="flex:2"><label>Insumo</label><select class="l-ins">${insumos.map(x=>`<option value="${x.id}" ${x.id===l.insumoId?'selected':''}>${esc(x.nombre)} (${esc(x.unidad)})</option>`).join('')}</select></div>
+        <div class="field" style="max-width:120px"><label>Cantidad (${esc(ins.unidad||'')})</label><input type="number" min="0" step="any" class="l-cant" value="${l.cantidad}"></div>
+        <div class="field" style="max-width:130px"><label>Costo unit. $</label><input type="number" min="0" step="any" class="l-costo" value="${l.costo}"></div>
+        ${lineas.length>1?`<button class="iconbtn" data-dell="${i}">✕</button>`:''}</div>`;
+    }).join('');
+    wrap.querySelectorAll('.l-ins').forEach(s=>s.onchange=()=>{ leer(); const i = +s.closest('[data-li]').dataset.li; lineas[i].costo = (insumoPorId(lineas[i].insumoId)||{}).costo||0; pintar(); });
+    wrap.querySelectorAll('.l-cant,.l-costo').forEach(inp=>inp.oninput=total);
+    wrap.querySelectorAll('[data-dell]').forEach(b=>b.onclick=()=>{ leer(); lineas.splice(+b.dataset.dell,1); pintar(); });
+    total();
+  }
+  pintar();
+  document.getElementById('btnAddLinea').onclick = ()=>{ leer(); lineas.push({insumoId:insumos[0].id, cantidad:'', costo:insumos[0].costo||0}); pintar(); };
+  document.getElementById('btnGuardarCompra').onclick = async ()=>{
+    leer();
+    const validas = lineas.filter(l=>(parseFloat(l.cantidad)||0)>0);
+    if(!validas.length){ toast('Cargá la cantidad de al menos un insumo'); return; }
+    const prov = document.getElementById('cProveedor').value.trim();
+    let totalGeneral = 0;
+    try{
+      for(const l of validas){
+        const ins = insumoPorId(l.insumoId); if(!ins) continue;
+        const cant = parseFloat(l.cantidad), cu = l.costo||0, stock = ins.stock||0;
+        const costoNuevo = (stock+cant)>0 ? redondear((stock*(ins.costo||0) + cant*cu)/(stock+cant), 2) : cu;
+        totalGeneral += cant*cu;
+        await moverInsumo(l.insumoId, 'compra', cant, 'Compra'+(prov?' · '+prov:''), {costoUnit:cu, total:cant*cu, proveedor:prov, costoNuevo});
+      }
+      closeModal(); toast('Compra registrada: '+fmtMoney(totalGeneral));
+    }catch(e){ toast('No se pudo registrar la compra'); }
+  };
+}
+function openMermaModal(ins){
+  if(!ins) return;
+  openModal(`
+    <h3>Registrar merma — ${esc(ins.nombre)}</h3>
+    <p class="section-sub">Stock actual: <b>${fmtQty(ins.stock,ins.unidad)}</b>. Se descuenta del inventario y queda valorizada en el historial.</p>
+    <div class="field-row">
+      <div class="field"><label>Cantidad perdida (${esc(ins.unidad)})</label><input id="mCant" type="number" min="0" step="any"></div>
+      <div class="field"><label>Motivo</label><select id="mMotivo">${MOTIVOS_MERMA.map(m=>`<option>${m}</option>`).join('')}</select></div>
+    </div>
+    <button class="btn danger" id="btnGuardarMerma" style="margin-top:10px">Registrar merma</button>
+  `);
+  document.getElementById('btnGuardarMerma').onclick = async ()=>{
+    const cant = parseFloat(document.getElementById('mCant').value)||0;
+    if(cant<=0){ toast('Ingresá una cantidad mayor a 0'); return; }
+    if(cant>(ins.stock||0)+1e-9){ toast('No hay tanto stock para descontar'); return; }
+    try{ await moverInsumo(ins.id, 'merma', -cant, document.getElementById('mMotivo').value); closeModal(); toast('Merma registrada'); }
+    catch(e){ toast('No se pudo registrar la merma'); }
+  };
+}
+function openConteoModal(ins){
+  if(!ins) return;
+  openModal(`
+    <h3>Conteo físico — ${esc(ins.nombre)}</h3>
+    <p class="section-sub">Stock según el sistema: <b>${fmtQty(ins.stock,ins.unidad)}</b>. Ingresá lo que realmente hay y el sistema registra la diferencia.</p>
+    <div class="field-row">
+      <div class="field"><label>Stock real (${esc(ins.unidad)})</label><input id="cReal" type="number" min="0" step="any" value="${redondear(ins.stock)}"></div>
+      <div class="field"><label>Motivo</label><input id="cMotivo" value="Conteo físico"></div>
+    </div>
+    <button class="btn" id="btnGuardarConteo" style="margin-top:10px">Guardar conteo</button>
+  `);
+  document.getElementById('btnGuardarConteo').onclick = async ()=>{
+    const real = parseFloat(document.getElementById('cReal').value);
+    if(isNaN(real) || real<0){ toast('Ingresá un stock válido'); return; }
+    const delta = redondear(real-(ins.stock||0));
+    if(delta===0){ closeModal(); toast('Sin diferencias'); return; }
+    try{ await moverInsumo(ins.id, 'ajuste', delta, document.getElementById('cMotivo').value.trim()||'Conteo físico'); closeModal(); toast('Conteo guardado'); }
+    catch(e){ toast('No se pudo guardar el conteo'); }
+  };
+}
+function openInsumoEditor(ins){
+  if(!requireAdmin()) return;
+  const isNew = !ins;
+  ins = ins || {nombre:'', rubro:'', unidad:'kg', stock:0, minimo:0, ideal:0, costo:0, proveedor:'', activo:true};
+  const rubros = [...new Set(state.insumos.map(i=>i.rubro).filter(Boolean))];
+  const proveedores = [...new Set(state.insumos.map(i=>i.proveedor).filter(Boolean))];
+  openModal(`
+    <h3>${isNew?'Nuevo insumo':'Editar insumo'}</h3>
+    <div class="field-row">
+      <div class="field" style="flex:2"><label>Nombre</label><input id="iNombre" value="${esc(ins.nombre)}" placeholder="Ej: Harina 000"></div>
+      <div class="field"><label>Rubro</label><input id="iRubro" list="listaRubros" value="${esc(ins.rubro||'')}" placeholder="Ej: Almacén"><datalist id="listaRubros">${rubros.map(r=>`<option value="${esc(r)}">`).join('')}</datalist></div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="max-width:120px"><label>Unidad</label><select id="iUnidad">${UNIDADES.map(u=>`<option ${u===ins.unidad?'selected':''}>${u}</option>`).join('')}</select></div>
+      <div class="field"><label>Costo por unidad $</label><input id="iCosto" type="number" min="0" step="any" value="${ins.costo||0}"></div>
+      ${isNew?`<div class="field"><label>Stock inicial</label><input id="iStock" type="number" min="0" step="any" value="0"></div>`:''}
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Stock mínimo (alerta)</label><input id="iMinimo" type="number" min="0" step="any" value="${ins.minimo||0}"></div>
+      <div class="field"><label>Stock ideal (para reponer)</label><input id="iIdeal" type="number" min="0" step="any" value="${ins.ideal||0}" placeholder="vacío = el doble del mínimo"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Proveedor</label><input id="iProveedor" list="listaProv2" value="${esc(ins.proveedor||'')}"><datalist id="listaProv2">${proveedores.map(p=>`<option value="${esc(p)}">`).join('')}</datalist></div>
+      <div class="field" style="max-width:130px"><label>Activo</label><select id="iActivo"><option value="1" ${ins.activo!==false?'selected':''}>Sí</option><option value="0" ${ins.activo===false?'selected':''}>No</option></select></div>
+    </div>
+    ${isNew?'':'<p class="section-sub">Para corregir el stock usá "Contar" (conteo físico): así queda el registro del ajuste.</p>'}
+    <div style="display:flex;justify-content:space-between;margin-top:14px">
+      ${!isNew?'<button class="btn danger" id="btnDelInsumo">Eliminar</button>':'<span></span>'}
+      <button class="btn" id="btnSaveInsumo">Guardar</button>
+    </div>
+  `);
+  const del = document.getElementById('btnDelInsumo');
+  if(del) del.onclick = async ()=>{
+    const usado = state.productos.filter(p=>(p.receta||[]).some(r=>r.insumoId===ins.id));
+    if(usado.length){ toast('No se puede eliminar: lo usan '+usado.length+' receta(s) ('+usado.slice(0,3).map(p=>p.nombre).join(', ')+')'); return; }
+    if(!confirm('¿Eliminar este insumo? El historial de movimientos se conserva.')) return;
+    try{ await dbCap.doc('insumos/'+ins.id).delete(); closeModal(); toast('Insumo eliminado'); }catch(e){ toast('Error al eliminar'); }
+  };
+  document.getElementById('btnSaveInsumo').onclick = async ()=>{
+    const nombre = document.getElementById('iNombre').value.trim();
+    if(!nombre){ toast('El nombre es obligatorio'); return; }
+    if(state.insumos.some(i=>i.id!==ins.id && i.nombre.toLowerCase()===nombre.toLowerCase())){ toast('Ya existe un insumo con ese nombre'); return; }
+    const data = {
+      nombre, rubro:document.getElementById('iRubro').value.trim(), unidad:document.getElementById('iUnidad').value,
+      costo:parseFloat(document.getElementById('iCosto').value)||0, minimo:parseFloat(document.getElementById('iMinimo').value)||0,
+      ideal:parseFloat(document.getElementById('iIdeal').value)||0, proveedor:document.getElementById('iProveedor').value.trim(),
+      activo:document.getElementById('iActivo').value==='1'
+    };
+    try{
+      if(isNew){
+        const stock = parseFloat(document.getElementById('iStock').value)||0;
+        const ref = await dbCap.collection('insumos').add({...data, stock:0});
+        if(stock>0) await moverInsumo(ref.id, 'inicial', stock, 'Stock inicial');
+      } else {
+        await dbCap.doc('insumos/'+ins.id).update(data);
+      }
+      closeModal(); toast('Insumo guardado');
+    }catch(e){ toast('No se pudo guardar el insumo'); }
+  };
+}
+
 
 /* ================= CAJA ================= */
 function renderCaja(app){
@@ -1644,6 +2163,7 @@ function renderCierre(app){
   const aggList = Object.entries(productoAgg).sort((a,b)=>b[1]-a[1]);
   const cajaDelDia = (state.caja && state.caja.fecha===fecha) ? state.caja : null;
   const confirmado = cierreConfirmado(fecha);
+  const costoDia = {...costoVendido(cerrados), tiene: state.insumos.length>0 && state.productos.some(p=>(p.receta||[]).length>0)};
 
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
@@ -1663,19 +2183,22 @@ function renderCierre(app){
       <div class="card" style="padding:14px"><div class="prod-meta">Pedidos cancelados</div><div class="prod-price" style="font-size:20px">${cancelados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Personas atendidas</div><div class="prod-price" style="font-size:20px">${totalPersonas}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Tenedores usados</div><div class="prod-price" style="font-size:20px">${totalTenedores}</div></div>
+      ${costoDia.tiene?`<div class="card" style="padding:14px"><div class="prod-meta">Costo de lo vendido (est.)</div><div class="prod-price" style="font-size:20px">${fmtMoney(costoDia.costo)}</div><div class="prod-meta">${totalVentas>0?Math.round(costoDia.costo/totalVentas*100):0}% de las ventas${costoDia.sinReceta?' · '+costoDia.sinReceta+' unid. sin receta':''}</div></div>
+      <div class="card" style="padding:14px"><div class="prod-meta">Margen bruto (est.)</div><div class="prod-price" style="font-size:20px;color:var(--ok)">${fmtMoney(totalVentas-costoDia.costo)}</div><div class="prod-meta">${totalVentas>0?Math.round((1-costoDia.costo/totalVentas)*100):0}% de las ventas</div></div>`:''}
     </div>
     ${cajaDelDia?`<div class="card" style="padding:14px;margin-bottom:18px">
       <h3 style="font-size:15px;margin:0 0 8px">Caja del día</h3>
       <p class="section-sub" style="margin:0">Inicial ${fmtMoney(cajaDelDia.montoInicial)} ${cajaDelDia.abierta?'· <span class="pill busy">Abierta</span>':`· contado ${fmtMoney(cajaDelDia.montoRealCierre||0)} · diferencia <b style="color:${cajaDelDia.diferencia===0?'var(--ok)':'var(--danger)'}">${fmtMoney(cajaDelDia.diferencia||0)}</b>`}</p>
     </div>`:''}
-    <h3 style="font-size:15px">Productos vendidos</h3>
+    ${plegAbrir('productos','Productos vendidos', aggList.length+' producto(s) · '+aggList.reduce((t,[,c])=>t+c,0)+' unidades')}
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>
         ${aggList.length===0?'<tr><td colspan="2"><div class="empty">Sin ventas cerradas para esta fecha.</div></td></tr>':
           aggList.map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}
       </tbody></table>
     </div>
-    <h3 style="font-size:15px">Detalle por mesa</h3>
+    </div></details>
+    ${plegAbrir('detalle','Detalle por mesa', cerrados.length+' mesa(s)')}
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
       ${cerrados.length===0?'<div class="card empty">Sin cierres registrados.</div>':
         cerrados.map(p=>`<div class="card" style="padding:12px 14px">
@@ -1684,37 +2207,24 @@ function renderCierre(app){
           ${p.medioPago==='Mixto' && p.pagos? `<div class="prod-meta">${p.pagos.map(pg=>esc(pg.medio)+' '+fmtMoney(pg.monto)).join(' + ')}</div>`:''}
           <div class="prod-meta" style="margin-top:6px">${(p.items||[]).map(it=>it.cantidad+'× '+esc(it.nombre)).join(', ')}</div>
         </div>`).join('')}
-    </div>
-    ${cancelados.length>0?`<h3 style="font-size:15px">Pedidos cancelados</h3>
+    </div></div></details>
+    ${cancelados.length>0?`${plegAbrir('cancelados','Pedidos cancelados', cancelados.length+' pedido(s)')}
     <div class="card" style="overflow-x:auto;margin-bottom:18px">
       <table><thead><tr><th>Hora</th><th>Mesa</th><th>Motivo</th></tr></thead><tbody>
         ${cancelados.map(p=>`<tr><td>${fmtTime(p.canceladoEn)}</td><td>Mesa ${esc(p.mesaNumero)}</td><td>${esc(p.motivoCancelacion||'—')}</td></tr>`).join('')}
       </tbody></table>
-    </div>`:''}
+    </div></div></details>`:''}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
-      ${state.adminMode && !confirmado?`<div class="card" style="padding:14px;flex:1;min-width:260px"><b>Reinicio de stock diario</b><p class="section-sub">Restaura el stock de todos los productos al valor configurado (usar al iniciar el día).</p><button class="btn gold" id="btnResetStock">Reiniciar stock del día</button></div>`:''}
       ${state.adminMode?`<div class="card" style="padding:14px;flex:1;min-width:260px">
         <b>Confirmar cierre del día</b>
-        <p class="section-sub">${confirmado?'Este día ya fue confirmado y no admite más cambios.':'Una vez confirmado, no se va a poder reiniciar el stock de esta fecha.'}</p>
+        <p class="section-sub">${confirmado?'Este día ya fue confirmado y no admite más cambios.':'Una vez confirmado, el cierre de esta fecha queda bloqueado.'}</p>
         <button class="btn ${confirmado?'':'danger'}" id="btnConfirmarCierre" ${confirmado?'disabled':''}>${confirmado?'Cierre ya confirmado':'Confirmar cierre'}</button>
       </div>`:''}
     </div>
   `;
   document.getElementById('fFecha').onchange = (e)=>{ state.ui.cierreDate = e.target.value; render(); };
+  document.querySelectorAll('details[data-plegable]').forEach(d=>d.addEventListener('toggle', ()=>{ state.ui.cierreSecciones[d.dataset.plegable] = d.open; }));
   document.getElementById('btnExportarCSV').onclick = ()=> exportarCierreExcel(fecha, cerrados, cancelados, totalVentas);
-  const rb = document.getElementById('btnResetStock');
-  if(rb) rb.onclick = async ()=>{
-    if(!confirm('¿Reiniciar el stock de todos los productos?')) return;
-    try{
-      for(const p of state.productos){
-        if(p.stockDiario!=null){
-          const delta = p.stockDiario - (p.stockRestante||0);
-          if(delta!==0) await registrarMovimientoStock(p.id, p.nombre, 'apertura', delta, 'Reinicio de stock diario');
-        }
-      }
-      toast('Stock reiniciado');
-    }catch(e){ toast('Error al reiniciar stock'); }
-  };
   const bcc = document.getElementById('btnConfirmarCierre');
   if(bcc) bcc.onclick = async ()=>{
     if(!requireAdmin()) return;
@@ -1821,6 +2331,16 @@ function exportarCierreExcel(fecha, cerrados, cancelados, totalVentas){
     const esTop = i===0 && cant===maxCant;
     rows.push(`<tr>${xlsTd(nombre,{bg:esTop?'#fef3c7':zebra, bold:esTop, color:esTop?'#92400e':undefined})}${xlsTd(cant,{bg:esTop?'#fef3c7':zebra, align:'right', bold:true, color:esTop?'#92400e':undefined})}</tr>`);
   });
+
+  if(state.insumos.length>0 && state.productos.some(p=>(p.receta||[]).length>0)){
+    const cv = costoVendido(cerrados);
+    rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
+    rows.push(xlsSectionRow('RESULTADO ESTIMADO (según recetas)', 2, '#8b5cf6'));
+    rows.push(xlsHeadRow(['Concepto','Monto']));
+    rows.push(`<tr>${xlsTd('Ventas',{bg:'#ffffff',bold:true})}${xlsTd(totalVentas,{bg:'#ffffff',align:'right'})}</tr>`);
+    rows.push(`<tr>${xlsTd('Costo de lo vendido',{bg:'#f8fafc',bold:true})}${xlsTd(Math.round(cv.costo),{bg:'#f8fafc',align:'right'})}</tr>`);
+    rows.push(`<tr>${xlsTd('Margen bruto',{bg:'#ede9fe',bold:true,color:'#5b21b6'})}${xlsTd(Math.round(totalVentas-cv.costo),{bg:'#ede9fe',align:'right',bold:true,color:'#5b21b6'})}</tr>`);
+  }
 
   if(cancelados && cancelados.length){
     rows.push(`<tr><td colspan="7" style="border:none;padding:5px"></td></tr>`);
@@ -2064,7 +2584,7 @@ function renderConfig(app){
 /* ================= DEMO DATA ================= */
 async function loadDemoData(){
   if(!requireAdmin()) return;
-  if(!confirm('Esto va a crear mesas, productos, mozos, ~60 días de historial de ventas, cierres, cancelaciones y pedidos de ejemplo. Si ya cargaste datos de prueba antes, se duplicarían: conviene "Vaciar todos los datos" primero. ¿Continuar?')) return;
+  if(!confirm('Esto va a crear mesas, productos con receta, insumos con compras y mermas, mozos, ~60 días de historial de ventas, cierres, cancelaciones y pedidos de ejemplo. Si ya cargaste datos de prueba antes, se duplicarían: conviene "Vaciar todos los datos" primero. ¿Continuar?')) return;
   toast('Cargando datos de prueba ampliados…');
   try{
     const estaciones = [
@@ -2089,7 +2609,7 @@ async function loadDemoData(){
 
     const productosDef = [
       // Calientes
-      {nombre:'Sorrentinos de jamón y queso', categoria:'Principales', precio:8500, estacionId:'caliente', stockDiario:20, grupos:[
+      {nombre:'Sorrentinos de jamón y queso', categoria:'Principales', precio:8500, estacionId:'caliente', grupos:[
           {id:uidLocal(), nombre:'Salsa', tipo:'unica', obligatoria:true, opciones:[
             {id:uidLocal(), nombre:'Fileto', precioExtra:0},
             {id:uidLocal(), nombre:'Crema y nuez', precioExtra:500},
@@ -2099,78 +2619,133 @@ async function loadDemoData(){
             {id:uidLocal(), nombre:'Extra queso', precioExtra:800},
           ]},
       ]},
-      {nombre:'Milanesa napolitana', categoria:'Principales', precio:9200, estacionId:'caliente', stockDiario:15, grupos:[
+      {nombre:'Milanesa napolitana', categoria:'Principales', precio:9200, estacionId:'caliente', grupos:[
         {id:uidLocal(), nombre:'Guarnición', tipo:'unica', obligatoria:true, permiteNinguno:true, opciones:[
           {id:uidLocal(), nombre:'Papas fritas', precioExtra:0},
           {id:uidLocal(), nombre:'Puré de papas', precioExtra:500},
           {id:uidLocal(), nombre:'Ensalada mixta', precioExtra:300},
         ]},
       ]},
-      {nombre:'Pizza Muzzarella', categoria:'Principales', precio:7500, estacionId:'caliente', stockDiario:30, grupos:[]},
+      {nombre:'Pizza Muzzarella', categoria:'Principales', precio:7500, estacionId:'caliente', grupos:[]},
       
       // Parrilla
-      {nombre:'Parrillada para 2', categoria:'Parrilla', precio:22000, estacionId:'parrilla', stockDiario:10, grupos:[
+      {nombre:'Parrillada para 2', categoria:'Parrilla', precio:22000, estacionId:'parrilla', grupos:[
         {id:uidLocal(), nombre:'Punto de cocción', tipo:'unica', obligatoria:true, opciones:[
           {id:uidLocal(), nombre:'Jugoso', precioExtra:0},
           {id:uidLocal(), nombre:'A punto', precioExtra:0},
           {id:uidLocal(), nombre:'Bien cocido', precioExtra:0},
         ]}
       ]},
-      {nombre:'Choripán clásico', categoria:'Parrilla', precio:3500, estacionId:'parrilla', stockDiario:25, grupos:[]},
+      {nombre:'Choripán clásico', categoria:'Parrilla', precio:3500, estacionId:'parrilla', grupos:[]},
       
       // Fríos y Entradas
-      {nombre:'Ensalada Caesar', categoria:'Entradas', precio:5200, estacionId:'fria', stockDiario:25, grupos:[
+      {nombre:'Ensalada Caesar', categoria:'Entradas', precio:5200, estacionId:'fria', grupos:[
         {id:uidLocal(), nombre:'Proteína', tipo:'unica', obligatoria:false, opciones:[
           {id:uidLocal(), nombre:'Pollo grillado', precioExtra:1200},
           {id:uidLocal(), nombre:'Sin proteína', precioExtra:0},
         ]},
       ]},
-      {nombre:'Empanadas (docena)', categoria:'Entradas', precio:6000, estacionId:'fria', stockDiario:10, grupos:[]},
-      {nombre:'Tabla de Fiambres', categoria:'Entradas', precio:12000, estacionId:'fria', stockDiario:8, grupos:[]},
+      {nombre:'Empanadas (docena)', categoria:'Entradas', precio:6000, estacionId:'fria', grupos:[]},
+      {nombre:'Tabla de Fiambres', categoria:'Entradas', precio:12000, estacionId:'fria', grupos:[]},
       
       // Bebidas
-      {nombre:'Copa de vino Malbec', categoria:'Bebidas', precio:3200, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Vino Malbec (Botella)', categoria:'Bebidas', precio:11000, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Agua con gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Agua sin gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Gaseosa línea Coca-Cola', categoria:'Bebidas', precio:1800, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Cerveza Artesanal IPA', categoria:'Bebidas', precio:3500, estacionId:'bebidas', stockDiario:50, grupos:[]},
+      {nombre:'Copa de vino Malbec', categoria:'Bebidas', precio:3200, estacionId:'bebidas', grupos:[]},
+      {nombre:'Vino Malbec (Botella)', categoria:'Bebidas', precio:11000, estacionId:'bebidas', grupos:[]},
+      {nombre:'Agua con gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', grupos:[]},
+      {nombre:'Agua sin gas', categoria:'Bebidas', precio:1800, estacionId:'bebidas', grupos:[]},
+      {nombre:'Gaseosa línea Coca-Cola', categoria:'Bebidas', precio:1800, estacionId:'bebidas', grupos:[]},
+      {nombre:'Cerveza Artesanal IPA', categoria:'Bebidas', precio:3500, estacionId:'bebidas', grupos:[]},
       
       // Postres
-      {nombre:'Tiramisú', categoria:'Postres', precio:4200, estacionId:'postres', stockDiario:12, grupos:[]},
-      {nombre:'Flan casero', categoria:'Postres', precio:3800, estacionId:'postres', stockDiario:15, grupos:[
+      {nombre:'Tiramisú', categoria:'Postres', precio:4200, estacionId:'postres', grupos:[]},
+      {nombre:'Flan casero', categoria:'Postres', precio:3800, estacionId:'postres', grupos:[
         {id:uidLocal(), nombre:'Agregados', tipo:'multiple', obligatoria:false, opciones:[
           {id:uidLocal(), nombre:'Dulce de Leche', precioExtra:500},
           {id:uidLocal(), nombre:'Crema', precioExtra:500},
         ]}
       ]},
-      {nombre:'Helado (2 bochas)', categoria:'Postres', precio:3500, estacionId:'postres', stockDiario:40, grupos:[]},
+      {nombre:'Helado (2 bochas)', categoria:'Postres', precio:3500, estacionId:'postres', grupos:[]},
 
-      // Extras para probar más casos (stock bajo, agotado, producto inactivo, categorías nuevas)
-      {nombre:'Ñoquis de papa', categoria:'Principales', precio:7800, estacionId:'caliente', stockDiario:12, stockRestante:12, grupos:[
+      // Extras para probar más casos (insumos agotados, producto inactivo, categorías nuevas)
+      {nombre:'Ñoquis de papa', categoria:'Principales', precio:7800, estacionId:'caliente', grupos:[
         {id:uidLocal(), nombre:'Salsa', tipo:'unica', obligatoria:true, opciones:[
           {id:uidLocal(), nombre:'Fileto', precioExtra:0},
           {id:uidLocal(), nombre:'Bolognesa', precioExtra:900},
         ]},
       ]},
-      {nombre:'Bife de chorizo', categoria:'Parrilla', precio:15500, estacionId:'parrilla', stockDiario:14, stockRestante:14, grupos:[
+      {nombre:'Bife de chorizo', categoria:'Parrilla', precio:15500, estacionId:'parrilla', grupos:[
         {id:uidLocal(), nombre:'Punto de cocción', tipo:'unica', obligatoria:true, opciones:[
           {id:uidLocal(), nombre:'Jugoso', precioExtra:0},
           {id:uidLocal(), nombre:'A punto', precioExtra:0},
           {id:uidLocal(), nombre:'Bien cocido', precioExtra:0},
         ]},
       ]},
-      {nombre:'Provoleta', categoria:'Entradas', precio:5500, estacionId:'parrilla', stockDiario:18, stockRestante:18, grupos:[]},
-      {nombre:'Rabas', categoria:'Entradas', precio:9800, estacionId:'fria', stockDiario:6, stockRestante:6, grupos:[]},
-      {nombre:'Limonada con menta', categoria:'Bebidas', precio:2800, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Café', categoria:'Bebidas', precio:2200, estacionId:'bebidas', stockDiario:null, grupos:[]},
-      {nombre:'Cheesecake', categoria:'Postres', precio:4600, estacionId:'postres', stockDiario:10, stockRestante:10, grupos:[]},
-      {nombre:'Ravioles de espinaca (fuera de carta)', categoria:'Principales', precio:8200, estacionId:'caliente', stockDiario:null, activo:false, grupos:[]},
+      {nombre:'Provoleta', categoria:'Entradas', precio:5500, estacionId:'parrilla', grupos:[]},
+      {nombre:'Rabas', categoria:'Entradas', precio:9800, estacionId:'fria', grupos:[]},
+      {nombre:'Limonada con menta', categoria:'Bebidas', precio:2800, estacionId:'bebidas', grupos:[]},
+      {nombre:'Café', categoria:'Bebidas', precio:2200, estacionId:'bebidas', grupos:[]},
+      {nombre:'Cheesecake', categoria:'Postres', precio:4600, estacionId:'postres', grupos:[]},
+      {nombre:'Ravioles de espinaca (fuera de carta)', categoria:'Principales', precio:8200, estacionId:'caliente', activo:false, grupos:[]},
     ];
     
+    // --- INSUMOS (ingredientes) con su costo y proveedor, y la receta de cada producto ---
+    const INSUMOS_DEF = [
+      // [nombre, rubro, unidad, costo por unidad, proveedor]
+      ['Nalga','Carnes','kg',8500,'Frigorífico Del Sur'], ['Bife de chorizo (corte)','Carnes','kg',13500,'Frigorífico Del Sur'],
+      ['Mix de parrilla','Carnes','kg',8200,'Frigorífico Del Sur'], ['Chorizo','Carnes','un',900,'Frigorífico Del Sur'],
+      ['Fiambres surtidos','Carnes','kg',9500,'Frigorífico Del Sur'], ['Calamar','Pescados','kg',9500,'Pescadería del Puerto'],
+      ['Queso muzzarella','Lácteos','kg',8800,'Lácteos La Serena'], ['Queso parmesano','Lácteos','g',14,'Lácteos La Serena'],
+      ['Queso crema','Lácteos','g',7.5,'Lácteos La Serena'], ['Mascarpone','Lácteos','g',9,'Lácteos La Serena'],
+      ['Leche','Lácteos','l',1100,'Lácteos La Serena'], ['Huevo','Lácteos','un',280,'Lácteos La Serena'],
+      ['Helado','Lácteos','l',6500,'Lácteos La Serena'], ['Provoleta (horma)','Lácteos','un',1500,'Lácteos La Serena'],
+      ['Pasta rellena','Almacén','kg',9000,'Distribuidora Norte'], ['Ñoquis','Almacén','kg',4800,'Distribuidora Norte'],
+      ['Harina 000','Almacén','kg',1100,'Distribuidora Norte'], ['Pan rallado','Almacén','g',2.2,'Distribuidora Norte'],
+      ['Salsa de tomate','Almacén','l',3000,'Distribuidora Norte'], ['Aceite','Almacén','l',3200,'Distribuidora Norte'],
+      ['Café','Almacén','g',18,'Distribuidora Norte'], ['Azúcar','Almacén','g',1.3,'Distribuidora Norte'],
+      ['Vainillas','Almacén','g',7,'Distribuidora Norte'], ['Empanada','Panificados','un',190,'Distribuidora Norte'],
+      ['Pan de choripán','Panificados','un',250,'Distribuidora Norte'],
+      ['Papa','Verdulería','kg',1000,'Verdulería El Mercado'], ['Lechuga','Verdulería','kg',2200,'Verdulería El Mercado'],
+      ['Limón','Verdulería','kg',1800,'Verdulería El Mercado'], ['Menta','Verdulería','g',6,'Verdulería El Mercado'],
+      ['Vino Malbec (botella)','Bebidas','un',5200,'Bebidas Patagonia'], ['Cerveza IPA','Bebidas','un',1300,'Bebidas Patagonia'],
+      ['Gaseosa','Bebidas','un',700,'Bebidas Patagonia'], ['Agua con gas','Bebidas','un',600,'Bebidas Patagonia'],
+      ['Agua sin gas','Bebidas','un',550,'Bebidas Patagonia'],
+    ];
+    const insRefs = {};
+    if(!dbData.insumos) dbData.insumos = {};
+    INSUMOS_DEF.forEach(([nombre,rubro,unidad,costo,proveedor],n)=>{
+      const id = uidLocal()+'i'+n;
+      dbData.insumos[id] = {nombre, rubro, unidad, costo, proveedor, stock:0, minimo:0, ideal:0, activo:true};
+      insRefs[nombre] = {id, nombre, unidad, costo, proveedor};
+    });
+    // Receta por porción: [insumo, cantidad en la unidad del insumo]
+    const RECETAS = {
+      'Sorrentinos de jamón y queso': [['Pasta rellena',0.25],['Salsa de tomate',0.12]],
+      'Milanesa napolitana': [['Nalga',0.22],['Pan rallado',50],['Huevo',1],['Queso muzzarella',0.08],['Salsa de tomate',0.08],['Papa',0.3]],
+      'Pizza Muzzarella': [['Harina 000',0.3],['Queso muzzarella',0.25],['Salsa de tomate',0.1],['Aceite',0.02]],
+      'Parrillada para 2': [['Mix de parrilla',0.8],['Chorizo',2],['Papa',0.3]],
+      'Choripán clásico': [['Chorizo',1],['Pan de choripán',1]],
+      'Ensalada Caesar': [['Lechuga',0.2],['Queso parmesano',30],['Huevo',1],['Pan rallado',20]],
+      'Empanadas (docena)': [['Empanada',12]],
+      'Tabla de Fiambres': [['Fiambres surtidos',0.4],['Queso muzzarella',0.15]],
+      'Copa de vino Malbec': [['Vino Malbec (botella)',0.2]],
+      'Vino Malbec (Botella)': [['Vino Malbec (botella)',1]],
+      'Agua con gas': [['Agua con gas',1]], 'Agua sin gas': [['Agua sin gas',1]],
+      'Gaseosa línea Coca-Cola': [['Gaseosa',1]], 'Cerveza Artesanal IPA': [['Cerveza IPA',1]],
+      'Tiramisú': [['Mascarpone',100],['Vainillas',50],['Huevo',1],['Café',10],['Azúcar',20]],
+      'Flan casero': [['Huevo',2],['Leche',0.25],['Azúcar',50]],
+      'Helado (2 bochas)': [['Helado',0.15]],
+      'Ñoquis de papa': [['Ñoquis',0.3],['Salsa de tomate',0.12]],
+      'Bife de chorizo': [['Bife de chorizo (corte)',0.38],['Papa',0.25]],
+      'Provoleta': [['Provoleta (horma)',1],['Aceite',0.01]],
+      'Rabas': [['Calamar',0.25],['Harina 000',0.08],['Aceite',0.15]],
+      'Limonada con menta': [['Limón',0.25],['Azúcar',40],['Menta',5]],
+      'Café': [['Café',18],['Azúcar',10]],
+      'Cheesecake': [['Queso crema',120],['Vainillas',40],['Azúcar',30],['Huevo',1]],
+    };
+
     const prodRefs = {};
     for(const p of productosDef){
-      const ref = await dbCap.collection('productos').add({stockRestante:p.stockDiario, activo:true, ...p});
+      const ref = await dbCap.collection('productos').add({activo:true, ...p, receta:(RECETAS[p.nombre]||[]).map(([n,q])=>({insumoId:insRefs[n].id, cantidad:q}))});
       prodRefs[p.nombre] = {id:ref.id, ...p};
     }
 
@@ -2376,32 +2951,84 @@ async function loadDemoData(){
       bulk('historialPrecios', {productoId:prodRefs[n].id, productoNombre:n, precioAnterior:antes, precioNuevo:nuevo, creado:tsDia(dias, 10+rnd()*2)});
     });
 
-    // Stock: la venta de hoy (pedidos abiertos y cerrados) descuenta del stock diario, con su historial de movimientos
-    const vendidoHoy = {};
-    const hoyStr = todayStr();
+    // --- INVENTARIO: consumo según recetas, stock mínimo/ideal calibrados con las ventas, compras, mermas y conteos ---
+    const recetaDe = {}; Object.entries(dbData.productos).forEach(([id,pr])=>{ recetaDe[id] = pr.receta||[]; });
+    const consumoPorDia = {};     // fecha -> insumoId -> cantidad consumida
     Object.values(dbData.pedidos).forEach(pd=>{
-      if(pd.estado==='cancelado' || dateOf(pd.creado)!==hoyStr) return;
-      (pd.items||[]).forEach(it=>{ vendidoHoy[it.productoId] = (vendidoHoy[it.productoId]||0)+it.cantidad;
-        const pr = dbData.productos[it.productoId];
-        if(pr && pr.stockDiario!=null) bulk('movimientosStock', {productoId:it.productoId, productoNombre:it.nombre, tipo:'venta', delta:-it.cantidad, motivo:'Mesa '+pd.mesaNumero, creado:it.creado});
+      if(pd.estado==='cancelado') return;
+      const f = dateOf(pd.cerrado || pd.creado);
+      (pd.items||[]).forEach(it=>(recetaDe[it.productoId]||[]).forEach(r=>{
+        const d = consumoPorDia[f] = consumoPorDia[f]||{};
+        d[r.insumoId] = (d[r.insumoId]||0) + r.cantidad*it.cantidad;
+      }));
+    });
+    const hoyStr = todayStr();
+    const fechaHace = n=>{ const d=new Date(); d.setDate(d.getDate()-n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    const niceNum = (x, unidad)=> (unidad==='kg'||unidad==='l') ? Math.max(0.5, Math.ceil(x*2)/2) : Math.max(1, Math.ceil(x));
+    Object.entries(dbData.insumos).forEach(([id,ins])=>{
+      let suma = 0; for(let n=1;n<=14;n++) suma += (consumoPorDia[fechaHace(n)]||{})[id]||0;
+      const prom = suma/14;                                       // consumo diario promedio
+      ins.minimo = niceNum(prom*1.2, ins.unidad);
+      ins.ideal  = niceNum(prom*4, ins.unidad);
+      const hoy = (consumoPorDia[hoyStr]||{})[id]||0;
+      ins.stock  = redondear(Math.max(0, niceNum(ins.ideal*(0.85+rnd()*0.25), ins.unidad) - hoy));
+    });
+
+    // Consumo: hoy ítem por ítem; los 7 días anteriores resumidos por día
+    Object.values(dbData.pedidos).forEach(pd=>{
+      if(pd.estado==='cancelado' || dateOf(pd.cerrado||pd.creado)!==hoyStr) return;
+      (pd.items||[]).forEach(it=>(recetaDe[it.productoId]||[]).forEach(r=>{
+        const ins = dbData.insumos[r.insumoId];
+        bulk('movimientosInsumos', {insumoId:r.insumoId, insumoNombre:ins.nombre, unidad:ins.unidad, tipo:'consumo', delta:-redondear(r.cantidad*it.cantidad), motivo:'Mesa '+pd.mesaNumero+' · '+it.nombre, costoUnit:ins.costo, total:null, proveedor:'', creado:it.creado});
+      }));
+    });
+    for(let off=1; off<=7; off++){
+      Object.entries(consumoPorDia[fechaHace(off)]||{}).forEach(([id,q])=>{
+        const ins = dbData.insumos[id];
+        bulk('movimientosInsumos', {insumoId:id, insumoNombre:ins.nombre, unidad:ins.unidad, tipo:'consumo', delta:-redondear(q), motivo:'Ventas del día', costoUnit:ins.costo, total:null, proveedor:'', creado:tsDia(off, 23.5)});
+      });
+    }
+    // Compras de los últimos ~60 días, con el precio un poco más bajo cuanto más viejas (inflación)
+    const porProveedor = {};
+    Object.entries(dbData.insumos).forEach(([id,ins])=>{ (porProveedor[ins.proveedor] = porProveedor[ins.proveedor]||[]).push(id); });
+    const diasCompra = [1,4,8,12,16,21,26,32,38,45,52,58];
+    Object.entries(porProveedor).forEach(([prov, ids])=>{
+      diasCompra.forEach(off=>{
+        if(rnd()<0.3) return;
+        const ts = tsDia(off, 8+rnd()*3);
+        ids.forEach(id=>{
+          const ins = dbData.insumos[id];
+          const cant = niceNum(ins.ideal*(0.7+rnd()*0.6), ins.unidad);
+          const cu = redondear(ins.costo/(1+0.0035*off)*(0.98+rnd()*0.04), 2);
+          bulk('movimientosInsumos', {insumoId:id, insumoNombre:ins.nombre, unidad:ins.unidad, tipo:'compra', delta:cant, motivo:'Compra · '+prov, costoUnit:cu, total:Math.round(cant*cu), proveedor:prov, creado:ts});
+        });
       });
     });
-    Object.entries(dbData.productos).forEach(([id,pr])=>{
-      if(pr.stockDiario==null) return;
-      bulk('movimientosStock', {productoId:id, productoNombre:pr.nombre, tipo:'apertura', delta:pr.stockDiario, motivo:'Apertura de jornada', creado:tsDia(0, 8)});
-      pr.stockRestante = Math.max(0, pr.stockDiario - (vendidoHoy[id]||0));
-    });
-    // Casos puntuales: uno agotado y uno con stock bajo, con ajustes manuales y una anulación
-    const forzarStock = (nombre, restante, motivo)=>{
-      const pr = prodRefs[nombre]; const dbp = dbData.productos[pr.id];
-      const delta = restante - dbp.stockRestante;
-      dbp.stockRestante = restante;
-      if(delta!==0) bulk('movimientosStock', {productoId:pr.id, productoNombre:nombre, tipo:'ajuste', delta, motivo, creado:Date.now()-40*60000});
+    // Mermas y conteos
+    const perecederos = Object.entries(dbData.insumos).filter(([,i])=>['Verdulería','Lácteos','Carnes','Pescados'].includes(i.rubro));
+    const motivosMerma = ['Vencido / en mal estado','Se cayó o se derramó','Error de cocina','Cortesía o degustación'];
+    for(let k=0;k<16;k++){
+      const [id,ins] = pick(perecederos);
+      const q = niceNum(ins.ideal*0.04*(1+rnd()), ins.unidad)/(ins.unidad==='un'||ins.unidad==='g'?1:2);
+      const offM = k<2 ? 0 : rint(1,25);
+      const horaM = offM===0 ? Math.max(0.1, ahoraH-1-k*0.5) : 10+rnd()*12;
+      bulk('movimientosInsumos', {insumoId:id, insumoNombre:ins.nombre, unidad:ins.unidad, tipo:'merma', delta:-redondear(q), motivo:pick(motivosMerma), costoUnit:ins.costo, total:null, proveedor:'', creado:tsDia(offM, horaM)});
+    }
+    // Casos puntuales para probar alertas y la lista de compras
+    const forzar = (nombre, valor, tipo, motivo)=>{
+      const id = insRefs[nombre].id, ins = dbData.insumos[id];
+      valor = ['un','g','ml'].includes(ins.unidad) ? Math.floor(valor) : redondear(valor,1);
+      const delta = redondear(valor - ins.stock);
+      ins.stock = valor;
+      if(delta!==0) bulk('movimientosInsumos', {insumoId:id, insumoNombre:nombre, unidad:ins.unidad, tipo, delta, motivo, costoUnit:ins.costo, total:null, proveedor:'', creado:Date.now()-45*60000});
     };
-    forzarStock('Rabas', 0, 'Se terminó la tanda del proveedor');
-    forzarStock('Ñoquis de papa', 1, 'Merma: se pasó de cocción');
-    bulk('movimientosStock', {productoId:prodRefs['Tiramisú'].id, productoNombre:'Tiramisú', tipo:'anulacion', delta:1, motivo:'Ítem quitado de la comanda', creado:Date.now()-70*60000});
-    bulk('movimientosStock', {productoId:prodRefs['Tiramisú'].id, productoNombre:'Tiramisú', tipo:'venta', delta:-3, motivo:'Mesa 2', creado:tsDia(1, 21.5)});
+    forzar('Calamar', 0, 'merma', 'Se terminó la tanda del proveedor');
+    forzar('Ñoquis', redondear(dbData.insumos[insRefs['Ñoquis'].id].minimo*0.6), 'ajuste', 'Conteo físico');
+    forzar('Provoleta (horma)', redondear(dbData.insumos[insRefs['Provoleta (horma)'].id].minimo*0.5), 'ajuste', 'Conteo físico');
+    forzar('Salsa de tomate', redondear(dbData.insumos[insRefs['Salsa de tomate'].id].minimo*0.8), 'ajuste', 'Conteo físico');
+    forzar('Huevo', redondear(dbData.insumos[insRefs['Huevo'].id].minimo*0.7), 'ajuste', 'Conteo físico');
+    // un insumo desactivado (se dejó de usar)
+    dbData.insumos[uidLocal()+'z'] = {nombre:'Ravioles de ricota', rubro:'Almacén', unidad:'kg', costo:8800, proveedor:'Distribuidora Norte', stock:0, minimo:0, ideal:0, activo:false};
 
     // Más movimientos manuales de caja hoy
     bulk('movimientosCaja', {tipo:'ingreso', medioPago:'Efectivo', concepto:'Aporte de cambio', monto:10000, creado:Date.now()-5.5*3600000});
@@ -2410,7 +3037,7 @@ async function loadDemoData(){
     bulk('movimientosCaja', {tipo:'ingreso', medioPago:'Transferencia', concepto:'Seña de reserva (cumpleaños sábado)', monto:15000, creado:Date.now()-2*3600000});
 
     saveDB();
-    ['pedidos','productos','mesas','movimientosStock','cierres','historialPrecios','movimientosCaja'].forEach(triggerDB);
+    ['pedidos','productos','mesas','insumos','movimientosInsumos','cierres','historialPrecios','movimientosCaja'].forEach(triggerDB);
 
     toast('Datos de prueba cargados con éxito');
   }catch(e){
@@ -2420,18 +3047,14 @@ async function loadDemoData(){
 }
 async function wipeAllData(){
   if(!requireAdmin()) return;
-  if(!confirm('Esto borra TODAS las mesas, productos y pedidos guardados. ¿Confirmás?')) return;
+  if(!confirm('Esto borra TODAS las mesas, productos, insumos y pedidos guardados. ¿Confirmás?')) return;
   toast('Borrando datos…');
   try{
-    for(const m of state.mesas) await dbCap.doc('mesas/'+m.id).delete();
-    for(const p of state.productos) await dbCap.doc('productos/'+p.id).delete();
-    for(const p of state.pedidos) await dbCap.doc('pedidos/'+p.id).delete();
-    for(const mv of state.movimientosCaja) await dbCap.doc('movimientosCaja/'+mv.id).delete();
-    for(const mv of state.movimientosStock) await dbCap.doc('movimientosStock/'+mv.id).delete();
-    for(const c of state.cierres) await dbCap.doc('cierres/'+c.id).delete();
-    for(const h of state.historialPrecios) await dbCap.doc('historialPrecios/'+h.id).delete();
-    await dbCap.doc('caja/main').delete();
-    await dbCap.doc('config/main').update({numMesas:0});
+    // Se vacían las colecciones de una sola vez (y se guarda una sola vez): con cientos de pedidos de prueba, borrar de a uno es lento.
+    ['mesas','productos','pedidos','movimientosCaja','movimientosStock','insumos','movimientosInsumos','cierres','historialPrecios','caja'].forEach(col=>{ dbData[col] = {}; });
+    if(dbData.config && dbData.config.main) dbData.config.main = {...dbData.config.main, numMesas:0};
+    saveDB();
+    Object.keys(dbListeners).forEach(triggerDB);
     toast('Datos borrados');
   }catch(e){ toast('Error al borrar datos'); }
 }
@@ -2442,4 +3065,4 @@ if(!localStorage.getItem(TUTORIAL_SEEN_KEY)){
 }
 </script>
 </body>
-</html>
+</html>
