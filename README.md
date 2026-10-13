@@ -88,7 +88,13 @@ cocina y no tiene este tratamiento mobile.
   elección se recuerda en cada dispositivo. Una vez que se pide la cuenta de una mesa,
   quitar un ítem de la comanda pasa a requerir modo administrador (antes de
   pedir la cuenta, el mozo puede seguir quitando ítems pendientes
-  libremente).
+  libremente). **Cargar productos a una mesa** está pensado para el
+  celular: el selector tiene buscador y categorías fijas arriba, filas
+  grandes que se tocan enteras (agrupadas por categoría) y marca los
+  productos sin insumos. Al elegir uno se configuran las opciones (las
+  obligatorias que faltan se resaltan), la cantidad con botones − / +, notas
+  rápidas ("Sin sal", "A punto"...) y el total se ve en vivo en el botón fijo
+  de abajo, con la opción "Agregar y cargar otro" para seguir sumando ítems.
 - **Cocina** — comandas en vivo por estación, con el mozo asignado a cada
   mesa visible en cada ticket. El avance de estado (pendiente → preparando →
   listo) es solo para el rol Cocina (o el admin); el rol Mozo no puede
