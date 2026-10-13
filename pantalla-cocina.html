@@ -23,6 +23,37 @@
     --tipo-entrada: #a78bfa;
     --tipo-comida: #14b8a6;
     --tipo-postre: #f472b6;
+
+    --ov-04: rgba(255,255,255,.04);
+    --ov-08: rgba(255,255,255,.08);
+    --ov-10: rgba(255,255,255,.1);
+    --ov-12: rgba(255,255,255,.12);
+    --urgent-name: #fecaca;
+    --urgent-time: #fca5a5;
+}
+:root[data-theme="light"]{
+    --bg: #e2e8f0;
+    --bg-col: #f8fafc;
+    --bg-tile: #ffffff;
+    --border-color: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+
+    --warn: #d97706;
+    --accent: #0284c7;
+    --ok: #16a34a;
+    --danger: #dc2626;
+
+    --tipo-entrada: #7c3aed;
+    --tipo-comida: #0f766e;
+    --tipo-postre: #db2777;
+
+    --ov-04: rgba(15,23,42,.04);
+    --ov-08: rgba(15,23,42,.08);
+    --ov-10: rgba(15,23,42,.08);
+    --ov-12: rgba(15,23,42,.08);
+    --urgent-name: #991b1b;
+    --urgent-time: #b91c1c;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 html, body { height: 100%; }
@@ -67,7 +98,7 @@ body {
 }
 .col-head .count {
     font-size: 0.6em; font-weight: 800; padding: 5px 16px; border-radius: 100px;
-    background: rgba(255,255,255,.12);
+    background: var(--ov-12);
 }
 .col-pendiente .col-head { color: var(--warn); border-color: var(--warn); background: rgba(245,158,11,.08); }
 .col-preparando .col-head { color: var(--accent); border-color: var(--accent); background: rgba(14,165,233,.08); }
@@ -90,11 +121,11 @@ body {
 .mesa-block-head {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 18px; font-size: clamp(1.05rem, 1.6vw, 1.35rem); font-weight: 800;
-    background: rgba(255,255,255,.04); border-bottom: 1px solid var(--border-color);
+    background: var(--ov-04); border-bottom: 1px solid var(--border-color);
 }
 .mesa-block-count {
     font-size: 0.65em; font-weight: 800; padding: 3px 12px; border-radius: 100px;
-    background: rgba(255,255,255,.1);
+    background: var(--ov-10);
 }
 .mesa-block-mozo {
     font-size: 0.65em; font-weight: 600; color: var(--text-muted);
@@ -121,7 +152,7 @@ body {
 .tile .item-obs { font-size: clamp(0.85rem, 1.1vw, 1rem); opacity: .8; font-style: italic; color: var(--warn); }
 .tile .tile-foot {
     display: flex; align-items: center; justify-content: space-between;
-    margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08);
+    margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--ov-08);
 }
 .tile .tile-time { font-size: 0.85rem; font-weight: 700; opacity: .6; }
 .tile .hint { font-size: 0.68rem; opacity: .65; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
@@ -136,8 +167,8 @@ body {
     background: linear-gradient(160deg, rgba(239,68,68,.5), var(--bg-tile) 72%);
     animation: pulseUrgent 1.1s ease-in-out infinite;
 }
-.col-pendiente .tile.urgent .item-name { color: #fecaca; }
-.col-pendiente .tile.urgent .tile-time { color: #fca5a5; opacity: .9; }
+.col-pendiente .tile.urgent .item-name { color: var(--urgent-name); }
+.col-pendiente .tile.urgent .tile-time { color: var(--urgent-time); opacity: .9; }
 .col-preparando .tile { border-color: rgba(14,165,233,.45); background: linear-gradient(160deg, rgba(14,165,233,.14), var(--bg-tile) 65%); }
 .col-listo .tile { border-color: rgba(34,197,94,.55); background: linear-gradient(160deg, rgba(34,197,94,.2), var(--bg-tile) 65%); animation: pulseReady 1.8s ease-in-out infinite; }
 
@@ -159,6 +190,17 @@ body {
     .header-links a span { display: none; }
 }
 </style>
+<script>
+  // Tema compartido con kitchen-live.html (Config → Apariencia): se aplica antes de pintar y
+  // se actualiza solo si se cambia desde otra pestaña (mismo origen, p. ej. Live Server).
+  (function(){
+    function aplicar(){
+      try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('restaurantFlowTema')==='light'?'light':'dark'); }catch(e){}
+    }
+    aplicar();
+    window.addEventListener('storage', function(e){ if(e.key==='restaurantFlowTema') aplicar(); });
+  })();
+</script>
 </head>
 <body>
 

@@ -11,6 +11,16 @@ No requiere build ni servidor: abrí `kitchen-live.html` directamente en el
 navegador (doble clic, o `python3 -m http.server` y entrar a esa URL si tu
 navegador bloquea `file://`).
 
+**Con Live Server (VS Code):** clic derecho en `kitchen-live.html` → *Open with
+Live Server* (el puerto está fijado en 5501 en `.vscode/settings.json`). Las
+tres páginas comparten `localStorage` solo si se abren bajo el **mismo
+origen**: usá siempre `http://127.0.0.1:5501/...` o siempre
+`http://localhost:5501/...`, sin mezclarlos. Ojo también con que abrir por
+`file://` usa un `localStorage` aparte del de Live Server, así que los datos
+de prueba no se ven de un modo al otro. El modo admin vive en memoria: si
+Live Server recarga la página al guardar un archivo, hay que volver a
+activarlo (el tema, el rol y los datos sí se conservan).
+
 Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar datos
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
 productos, una caja abierta y pedidos en distintos estados.
@@ -29,6 +39,9 @@ Tutorial" al pie de la barra lateral.
 | `dashboard.html` | Panel de KPIs del día (ventas, ocupación, productos top, etc.) y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año), de solo lectura. |
 | `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Clic izquierdo para avanzar un ítem un paso; clic derecho para retroceder un paso, por si se tocó por accidente. |
 | `a.html`, `cocina-ordu.html` | Prototipos previos, se mantienen como referencia histórica. |
+
+El **tema oscuro/claro** (Config → Apariencia) se aplica a las tres páginas
+activas, y si lo cambiás con otra pestaña abierta, esta se actualiza sola.
 
 Las tres páginas activas están enlazadas entre sí y leen/escriben la misma
 base de datos en `localStorage` (clave `restaurantFlowLocalDB`), así que

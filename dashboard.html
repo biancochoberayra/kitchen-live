@@ -22,6 +22,21 @@
     --warning: #f59e0b;
     --alert-red: #ef4444;
 }
+:root[data-theme="light"]{
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-hover: #e2e8f0;
+    --accent: #0ea5e9;
+    --accent-hover: #0284c7;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --alert-red: #dc2626;
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
@@ -129,6 +144,17 @@ header {
     .summary-cards{ grid-template-columns: 1fr; }
 }
 </style>
+<script>
+  // Tema compartido con kitchen-live.html (Config → Apariencia): se aplica antes de pintar y
+  // se actualiza solo si se cambia desde otra pestaña (mismo origen, p. ej. Live Server).
+  (function(){
+    function aplicar(){
+      try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('restaurantFlowTema')==='light'?'light':'dark'); }catch(e){}
+    }
+    aplicar();
+    window.addEventListener('storage', function(e){ if(e.key==='restaurantFlowTema') aplicar(); });
+  })();
+</script>
 </head>
 <body>
 

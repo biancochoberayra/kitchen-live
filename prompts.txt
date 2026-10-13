@@ -58,7 +58,7 @@ Config (solo modo admin):
 - Mozos: nombres del equipo, para poder asignarlos a las mesas.
 - Cantidad de cocineros y estaciones de cocina.
 - PIN de administrador.
-- Tema oscuro/claro: se guarda en localStorage de ese dispositivo y se aplica antes de pintar la página (sin parpadeo).
+- Tema oscuro/claro: se guarda en localStorage de ese dispositivo y se aplica antes de pintar la página (sin parpadeo). Se aplica también a dashboard.html y pantalla-cocina.html, y se sincroniza entre pestañas del mismo origen (p. ej. Live Server en 127.0.0.1:5501).
 - Carga y borrado de datos de prueba.
 
 Roles y acceso:
