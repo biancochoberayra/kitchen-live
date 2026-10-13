@@ -109,12 +109,15 @@ body {
     padding: 22px; display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 18px; align-content: start; align-items: start;
+    /* Cada fila mide lo que ocupa su bloque: sin esto, al haber más contenido que alto de pantalla las filas se achican y los bloques se pisan. */
+    grid-auto-rows: max-content;
 }
 .tiles::-webkit-scrollbar { width: 10px; }
 .tiles::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 8px; }
 
 /* --- BLOQUE POR MESA --- */
 .mesa-block {
+    min-height: min-content;
     border-radius: 18px; background: var(--bg-col); border: 1px solid var(--border-color);
     overflow: hidden;
 }
