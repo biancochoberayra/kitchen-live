@@ -1838,7 +1838,7 @@ function exportarCierreExcel(fecha, cerrados, cancelados, totalVentas){
 <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
 </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>table{border-collapse:collapse}</style>
-</head><body><table>${rows.join('')}</table></body></html>`;
+</head><body><table>${rows.join('')}</table><\/body><\/html>`;
 
   const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
   const url = URL.createObjectURL(blob);

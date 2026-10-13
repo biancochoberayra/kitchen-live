@@ -21,6 +21,12 @@ de prueba no se ven de un modo al otro. El modo admin vive en memoria: si
 Live Server recarga la página al guardar un archivo, hay que volver a
 activarlo (el tema, el rol y los datos sí se conservan).
 
+> **Nota para quien edite el código:** Live Server inyecta su script de
+> recarga justo antes del *primer* `</body>` que encuentra en el archivo, aunque
+> esté dentro de un string de JavaScript. Por eso, dentro de los `<script>`
+> hay que escribir `<\/body>` (con la barra escapada) y nunca `</body>`
+> literal; si no, la página se rompe y muestra su propio código como texto.
+
 Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar datos
 de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
 productos, una caja abierta y pedidos en distintos estados.
