@@ -5,7 +5,49 @@ corre en el navegador y los datos se guardan en `localStorage`. Sirve para
 probar el flujo completo de un restaurante (mesas, pedidos, cocina, caja,
 inventario, cierres) con datos de prueba, sin instalar nada.
 
+## Origen del proyecto
+
+El plan original (ver `prompts.txt`) pedía un sistema cliente-servidor
+completo para uso real en un restaurante: HTML/CSS/JS en el frontend,
+backend en Python con FastAPI, base de datos PostgreSQL, login real con
+usuarios y permisos, WebSockets para tiempo real, e instalación en una red
+local. Ese documento se conserva íntegro como referencia histórica, con una
+sección al principio ("ESTADO REAL DE LA IMPLEMENTACIÓN") que resume, módulo
+por módulo, qué se construyó realmente.
+
+Lo que terminó implementándose es una versión más chica, pensada para
+demostrar el flujo operativo de punta a punta sin backend ni servidor: no
+hay base de datos externa ni login con usuarios reales, y la sincronización
+entre pantallas es por lectura de `localStorage`, no por WebSockets. A
+cambio, tiene funciones que no estaban en el pedido original, como zonas
+del salón, carga rápida de mesa por número, asignación de mozo por mesa, y
+un módulo de inventario con recetas y costos en vez del simple control de
+stock por producto que se había planeado al inicio.
+
+## Arquitectura técnica
+
+- **Sin build ni dependencias**: cada página (`kitchen-live.html`,
+  `dashboard.html`, `pantalla-cocina.html`) es un único archivo HTML con su
+  propio `<style>` y `<script>`, sin frameworks ni paso de compilación. Se
+  edita y se abre directamente.
+- **Persistencia**: todo el estado (mesas, productos, insumos, pedidos,
+  caja, cierres, configuración) vive en una sola clave de `localStorage`,
+  `restaurantFlowLocalDB`, como un único objeto JSON.
+- **"Tiempo real" por polling**: las páginas no usan WebSockets; cada una
+  relee `localStorage` periódicamente, así que si se abren varias pestañas
+  del mismo navegador (por ejemplo Mapa en una y Cocina en otra) los
+  cambios se reflejan con un pequeño retraso, no al instante.
+- **Tema oscuro/claro**: se define con variables CSS (`--ink`, `--paper`,
+  `--brand`, etc.) sobre `:root`, con un bloque alternativo para
+  `:root[data-theme="light"]`. La preferencia se guarda en `localStorage` y
+  se aplica con un script mínimo antes de pintar la página, para evitar el
+  parpadeo del tema por defecto.
+
 ## Cómo usarlo
+
+Instrucciones más detalladas, con pasos para solucionar problemas si la
+página no carga bien, en el documento
+[RestaurantFlow — Instalación y uso](https://docs.google.com/document/d/19az3on9c9mE7NfaK6XuhyoNB42ro-rTmir-n5SbFR30/edit?usp=drivesdk).
 
 No requiere build ni servidor: abrí `kitchen-live.html` directamente en el
 navegador (doble clic, o `python3 -m http.server` y entrar a esa URL si tu
