@@ -156,6 +156,14 @@ details.plegable>summary:hover{color:var(--brand-2)}
 .mc-estado{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft)}
 .mc-info{font-size:12.5px;color:var(--ink-soft)}
 .mc-listo{color:var(--ok)}
+/* Cocina (rol Mozo) */
+.mozo-filtro{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.mozo-filtro-label{font-size:12px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px}
+.seccion-retirar{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;margin:6px 0 10px}
+.mozo-grupo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin:14px 0 8px;color:var(--ink)}
+.mozo-grupo i{color:var(--ink-soft);font-size:12px}
+.grid-4.listos .ticket{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+
 
 .card{background:var(--paper-raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .section-title{font-size:20px;font-weight:800;margin:0 0 4px}
@@ -1276,13 +1284,14 @@ function openCobrarModal(m, pedido, total){
 
 /* ================= COCINA ================= */
 function renderCocina(app){
+  if(state.rol==='mozo') return renderCocinaMozo(app);
   const estaciones = (state.config.estaciones||[]);
   if(!state.ui.stationTab && estaciones[0]) state.ui.stationTab = estaciones[0].id;
   const abiertos = state.pedidos.filter(p=>p.estado==='abierto');
   const allItems = [];
   abiertos.forEach(p=>{
     (p.items||[]).forEach(it=>{
-      if(it.estado!=='entregado') allItems.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id, mozoNombre:p.mozoNombre});
+      if(it.estado!=='entregado') allItems.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id, mozoNombre:p.mozoNombre, mozoId:p.mozoId||null});
     });
   });
   const filtered = allItems.filter(it=>(it.estacionId||'general')===state.ui.stationTab).sort((a,b)=>a.creado-b.creado);
@@ -1299,6 +1308,10 @@ function renderCocina(app){
     </div>
   `;
   document.querySelectorAll('.stationbar button').forEach(b=>b.onclick=()=>{ state.ui.stationTab=b.dataset.st; render(); });
+  bindTicketActions();
+}
+// Botones de los tickets (avanzar estado / marcar retirado), compartidos por la vista de cocina y la del mozo.
+function bindTicketActions(){
   document.querySelectorAll('[data-advance]').forEach(btn=>{
     btn.onclick = async ()=>{
       const [pedidoId,itemId] = btn.dataset.advance.split('|');
@@ -1320,6 +1333,66 @@ function renderCocina(app){
       catch(e){ toast('Error al actualizar'); }
     };
   });
+}
+/* Cocina para el rol Mozo: filtro por mozo, sección "Listos para retirar" y comandas en cocina agrupadas por mozo */
+function renderCocinaMozo(app){
+  const estaciones = (state.config.estaciones||[]);
+  if(!state.ui.stationTab && estaciones[0]) state.ui.stationTab = estaciones[0].id;
+  const mozosCfg = (state.config.mozos||[]);
+  const items = [];
+  state.pedidos.filter(p=>p.estado==='abierto').forEach(p=>(p.items||[]).forEach(it=>{
+    if(it.estado!=='entregado') items.push({...it, mesaNumero:p.mesaNumero, pedidoId:p.id, mozoNombre:p.mozoNombre, mozoId:p.mozoId||null});
+  }));
+  const claveMozo = it => it.mozoId && mozosCfg.some(m=>m.id===it.mozoId) ? it.mozoId : 'sin';
+  const nombreMozo = k => k==='sin' ? 'Sin asignar' : (mozosCfg.find(m=>m.id===k)||{}).nombre || 'Sin asignar';
+  const hayModoSin = items.some(it=>claveMozo(it)==='sin');
+  const opciones = [...mozosCfg.map(m=>m.id), ...(hayModoSin?['sin']:[])];
+
+  if(state.ui.cocinaMozo==null){ try{ state.ui.cocinaMozo = localStorage.getItem('restaurantFlowCocinaMozo') || 'todos'; }catch(e){ state.ui.cocinaMozo = 'todos'; } }
+  if(state.ui.cocinaMozo!=='todos' && !opciones.includes(state.ui.cocinaMozo)) state.ui.cocinaMozo = 'todos';
+  const sel = state.ui.cocinaMozo;
+  const delMozo = it => sel==='todos' || claveMozo(it)===sel;
+
+  const listos = items.filter(it=>it.estado==='listo' && delMozo(it)).sort((a,b)=>a.creado-b.creado);
+  const enCocina = items.filter(it=>it.estado!=='listo' && delMozo(it));
+  const enEstacion = enCocina.filter(it=>(it.estacionId||'general')===state.ui.stationTab).sort((a,b)=>a.creado-b.creado);
+  const nListos = k => items.filter(it=>it.estado==='listo' && (k==='todos'||claveMozo(it)===k)).length;
+
+  // agrupa por mozo (solo cuando se ven todos los mozos) respetando el orden de la lista de mozos
+  const agrupar = lista => {
+    if(sel!=='todos') return [[sel, lista]];
+    return [...mozosCfg.map(m=>m.id), 'sin'].map(k=>[k, lista.filter(it=>claveMozo(it)===k)]).filter(([,l])=>l.length);
+  };
+  const bloques = (lista, listoCard) => agrupar(lista).map(([k,l])=>`
+    ${sel==='todos'?`<div class="mozo-grupo"><i class="fa-solid fa-user"></i> ${esc(nombreMozo(k))} <span class="badge-count">${l.length}</span></div>`:''}
+    <div class="grid-4 tickets ${listoCard?'listos':''}">${l.map(it=>ticketCardHtml(it)).join('')}</div>`).join('');
+
+  app.innerHTML = `
+    <h2 class="section-title">Cocina</h2>
+    <p class="section-sub">Elegí tu nombre para ver solo tus mesas, o todos los mozos agrupados.</p>
+    <div class="mozo-filtro">
+      <span class="mozo-filtro-label"><i class="fa-solid fa-user"></i> Mozo</span>
+      <div class="mesa-filtros" style="margin:0">
+        ${[['todos','Todos'], ...opciones.map(k=>[k, nombreMozo(k)])].map(([k,l])=>`<button data-cmozo="${k}" class="${sel===k?'on':''}">${esc(l)}${nListos(k)?` <span class="badge-count" style="background:var(--ok-bg);color:var(--ok)" title="Listos para retirar">${nListos(k)}</span>`:''}</button>`).join('')}
+      </div>
+    </div>
+
+    <h3 class="seccion-retirar"><i class="fa-solid fa-bell-concierge"></i> Listos para retirar <span class="badge-count" style="background:var(--ok-bg);color:var(--ok)">${listos.length}</span></h3>
+    ${listos.length===0 ? `<div class="card empty" style="padding:18px;margin-bottom:18px"><b>Nada para retirar por ahora</b>Cuando cocina marque un ítem como listo, aparece acá.</div>` : `<div style="margin-bottom:22px">${bloques(listos, true)}</div>`}
+
+    <h3 class="seccion-retirar"><i class="fa-solid fa-fire-burner"></i> En cocina <span class="badge-count">${enCocina.length}</span></h3>
+    <div class="stationbar">
+      ${estaciones.map(e=>`<button data-st="${e.id}" class="${state.ui.stationTab===e.id?'active':''}">${esc(e.nombre)} <span class="badge-count">${enCocina.filter(it=>(it.estacionId||'general')===e.id).length}</span></button>`).join('')}
+    </div>
+    ${enEstacion.length===0 ? '<div class="empty"><b>Sin comandas en esta estación</b>'+(sel==='todos'?'Los pedidos en preparación aparecerán acá.':'No hay pedidos de '+esc(nombreMozo(sel))+' en preparación en esta estación.')+'</div>' : bloques(enEstacion, false)}
+  `;
+  document.querySelectorAll('[data-cmozo]').forEach(b=>b.onclick=()=>{
+    state.ui.cocinaMozo = b.dataset.cmozo;
+    try{ localStorage.setItem('restaurantFlowCocinaMozo', b.dataset.cmozo); }catch(e){}
+    render();
+  });
+  document.querySelectorAll('.stationbar button').forEach(b=>b.onclick=()=>{ state.ui.stationTab=b.dataset.st; render(); });
+  bindTicketActions();
 }
 function ticketCardHtml(it){
   const stColor = it.estado==='listo'?'ok':it.estado==='preparando'?'warn':'busy';

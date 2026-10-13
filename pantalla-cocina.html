@@ -84,7 +84,7 @@ body {
 /* --- BOARD (3 columnas) --- */
 .board {
     flex: 1; min-height: 0;
-    display: grid; grid-template-columns: repeat(3, 1fr);
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 2px; background: var(--border-color);
 }
 .col { background: var(--bg-col); display: flex; flex-direction: column; min-height: 0; }
@@ -107,7 +107,7 @@ body {
 .tiles {
     flex: 1; min-height: 0; overflow-y: auto;
     padding: 22px; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
     gap: 18px; align-content: start; align-items: start;
     /* Cada fila mide lo que ocupa su bloque: sin esto, al haber más contenido que alto de pantalla las filas se achican y los bloques se pisan. */
     grid-auto-rows: max-content;
