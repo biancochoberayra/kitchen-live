@@ -28,8 +28,15 @@ activarlo (el tema, el rol y los datos sí se conservan).
 > literal; si no, la página se rompe y muestra su propio código como texto.
 
 Para ver el sistema en uso rápido: **Config → Datos de prueba → Cargar datos
-de prueba** (requiere modo admin, PIN por defecto `1234`). Carga mesas,
-productos, una caja abierta y pedidos en distintos estados.
+de prueba** (requiere modo admin, PIN por defecto `1234`). Carga 16 mesas en 3
+zonas, 4 mozos, 25 productos (con uno agotado, uno con stock bajo y uno
+inactivo), una caja abierta con movimientos, comandas abiertas en todos los
+estados (pendiente, preparando, listo, entregado, cuenta pedida), **unos 60
+días de historial de ventas** (con picos, días flojos, pagos divididos y
+cancelaciones), cierres confirmados de días anteriores (ayer y anteayer
+quedan sin confirmar para probarlo), historial de precios y de movimientos de
+stock. Si ya cargaste datos de prueba antes, conviene "Vaciar todos los
+datos" primero, porque cargarlos de nuevo los duplica.
 
 La primera vez que se abre `kitchen-live.html` aparece un **tutorial** paso a
 paso que explica cada módulo del sistema (no vuelve a aparecer solo después).
@@ -42,7 +49,7 @@ Tutorial" al pie de la barra lateral.
 | Archivo | Qué es |
 |---|---|
 | `kitchen-live.html` | La aplicación principal. Todo el flujo operativo. |
-| `dashboard.html` | Panel de KPIs del día (ventas, ocupación, productos top, etc.) y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año), de solo lectura. |
+| `dashboard.html` | Panel de solo lectura: KPIs del día (ventas, ocupación, productos top, etc.), **gráficos de líneas** (ventas por día, ventas por hora del día, ticket promedio por día, personas atendidas por día), **gráficos de torta** (ventas por medio de pago, por categoría y por mozo, y cancelaciones por motivo) con selector de período de 7/14/30/60 días, tooltips al pasar el mouse y un "Ver datos" con la tabla de cada gráfico, y estadísticas históricas (mejor día de ventas, producto más vendido de la semana/mes/año). |
 | `pantalla-cocina.html` | Pantalla grande para la cocina (estilo tablero de KDS), con 3 columnas: Pendiente / En preparación / Listo. Clic izquierdo para avanzar un ítem un paso; clic derecho para retroceder un paso, por si se tocó por accidente. |
 | `a.html`, `cocina-ordu.html` | Prototipos previos, se mantienen como referencia histórica. |
 

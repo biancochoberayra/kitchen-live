@@ -7,7 +7,7 @@ Este documento fue el plan original pedido para RestaurantFlow como un sistema c
 
 Archivos del sistema:
 - kitchen-live.html: la aplicación principal. Todo el flujo operativo (Mapa, Cocina, Productos, Stock, Caja, Cierre, Config).
-- dashboard.html: panel de KPIs de solo lectura (ventas del día, ocupación de mesas, pedidos pendientes, producto más vendido, personas atendidas, ventas por método de pago, estado de cocina, stock bajo), más una sección de estadísticas históricas (mejor día de ventas, producto más vendido de los últimos 7/30/365 días), calculadas sobre todos los pedidos cerrados, no solo los de hoy.
+- dashboard.html: panel de KPIs de solo lectura (ventas del día, ocupación de mesas, pedidos pendientes, producto más vendido, personas atendidas, ventas por método de pago, estado de cocina, stock bajo), más gráficos SVG propios (sin librerías) con selector de período de 7/14/30/60 días y tooltip al pasar el mouse: líneas (ventas por día, ventas por hora, ticket promedio por día, personas por día) y tortas (medio de pago, categoría, mozo, cancelaciones por motivo), cada uno con un "Ver datos" en tabla; y una sección de estadísticas históricas (mejor día de ventas, producto más vendido de los últimos 7/30/365 días), calculadas sobre todos los pedidos cerrados, no solo los de hoy.
 - pantalla-cocina.html: pantalla grande tipo tablero de cocina (KDS), 3 columnas (Pendiente / En preparación / Listo). Clic izquierdo avanza un ítem un paso; clic derecho lo retrocede un paso, por si se tocó por accidente.
 - a.html, cocina-ordu.html: prototipos previos, se mantienen solo como referencia histórica.
 
@@ -59,7 +59,7 @@ Config (solo modo admin):
 - Cantidad de cocineros y estaciones de cocina.
 - PIN de administrador.
 - Tema oscuro/claro: se guarda en localStorage de ese dispositivo y se aplica antes de pintar la página (sin parpadeo). Se aplica también a dashboard.html y pantalla-cocina.html, y se sincroniza entre pestañas del mismo origen (p. ej. Live Server en 127.0.0.1:5501).
-- Carga y borrado de datos de prueba.
+- Carga y borrado de datos de prueba. La carga incluye 16 mesas en 3 zonas, 4 mozos, 25 productos (uno agotado, uno con stock bajo, uno inactivo), comandas abiertas en todos los estados, ~60 días de historial de ventas (con cancelaciones y pagos divididos), cierres confirmados de días anteriores, historial de precios y de movimientos de stock.
 
 Roles y acceso:
 - Selector de rol en la barra lateral: Mozo, Cocina, Caja, Encargado de stock, Administrador. Filtra qué secciones ve cada uno y, dentro de Cocina y de una comanda con cuenta pedida, qué acciones puede tocar.
