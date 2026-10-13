@@ -310,8 +310,11 @@ tr:last-child td{border-bottom:none}
   .mesa-item-row>div:last-child{align-items:flex-start}
   .chip-toggle{padding:8px 13px;font-size:13.5px}
   .stationbar button{padding:9px 15px}
+  /* el aviso emergente va arriba para no tapar los botones de las hojas que suben desde abajo */
+  .toast{bottom:auto;top:62px}
 }
 @media (max-width:520px){
+  .grid-cards.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mesas-lista{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mapa-shell{min-height:56vh}
 }
@@ -1716,7 +1719,7 @@ function renderInventario(app){
   const kpi = (label, val, sub, color)=>`<div class="card" style="padding:14px"><div class="prod-meta">${label}</div><div class="prod-price" style="font-size:20px;${color?'color:'+color:''}">${val}</div>${sub?`<div class="prod-meta">${sub}</div>`:''}</div>`;
   app.innerHTML = `
     <div><h2 class="section-title">Inventario</h2><p class="section-sub">Insumos (ingredientes), recetas, compras y costos. Cada venta descuenta del inventario los insumos de la receta del producto.</p></div>
-    <div class="grid-cards" style="margin:14px 0">
+    <div class="grid-cards kpis" style="margin:14px 0">
       ${kpi('Insumos activos', activos.length)}
       ${kpi('Valor del inventario', fmtMoney(valor), 'a costo promedio')}
       ${kpi('Bajo el mínimo', bajos, bajos?'conviene reponer':'todo en orden', bajos?'var(--warn)':'')}
@@ -1863,7 +1866,7 @@ function invTabCostos(body){
   const kpi = (label, val, sub)=>`<div class="card" style="padding:14px"><div class="prod-meta">${label}</div><div class="prod-price" style="font-size:20px">${val}</div>${sub?`<div class="prod-meta">${sub}</div>`:''}</div>`;
   body.innerHTML = `
     <p class="section-sub">El <b>costo</b> sale de la receta de cada producto (cantidad de cada insumo × su costo promedio). El <b>food cost</b> es el costo dividido el precio de venta: en gastronomía un valor sano suele rondar el 28–35%.</p>
-    <div class="grid-cards" style="margin-bottom:14px">
+    <div class="grid-cards kpis" style="margin-bottom:14px">
       ${kpi('Productos con receta', con.length+' / '+rows.length, sin.length?sin.length+' sin receta':'todos con receta')}
       ${kpi('Food cost promedio', con.length?Math.round(fcProm)+'%':'—')}
       ${kpi('Mayor food cost', peor?Math.round(peor.fc)+'%':'—', peor?esc(peor.p.nombre):'')}
@@ -1903,7 +1906,7 @@ function invTabMovimientos(body){
       <div class="field" style="max-width:220px"><label>Tipo</label><select id="fInvTipo">
         <option value="todos">Todos</option>${Object.entries(TIPO_MOV_LABEL).map(([k,l])=>`<option value="${k}" ${tipo===k?'selected':''}>${l}</option>`).join('')}</select></div>
     </div>
-    <div class="grid-cards" style="margin-bottom:14px">
+    <div class="grid-cards kpis" style="margin-bottom:14px">
       ${kpi('Compras del día', fmtMoney(suma('compra')), delDia.filter(m=>m.tipo==='compra').length+' ingreso(s)')}
       ${kpi('Consumo por ventas', fmtMoney(suma('consumo')), 'a costo de los insumos')}
       ${kpi('Mermas', fmtMoney(suma('merma')), delDia.filter(m=>m.tipo==='merma').length+' registro(s)', suma('merma')>0?'var(--danger)':'')}
@@ -2128,7 +2131,7 @@ function renderCaja(app){
       ${cajaAbiertaHoy?`<button class="btn gold" id="btnCerrarCaja">Cerrar caja</button>`:
         `<span class="pill ${cfg.diferencia===0?'ok':'warn'}">Caja cerrada · contado ${fmtMoney(cfg.montoRealCierre||0)} · diferencia ${fmtMoney(cfg.diferencia||0)}</span>`}
     </div>
-    <div class="grid-cards" style="margin:14px 0">
+    <div class="grid-cards kpis" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Monto inicial</div><div class="prod-price" style="font-size:20px">${fmtMoney(cfg.montoInicial)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas cobradas hoy</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentasHoy)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Total esperado en caja</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalEsperado)}</div></div>
@@ -2250,7 +2253,7 @@ function renderCierre(app){
       <span class="pill ok">🔒 Cierre confirmado</span>
       <span class="section-sub" style="margin:0">Confirmado ${fmtTime(confirmado.confirmadoEn)}hs. Este día ya no se puede modificar.</span>
     </div>`:''}
-    <div class="grid-cards" style="margin:14px 0">
+    <div class="grid-cards kpis" style="margin:14px 0">
       <div class="card" style="padding:14px"><div class="prod-meta">Ventas totales</div><div class="prod-price" style="font-size:20px">${fmtMoney(totalVentas)}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Mesas cerradas</div><div class="prod-price" style="font-size:20px">${cerrados.length}</div></div>
       <div class="card" style="padding:14px"><div class="prod-meta">Pedidos cancelados</div><div class="prod-price" style="font-size:20px">${cancelados.length}</div></div>
