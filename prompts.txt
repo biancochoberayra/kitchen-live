@@ -71,7 +71,7 @@ Ayuda dentro de la app:
 - Panel de "Acceso rápido" con la misma explicación en formato lista, reabrible en cualquier momento desde el botón "Ayuda / Tutorial" de la barra lateral.
 
 Responsive:
-- kitchen-live.html y dashboard.html: en pantallas chicas, el rol y la navegación se colapsan en un menú tipo cajón detrás de un botón flotante en la esquina; las tablas anchas se desplazan horizontalmente en vez de achicarse. En el Salón hay vista Plano / Lista (en celular arranca en Lista, con tarjetas por mesa, filtros por estado y aviso de ítems para retirar); las ventanas se abren como hoja desde abajo. Cocina y Productos usan una grilla de 4 columnas (3 / 2 / 1 en pantallas chicas).
+- kitchen-live.html y dashboard.html: en pantallas chicas, el rol y la navegación se colapsan en un menú tipo cajón detrás de un botón flotante en la esquina; las tablas anchas se desplazan horizontalmente en vez de achicarse. En el Salón hay vista Plano / Lista (en celular arranca en Lista, con tarjetas por mesa, filtros por estado y aviso de ítems para retirar); las ventanas se abren como hoja desde abajo. Cocina y Productos usan una grilla de 4 columnas (3 / 2 / 1 en pantallas chicas). En Cocina, el rol Mozo tiene filtro por nombre de mozo (recordado por dispositivo), una sección "Listos para retirar" con el botón Retirado y las comandas en cocina agrupadas por mozo.
 - pantalla-cocina.html está pensada para una pantalla grande fija y no tiene este tratamiento mobile.
 
 Lo que NO se implementó (fuera de alcance de esta versión, a propósito):

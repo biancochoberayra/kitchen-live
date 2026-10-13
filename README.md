@@ -96,7 +96,13 @@ cocina y no tiene este tratamiento mobile.
   ahí el mozo (o el admin) ve el botón "Retirado ✓" para marcarlo como
   entregado sin tener que ir hasta la mesa — es la única acción que el mozo
   puede hacer en esta sección. Los tickets se muestran en una grilla de 4
-  columnas (3 / 2 / 1 en pantallas más chicas).
+  columnas (3 / 2 / 1 en pantallas más chicas). Con el **rol Mozo**, Cocina
+  se organiza distinto: un **filtro por nombre de mozo** (se recuerda en cada
+  dispositivo) para ver solo las propias mesas, una sección **"Listos para
+  retirar"** con el botón "Retirado ✓" arriba de todo, y las comandas que
+  siguen en cocina agrupadas por mozo (por estación). Con "Todos" se ven los
+  grupos de cada mozo; cada mozo del filtro muestra cuántos ítems tiene
+  listos.
 - **Productos** — catálogo con categorías (grilla de 4 columnas, 3 / 2 en
   pantallas más chicas), precios, grupos de opciones, **receta** (qué
   insumos y cuánto de cada uno consume una porción, con su costo y margen
