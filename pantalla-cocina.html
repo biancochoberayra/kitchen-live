@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantalla de Cocina - RestaurantFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+    --bg: #05070c;
+    --bg-col: #0b1220;
+    --bg-tile: #111a2c;
+    --border-color: #1c2740;
+    --text-main: #f8fafc;
+    --text-muted: #7c8aa3;
+
+    --warn: #f59e0b;
+    --accent: #0ea5e9;
+    --ok: #22c55e;
+    --danger: #ef4444;
+
+    --tipo-entrada: #a78bfa;
+    --tipo-comida: #14b8a6;
+    --tipo-postre: #f472b6;
+
+    --ov-04: rgba(255,255,255,.04);
+    --ov-08: rgba(255,255,255,.08);
+    --ov-10: rgba(255,255,255,.1);
+    --ov-12: rgba(255,255,255,.12);
+    --urgent-name: #fecaca;
+    --urgent-time: #fca5a5;
+}
+:root[data-theme="light"]{
+    --bg: #e2e8f0;
+    --bg-col: #f8fafc;
+    --bg-tile: #ffffff;
+    --border-color: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+
+    --warn: #d97706;
+    --accent: #0284c7;
+    --ok: #16a34a;
+    --danger: #dc2626;
+
+    --tipo-entrada: #7c3aed;
+    --tipo-comida: #0f766e;
+    --tipo-postre: #db2777;
+
+    --ov-04: rgba(15,23,42,.04);
+    --ov-08: rgba(15,23,42,.08);
+    --ov-10: rgba(15,23,42,.08);
+    --ov-12: rgba(15,23,42,.08);
+    --urgent-name: #991b1b;
+    --urgent-time: #b91c1c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+html, body { height: 100%; }
+body {
+    background: var(--bg); color: var(--text-main);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* --- HEADER --- */
+.board-header {
+    flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 34px;
+    background: var(--bg-col);
+    border-bottom: 1px solid var(--border-color);
+}
+.brand { display: flex; align-items: center; gap: 14px; font-size: clamp(1.1rem, 1.8vw, 1.7rem); font-weight: 800; letter-spacing: .3px; }
+.brand i { color: var(--accent); font-size: 1.15em; }
+.header-links { display: flex; align-items: center; gap: 6px; }
+.header-links a {
+    display: flex; align-items: center; gap: 7px; text-decoration: none;
+    color: var(--text-muted); font-weight: 600; font-size: 13px;
+    padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+}
+.header-links a:hover { background: var(--bg-tile); color: var(--text-main); }
+.clock { font-size: clamp(1rem, 1.6vw, 1.4rem); font-weight: 700; color: var(--text-muted); letter-spacing: .5px; }
+
+/* --- BOARD (3 columnas) --- */
+.board {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px; background: var(--border-color);
+}
+.col { background: var(--bg-col); display: flex; flex-direction: column; min-height: 0; }
+
+.col-head {
+    flex: none; padding: 18px 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: clamp(1.05rem, 2vw, 1.7rem); font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 3px solid;
+}
+.col-head .count {
+    font-size: 0.6em; font-weight: 800; padding: 5px 16px; border-radius: 100px;
+    background: var(--ov-12);
+}
+.col-pendiente .col-head { color: var(--warn); border-color: var(--warn); background: rgba(245,158,11,.08); }
+.col-preparando .col-head { color: var(--accent); border-color: var(--accent); background: rgba(14,165,233,.08); }
+.col-listo .col-head { color: var(--ok); border-color: var(--ok); background: rgba(34,197,94,.08); }
+
+.tiles {
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 22px; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+    gap: 18px; align-content: start; align-items: start;
+    /* Cada fila mide lo que ocupa su bloque: sin esto, al haber más contenido que alto de pantalla las filas se achican y los bloques se pisan. */
+    grid-auto-rows: max-content;
+}
+.tiles::-webkit-scrollbar { width: 10px; }
+.tiles::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 8px; }
+
+/* --- BLOQUE POR MESA --- */
+.mesa-block {
+    min-height: min-content;
+    border-radius: 18px; background: var(--bg-col); border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+.mesa-block-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; font-size: clamp(1.05rem, 1.6vw, 1.35rem); font-weight: 800;
+    background: var(--ov-04); border-bottom: 1px solid var(--border-color);
+}
+.mesa-block-count {
+    font-size: 0.65em; font-weight: 800; padding: 3px 12px; border-radius: 100px;
+    background: var(--ov-10);
+}
+.mesa-block-mozo {
+    font-size: 0.65em; font-weight: 600; color: var(--text-muted);
+}
+.mesa-block-items { display: flex; flex-direction: column; gap: 2px; padding: 10px; }
+
+/* --- INSIGNIA DE TIPO DE PLATO --- */
+.tipo-badge {
+    align-self: flex-start; font-size: 0.68rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .5px;
+    padding: 3px 10px; border-radius: 100px;
+}
+.tipo-badge.tipo-entrada { background: rgba(167,139,250,.18); color: var(--tipo-entrada); }
+.tipo-badge.tipo-comida { background: rgba(20,184,166,.18); color: var(--tipo-comida); }
+.tipo-badge.tipo-postre { background: rgba(244,114,182,.18); color: var(--tipo-postre); }
+
+.tile {
+    border-radius: 14px; padding: 14px 16px; margin: 4px;
+    background: var(--bg-tile); border: 2px solid transparent;
+    display: flex; flex-direction: column; gap: 7px;
+}
+.tile .item-name { font-size: clamp(1.15rem, 1.8vw, 1.55rem); font-weight: 800; line-height: 1.2; }
+.tile .item-opts { font-size: clamp(0.9rem, 1.2vw, 1.05rem); opacity: .75; font-weight: 600; }
+.tile .item-obs { font-size: clamp(0.85rem, 1.1vw, 1rem); opacity: .8; font-style: italic; color: var(--warn); }
+.tile .tile-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--ov-08);
+}
+.tile .tile-time { font-size: 0.85rem; font-weight: 700; opacity: .6; }
+.tile .hint { font-size: 0.68rem; opacity: .65; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+
+.tile.tappable { cursor: pointer; transition: transform .12s ease, filter .12s ease; }
+.tile.tappable:hover { filter: brightness(1.12); }
+.tile.tappable:active { transform: scale(.96); }
+
+.col-pendiente .tile { border-color: rgba(245,158,11,.45); background: linear-gradient(160deg, rgba(245,158,11,.14), var(--bg-tile) 65%); }
+.col-pendiente .tile.urgent {
+    border-color: var(--danger); border-width: 3px;
+    background: linear-gradient(160deg, rgba(239,68,68,.5), var(--bg-tile) 72%);
+    animation: pulseUrgent 1.1s ease-in-out infinite;
+}
+.col-pendiente .tile.urgent .item-name { color: var(--urgent-name); }
+.col-pendiente .tile.urgent .tile-time { color: var(--urgent-time); opacity: .9; }
+.col-preparando .tile { border-color: rgba(14,165,233,.45); background: linear-gradient(160deg, rgba(14,165,233,.14), var(--bg-tile) 65%); }
+.col-listo .tile { border-color: rgba(34,197,94,.55); background: linear-gradient(160deg, rgba(34,197,94,.2), var(--bg-tile) 65%); animation: pulseReady 1.8s ease-in-out infinite; }
+
+@keyframes pulseReady { 0%,100% { box-shadow: 0 0 0 rgba(34,197,94,0); } 50% { box-shadow: 0 0 30px rgba(34,197,94,.55); } }
+@keyframes pulseUrgent { 0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); } 50% { box-shadow: 0 0 38px rgba(239,68,68,.9); } }
+
+.empty-col { grid-column: 1/-1; padding: 50px 20px; text-align: center; color: var(--text-muted); font-size: 1.05rem; opacity: .6; }
+
+.full-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+    color: var(--text-muted); text-align: center; padding: 40px;
+}
+.full-empty i { font-size: 3rem; opacity: .3; }
+.full-empty a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+@media (max-width: 900px) {
+    .board { grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); overflow-y: auto; }
+    body { overflow-y: auto; }
+    .header-links a span { display: none; }
+}
+</style>
+<script>
+  // Tema compartido con kitchen-live.html (Config → Apariencia): se aplica antes de pintar y
+  // se actualiza solo si se cambia desde otra pestaña (mismo origen, p. ej. Live Server).
+  (function(){
+    function aplicar(){
+      try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('restaurantFlowTema')==='light'?'light':'dark'); }catch(e){}
+    }
+    aplicar();
+    window.addEventListener('storage', function(e){ if(e.key==='restaurantFlowTema') aplicar(); });
+  })();
+</script>
+</head>
+<body>
+
+<header class="board-header">
+    <div class="brand"><i class="fa-solid fa-fire-burner"></i> RestaurantFlow — Cocina en vivo</div>
+    <nav class="header-links">
+      <a href="kitchen-live.html"><i class="fa-solid fa-house"></i> <span>Sistema</span></a>
+      <a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
+    </nav>
+    <div class="clock" id="reloj"></div>
+</header>
+
+<main class="board" id="board">
+    <section class="col col-pendiente">
+        <div class="col-head"><span><i class="fa-solid fa-hourglass-half"></i> Pendiente</span><span class="count" id="countPendiente">0</span></div>
+        <div class="tiles" id="colPendiente"></div>
+    </section>
+    <section class="col col-preparando">
+        <div class="col-head"><span><i class="fa-solid fa-fire"></i> En preparación</span><span class="count" id="countPreparando">0</span></div>
+        <div class="tiles" id="colPreparando"></div>
+    </section>
+    <section class="col col-listo">
+        <div class="col-head"><span><i class="fa-solid fa-check"></i> Listo</span><span class="count" id="countListo">0</span></div>
+        <div class="tiles" id="colListo"></div>
+    </section>
+</main>
+
+<script>
+const DB_KEY = 'restaurantFlowLocalDB';
+const URGENTE_MIN = 10; // minutos esperando sin empezar a preparar = se marca urgente
+
+function loadDB(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(DB_KEY));
+    return raw || {config:{}, mesas:{}, productos:{}, pedidos:{}};
+  }catch(e){ return {config:{}, mesas:{}, productos:{}, pedidos:{}}; }
+}
+function saveDB(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function asArray(col){ return Object.keys(col||{}).map(id=>({id, ...col[id]})); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function minutosDesde(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/60000)); }
+function fmtTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// Clasifica la categoría de un producto en entrada / comida / postre para
+// colorear el ticket. Cualquier categoría que no diga "entrada" o "postre"
+// (principales, parrilla, bebidas, etc.) cae en "comida".
+function clasificarTipo(categoria){
+  const c = (categoria||'').toLowerCase();
+  if(c.includes('entrada')) return 'entrada';
+  if(c.includes('postre')) return 'postre';
+  return 'comida';
+}
+
+// Un ticket por ítem, agrupados en un bloque por mesa dentro de cada columna
+// (Pendiente/En preparación/Listo), igual de granular que la vista Cocina
+// del sistema principal: cada producto pedido se sigue por separado, pero
+// sin mezclar visualmente los productos de mesas distintas.
+function computeBoard(){
+  const db = loadDB();
+  const catPorProducto = {};
+  asArray(db.productos).forEach(p=>{ catPorProducto[p.id] = p.categoria; });
+  const pedidos = asArray(db.pedidos).filter(p=>p.estado==='abierto');
+  const gruposPorMesa = { pendiente: {}, preparando: {}, listo: {} };
+
+  pedidos.forEach(p=>{
+    (p.items||[]).forEach(it=>{
+      if(it.estado==='entregado') return;
+      const mesaGrupos = gruposPorMesa[it.estado];
+      if(!mesaGrupos) return;
+      const key = p.mesaNumero;
+      if(!mesaGrupos[key]) mesaGrupos[key] = { mesaNumero: p.mesaNumero, mozoNombre: p.mozoNombre, items: [] };
+      mesaGrupos[key].items.push({
+        pedidoId: p.id,
+        itemId: it.id,
+        nombre: it.nombre,
+        cantidad: it.cantidad,
+        opcionesTexto: it.opcionesTexto,
+        observaciones: it.observaciones,
+        creado: it.creado || p.creado,
+        tipo: clasificarTipo(catPorProducto[it.productoId])
+      });
+    });
+  });
+
+  const buckets = {};
+  Object.keys(gruposPorMesa).forEach(estado=>{
+    const grupos = Object.values(gruposPorMesa[estado]);
+    grupos.forEach(g=> g.items.sort((a,b)=>(a.creado||0)-(b.creado||0)) );
+    grupos.sort((a,b)=> (a.items[0]?.creado||0) - (b.items[0]?.creado||0) );
+    buckets[estado] = grupos;
+  });
+  return { buckets, hasAnyData: asArray(db.mesas).length>0 || asArray(db.pedidos).length>0 };
+}
+
+// Avanza un ítem un paso: pendiente->preparando (colKey='pendiente') o
+// preparando->listo (colKey='preparando'). El paso listo->entregado lo hace
+// el mozo desde el sistema principal, no la cocina, igual que en kitchen-live.html.
+function advanceItem(pedidoId, itemId, colKey){
+  const nextEstado = colKey==='pendiente' ? 'preparando' : colKey==='preparando' ? 'listo' : null;
+  if(!nextEstado) return;
+  const db = loadDB();
+  const pedido = db.pedidos && db.pedidos[pedidoId];
+  if(!pedido) return;
+  pedido.items = (pedido.items||[]).map(it=> it.id===itemId ? {...it, estado:nextEstado} : it);
+  saveDB(db);
+  render();
+}
+
+// Clic derecho: retrocede un ítem un paso, por si se tocó por accidente.
+function retreatItem(pedidoId, itemId, colKey){
+  const prevEstado = colKey==='preparando' ? 'pendiente' : colKey==='listo' ? 'preparando' : null;
+  if(!prevEstado) return;
+  const db = loadDB();
+  const pedido = db.pedidos && db.pedidos[pedidoId];
+  if(!pedido) return;
+  pedido.items = (pedido.items||[]).map(it=> it.id===itemId ? {...it, estado:prevEstado} : it);
+  saveDB(db);
+  render();
+}
+
+const TIPO_LABEL = { entrada: 'Entrada', comida: 'Comida', postre: 'Postre' };
+
+function tileHtml(entry, colKey){
+  const mins = minutosDesde(entry.creado);
+  const urgent = colKey==='pendiente' && mins >= URGENTE_MIN;
+  const tappable = colKey==='pendiente' || colKey==='preparando';
+  const hint = colKey==='pendiente' ? 'Toca: empezar a preparar' :
+    colKey==='preparando' ? 'Toca: marcar listo · clic derecho: volver' :
+    'Esperando al mozo · clic derecho: volver';
+  return `<div class="tile ${urgent?'urgent':''} ${tappable?'tappable':''}" data-pedido-id="${entry.pedidoId}" data-item-id="${entry.itemId}" data-col="${colKey}">
+    <span class="tipo-badge tipo-${entry.tipo}">${TIPO_LABEL[entry.tipo]}</span>
+    <div class="item-name">${entry.cantidad}× ${esc(entry.nombre)}</div>
+    ${entry.opcionesTexto?`<div class="item-opts">${esc(entry.opcionesTexto)}</div>`:''}
+    ${entry.observaciones?`<div class="item-obs">"${esc(entry.observaciones)}"</div>`:''}
+    <div class="tile-foot">
+      <span class="tile-time"><i class="fa-regular fa-clock"></i> ${fmtTime(entry.creado)}</span>
+      <span class="hint">${hint}</span>
+    </div>
+  </div>`;
+}
+
+function blockHtml(grupo, colKey){
+  return `<div class="mesa-block">
+    <div class="mesa-block-head">
+      <span><i class="fa-solid fa-utensils"></i> Mesa ${esc(grupo.mesaNumero)}${grupo.mozoNombre?` <span class="mesa-block-mozo">· ${esc(grupo.mozoNombre)}</span>`:''}</span>
+      <span class="mesa-block-count">${grupo.items.length}</span>
+    </div>
+    <div class="mesa-block-items">
+      ${grupo.items.map(it=>tileHtml(it, colKey)).join('')}
+    </div>
+  </div>`;
+}
+
+function render(){
+  const { buckets, hasAnyData } = computeBoard();
+  const board = document.getElementById('board');
+
+  if(!hasAnyData){
+    board.innerHTML = `<div class="full-empty" style="grid-column:1/-1">
+      <i class="fa-solid fa-fire-burner"></i>
+      <div>Todavía no hay pedidos cargados.<br>Abrí <a href="kitchen-live.html">el sistema</a> y empezá a tomar pedidos desde el Mapa.</div>
+    </div>`;
+    return;
+  }
+  if(!document.getElementById('colPendiente')){
+    board.innerHTML = `
+    <section class="col col-pendiente">
+        <div class="col-head"><span><i class="fa-solid fa-hourglass-half"></i> Pendiente</span><span class="count" id="countPendiente">0</span></div>
+        <div class="tiles" id="colPendiente"></div>
+    </section>
+    <section class="col col-preparando">
+        <div class="col-head"><span><i class="fa-solid fa-fire"></i> En preparación</span><span class="count" id="countPreparando">0</span></div>
+        <div class="tiles" id="colPreparando"></div>
+    </section>
+    <section class="col col-listo">
+        <div class="col-head"><span><i class="fa-solid fa-check"></i> Listo</span><span class="count" id="countListo">0</span></div>
+        <div class="tiles" id="colListo"></div>
+    </section>`;
+  }
+
+  const map = { pendiente: 'colPendiente', preparando: 'colPreparando', listo: 'colListo' };
+  const counts = { pendiente: 'countPendiente', preparando: 'countPreparando', listo: 'countListo' };
+  Object.keys(map).forEach(key=>{
+    const grupos = buckets[key];
+    const totalItems = grupos.reduce((s,g)=>s+g.items.length, 0);
+    document.getElementById(counts[key]).textContent = totalItems;
+    document.getElementById(map[key]).innerHTML = grupos.length===0
+      ? '<div class="empty-col">Sin pedidos acá</div>'
+      : grupos.map(g=>blockHtml(g, key)).join('');
+  });
+
+  document.querySelectorAll('.tile.tappable').forEach(el=>{
+    el.addEventListener('click', ()=> advanceItem(el.dataset.pedidoId, el.dataset.itemId, el.dataset.col));
+  });
+  document.querySelectorAll('.tile').forEach(el=>{
+    el.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      retreatItem(el.dataset.pedidoId, el.dataset.itemId, el.dataset.col);
+    });
+  });
+}
+
+function actualizarReloj(){
+  const ahora = new Date();
+  document.getElementById('reloj').textContent = ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+render();
+setInterval(render, 4000);
+window.addEventListener('storage', (e)=>{ if(e.key===DB_KEY) render(); });
+</script>
+
+</body>
+</html>
