@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Electron en 10 minutos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b14;
+    --fg: #e8f1ff;
+    --muted: #8a9bb8;
+    --cyan: #9feaf9;
+    --teal: #47848f;
+    --violet: #a78bfa;
+    --pink: #f472b6;
+    --green: #4ade80;
+    --red: #f87171;
+    --card: rgba(255, 255, 255, 0.05);
+    --border: rgba(159, 234, 249, 0.18);
+    --ease: cubic-bezier(.2, .8, .2, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at 20% 0%, #10203a 0%, var(--bg) 55%), var(--bg);
+    color: var(--fg);
+    font-family: "Space Grotesk", system-ui, sans-serif;
+  }
+  #bg { position: fixed; inset: 0; z-index: 0; }
+
+  .deck { position: fixed; inset: 0; z-index: 1; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3vh; padding: 6vh 6vw; text-align: center;
+    opacity: 0; transform: scale(.9) translateY(40px); filter: blur(10px);
+    transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease);
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; transform: none; filter: none; pointer-events: auto; }
+  .slide.past { transform: scale(1.1) translateY(-40px); }
+
+  /* Staggered entrance */
+  .a { opacity: 0; transform: translateY(40px); }
+  .slide.active .a { animation: rise .9s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 140ms + 250ms); }
+  .slide.active .a.pop { animation-name: pop; }
+  .slide.active .a.flip { animation-name: flip; }
+  .slide.active .a.left { animation-name: fromLeft; }
+  .slide.active .a.right { animation-name: fromRight; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @keyframes pop { 0% { opacity: 0; transform: scale(.2) rotate(-12deg); } 70% { opacity: 1; transform: scale(1.12) rotate(3deg); } 100% { opacity: 1; transform: none; } }
+  @keyframes flip { 0% { opacity: 0; transform: perspective(800px) rotateY(90deg); } 100% { opacity: 1; transform: none; } }
+  @keyframes fromLeft { 0% { opacity: 0; transform: translateX(-120px); } 100% { opacity: 1; transform: none; } }
+  @keyframes fromRight { 0% { opacity: 0; transform: translateX(120px); } 100% { opacity: 1; transform: none; } }
+
+  h1 { font-size: clamp(3rem, 10vw, 8.5rem); line-height: .95; letter-spacing: -.04em; }
+  h2 { font-size: clamp(2rem, 5.5vw, 4.5rem); letter-spacing: -.03em; line-height: 1.05; }
+  .sub { font-size: clamp(1rem, 2.2vw, 1.7rem); color: var(--muted); }
+  .tag {
+    font-family: "JetBrains Mono", monospace; font-size: .85rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cyan); border: 1px solid var(--border); padding: .4em 1em; border-radius: 99px;
+  }
+  .grad {
+    background: linear-gradient(90deg, var(--cyan), var(--violet), var(--pink), var(--cyan));
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 6s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% 0; } }
+
+  /* Atom logo */
+  .atom { width: min(42vh, 70vw); height: min(42vh, 70vw); filter: drop-shadow(0 0 30px rgba(159, 234, 249, .45)); }
+  .atom .orbit { fill: none; stroke: var(--cyan); stroke-width: 4; opacity: .85; }
+  .atom .spin { transform-origin: 0 0; animation: spin 18s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .atom .core { fill: var(--cyan); animation: pulse 2s ease-in-out infinite; transform-origin: 0 0; }
+  @keyframes pulse { 50% { transform: scale(1.35); } }
+
+  /* Equation */
+  .eq { display: flex; align-items: center; gap: 2.5vw; flex-wrap: wrap; justify-content: center; }
+  .chip {
+    padding: 3vh 3vw; border-radius: 24px; border: 1px solid var(--border); background: var(--card);
+    backdrop-filter: blur(6px); min-width: 15rem;
+  }
+  .chip .big { font-size: clamp(1.6rem, 3.4vw, 2.8rem); font-weight: 700; }
+  .chip small { display: block; color: var(--muted); margin-top: .4em; font-size: 1rem; }
+  .op { font-size: clamp(2.5rem, 6vw, 5rem); color: var(--muted); font-weight: 300; }
+  .chip.hero { border-color: var(--cyan); box-shadow: 0 0 60px rgba(159, 234, 249, .35), inset 0 0 40px rgba(159, 234, 249, .08); }
+
+  /* Timeline */
+  .timeline { display: flex; gap: 2vw; position: relative; width: min(1100px, 100%); justify-content: space-between; }
+  .timeline::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 1.1rem; height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--violet), var(--pink));
+    transform: scaleX(0); transform-origin: left;
+  }
+  .slide.active .timeline::before { animation: grow 1.6s var(--ease) .3s forwards; }
+  @keyframes grow { to { transform: scaleX(1); } }
+  .tl { flex: 1; position: relative; padding-top: 3.2rem; }
+  .tl::before {
+    content: ""; position: absolute; top: .45rem; left: 50%; width: 1.4rem; height: 1.4rem; margin-left: -.7rem;
+    border-radius: 50%; background: var(--bg); border: 3px solid var(--cyan); box-shadow: 0 0 18px var(--cyan);
+  }
+  .tl b { font-size: clamp(1.6rem, 3vw, 2.6rem); display: block; }
+  .tl span { color: var(--muted); }
+
+  /* Apps grid */
+  .apps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2.2vw; width: min(1100px, 100%); }
+  .app { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
+  .app .ic {
+    width: clamp(3.6rem, 8vw, 6.5rem); aspect-ratio: 1; border-radius: 28%;
+    display: grid; place-items: center; font-weight: 700; font-size: clamp(1.4rem, 3vw, 2.4rem);
+    background: var(--c); color: #fff; box-shadow: 0 12px 40px -10px var(--c);
+    animation: float 4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.4s);
+  }
+  @keyframes float { 50% { transform: translateY(-10px); } }
+  .app.star .ic { outline: 3px solid #fff; outline-offset: 6px; animation: float 4s ease-in-out infinite, ring 1.6s ease-out infinite; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(88, 101, 242, .8); } 100% { box-shadow: 0 0 0 30px rgba(88, 101, 242, 0); } }
+  .app span { font-size: clamp(.8rem, 1.4vw, 1.1rem); color: var(--muted); }
+  .app.star span { color: #fff; font-weight: 700; }
+
+  /* Architecture */
+  .arch { display: flex; align-items: center; gap: 1.2vw; width: min(1200px, 100%); justify-content: center; }
+  .box {
+    padding: 3vh 2vw; border-radius: 22px; background: var(--card); border: 1px solid var(--border);
+    flex: 0 0 auto; width: clamp(11rem, 22vw, 18rem);
+  }
+  .box h3 { font-size: clamp(1.1rem, 2vw, 1.6rem); margin-bottom: .5em; }
+  .box p { color: var(--muted); font-size: clamp(.85rem, 1.3vw, 1.05rem); line-height: 1.4; }
+  .box .emoji { font-size: 2.4rem; display: block; margin-bottom: .3em; }
+  .box.main { border-color: var(--green); box-shadow: 0 0 40px -10px var(--green); }
+  .box.pre { border-color: var(--violet); box-shadow: 0 0 40px -10px var(--violet); }
+  .box.ren { border-color: var(--cyan); box-shadow: 0 0 40px -10px var(--cyan); }
+  .wire { flex: 1; min-width: 3rem; height: 4px; background: rgba(255, 255, 255, .12); position: relative; border-radius: 4px; }
+  .wire i {
+    position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 14px var(--cyan); animation: travel 1.8s linear infinite;
+  }
+  .wire i:nth-child(2) { animation-delay: -.6s; background: var(--pink); box-shadow: 0 0 14px var(--pink); animation-direction: reverse; }
+  .wire i:nth-child(3) { animation-delay: -1.2s; }
+  @keyframes travel { from { left: 0; } to { left: calc(100% - 12px); } }
+  .wire em {
+    position: absolute; top: -2rem; left: 50%; transform: translateX(-50%);
+    font-family: "JetBrains Mono", monospace; font-style: normal; font-size: .8rem; color: var(--muted);
+  }
+
+  /* Discord stack */
+  .stack { display: flex; flex-direction: column; gap: 1.4vh; width: min(760px, 100%); }
+  .layer {
+    display: flex; align-items: center; gap: 1.2rem; padding: 2.2vh 2vw; border-radius: 18px; text-align: left;
+    background: linear-gradient(90deg, var(--lc), transparent 140%); border: 1px solid rgba(255, 255, 255, .12);
+  }
+  .layer .emoji { font-size: 2.2rem; }
+  .layer b { font-size: clamp(1.1rem, 2vw, 1.5rem); display: block; }
+  .layer span { color: rgba(255, 255, 255, .75); }
+
+  /* Pros / cons */
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.6vw; width: min(1200px, 100%); }
+  .card {
+    padding: 3.5vh 1.4vw; border-radius: 22px; background: var(--card); border: 1px solid var(--border);
+    transition: transform .3s var(--ease);
+  }
+  .card:hover { transform: translateY(-8px) scale(1.03); }
+  .card .emoji { font-size: clamp(2.4rem, 4.5vw, 3.6rem); display: block; margin-bottom: .4em; }
+  .card b { font-size: clamp(1rem, 1.8vw, 1.4rem); display: block; margin-bottom: .4em; }
+  .card span { color: var(--muted); font-size: clamp(.8rem, 1.2vw, 1rem); }
+  .pros .card { border-color: rgba(74, 222, 128, .35); }
+  .cons .card { border-color: rgba(248, 113, 113, .35); }
+
+  /* Bars */
+  .bars { width: min(900px, 100%); display: flex; flex-direction: column; gap: 3vh; text-align: left; }
+  .bar label { display: flex; justify-content: space-between; margin-bottom: .6rem; font-size: clamp(1rem, 1.8vw, 1.4rem); }
+  .bar label b { font-family: "JetBrains Mono", monospace; }
+  .track { height: 2.2rem; border-radius: 99px; background: rgba(255, 255, 255, .06); overflow: hidden; }
+  .fill { height: 100%; width: 0; border-radius: 99px; background: var(--fc); box-shadow: 0 0 30px var(--fc); }
+  .slide.active .fill { animation: fillTo 1.8s var(--ease) forwards; animation-delay: calc(var(--i) * 300ms + 600ms); }
+  @keyframes fillTo { to { width: var(--w); } }
+  .note { color: var(--muted); font-size: .9rem; }
+
+  /* Terminal */
+  .term {
+    width: min(900px, 100%); border-radius: 16px; overflow: hidden; text-align: left;
+    background: #0d1117; border: 1px solid rgba(255, 255, 255, .1); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .8), 0 0 60px -20px var(--cyan);
+  }
+  .term-bar { display: flex; gap: .5rem; padding: .8rem 1rem; background: #161b22; }
+  .term-bar i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f56; }
+  .term-bar i:nth-child(2) { background: #ffbd2e; }
+  .term-bar i:nth-child(3) { background: #27c93f; }
+  .term pre {
+    font-family: "JetBrains Mono", monospace; font-size: clamp(.85rem, 1.5vw, 1.2rem); line-height: 1.7;
+    padding: 1.4rem 1.6rem; min-height: 15em; white-space: pre-wrap;
+  }
+  .p { color: var(--green); }
+  .c { color: #6b7a93; }
+  .o { color: var(--cyan); }
+  .cursor { display: inline-block; width: .6em; height: 1.1em; vertical-align: -.15em; background: var(--fg); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Code */
+  .code { width: min(900px, 100%); text-align: left; }
+  .code pre { white-space: normal; line-height: 1.5; min-height: 0; font-size: clamp(.75rem, 1.25vw, 1.05rem); }
+  .code .cm { color: #8b9bb4; }
+  .code .ln { display: block; white-space: pre; }
+  .kw { color: var(--pink); }
+  .fn { color: var(--cyan); }
+  .st { color: #fbbf24; }
+  .cm { color: #6b7a93; font-style: italic; }
+
+  /* Final */
+  .plan { display: flex; gap: 3vw; flex-wrap: wrap; justify-content: center; }
+  .step {
+    width: clamp(15rem, 30vw, 24rem); padding: 4vh 2vw; border-radius: 26px; background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .step .emoji { font-size: clamp(3rem, 6vw, 5rem); display: block; animation: float 3s ease-in-out infinite; }
+  .step b { font-size: clamp(1.3rem, 2.4vw, 2rem); display: block; margin: .3em 0; }
+  .step span { color: var(--muted); }
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .confetti i { position: absolute; top: -5vh; width: 10px; height: 16px; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(115vh) rotate(720deg); } }
+
+  /* Explainers */
+  .bounce { display: inline-block; font-size: clamp(2rem, 4vw, 3rem); color: var(--cyan); animation: bounce 1.4s ease-in-out infinite; }
+  @keyframes bounce { 50% { transform: translateY(12px); } }
+  .apps.five { width: min(900px, 100%); }
+  .chip.danger { border-color: var(--red); box-shadow: 0 0 60px rgba(248, 113, 113, .4), inset 0 0 40px rgba(248, 113, 113, .08); }
+  .chip.danger .big { color: var(--red); }
+  .slide.active .chip.danger.a { animation: pop .9s var(--ease) forwards, shake .5s ease-in-out 2.2s 2; animation-delay: calc(var(--i) * 140ms + 250ms), 2.2s; }
+  @keyframes shake { 25% { transform: translateX(-8px) rotate(-2deg); } 75% { transform: translateX(8px) rotate(2deg); } }
+  .quote {
+    max-width: 900px; padding: 3.5vh 3vw; border-radius: 24px; font-size: clamp(1.2rem, 2.6vw, 2.1rem); line-height: 1.35;
+    background: var(--card); border: 2px solid transparent;
+    background-image: linear-gradient(var(--bg), var(--bg)), linear-gradient(90deg, var(--cyan), var(--violet), var(--pink));
+    background-origin: border-box; background-clip: padding-box, border-box;
+  }
+  .quote b { color: var(--red); }
+  .eq.tight { gap: 1.4vw; flex-wrap: nowrap; }
+  .eq.tight .chip { min-width: 0; padding: 2.4vh 1.6vw; }
+  .eq.tight .chip .big { font-size: clamp(1.1rem, 2.2vw, 1.9rem); }
+  .eq.tight .op { font-size: clamp(2rem, 4vw, 3.5rem); }
+
+  /* Preload menu: orders */
+  .orders { display: flex; flex-direction: column; gap: 1.6vh; width: min(1000px, 100%); }
+  .order { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1.4vw; }
+  .bubble {
+    padding: 1.6vh 1.4vw; border-radius: 18px; text-align: left; font-size: clamp(.95rem, 1.7vw, 1.35rem);
+    background: rgba(159, 234, 249, .08); border: 1px solid var(--border);
+  }
+  .verdict { padding: 1.6vh 1.4vw; border-radius: 18px; text-align: left; font-size: clamp(.95rem, 1.7vw, 1.35rem); }
+  .verdict.yes { background: rgba(74, 222, 128, .1); border: 1px solid rgba(74, 222, 128, .5); }
+  .verdict.no { background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .6); }
+  .verdict small { display: block; color: var(--muted); font-size: .8em; margin-top: .2em; }
+  .order .arrow { font-size: 1.6rem; color: var(--muted); }
+
+  /* Attack story */
+  .chat {
+    width: min(640px, 100%); display: flex; gap: 1rem; text-align: left; padding: 2vh 1.6vw; border-radius: 18px;
+    background: #313338; border: 1px solid rgba(255, 255, 255, .08); position: relative;
+  }
+  .chat .avatar { flex: 0 0 auto; width: 2.8rem; height: 2.8rem; border-radius: 50%; background: #ed4245; display: grid; place-items: center; font-weight: 700; }
+  .chat .name { color: #f23f43; font-weight: 600; }
+  .chat .time { color: #949ba4; font-size: .8rem; margin-left: .4rem; }
+  .chat .msg { margin-top: .2rem; font-size: clamp(1rem, 1.6vw, 1.25rem); }
+  .xray {
+    margin-top: .8rem; padding: .7rem 1rem; border-radius: 10px; font-family: "JetBrains Mono", monospace;
+    font-size: clamp(.8rem, 1.3vw, 1rem); color: var(--red); background: rgba(248, 113, 113, .1); border: 1px dashed var(--red);
+  }
+  .steps4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; width: min(1200px, 100%); }
+  .steps4 .card { padding: 2.4vh 1.2vw; }
+  .steps4 .card .emoji { font-size: clamp(2rem, 3.6vw, 2.8rem); }
+  .steps4 .card .num { font-family: "JetBrains Mono", monospace; color: var(--cyan); font-size: .85rem; display: block; margin-bottom: .3em; }
+  .steps4 .card.bad { border-color: var(--red); box-shadow: 0 0 40px -12px var(--red); }
+  .ok { color: var(--green); }
+
+  /* UI chrome */
+  .progress { position: fixed; top: 0; left: 0; height: 4px; z-index: 5; background: linear-gradient(90deg, var(--cyan), var(--violet), var(--pink)); transition: width .6s var(--ease); }
+  .hud { position: fixed; bottom: 1.4rem; right: 1.6rem; z-index: 5; display: flex; align-items: center; gap: .8rem; font-family: "JetBrains Mono", monospace; color: var(--muted); }
+  .hud button {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 1px solid var(--border); background: var(--card);
+    color: var(--fg); font-size: 1.1rem; cursor: pointer; transition: background .2s;
+  }
+  .hud button:hover { background: rgba(159, 234, 249, .18); }
+  .hint { position: fixed; bottom: 1.6rem; left: 1.6rem; z-index: 5; color: var(--muted); font-size: .8rem; font-family: "JetBrains Mono", monospace; opacity: .6; }
+
+  @media (max-width: 760px) {
+    .apps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .arch { flex-direction: column; }
+    .wire { width: 4px; height: 3rem; flex: 0 0 auto; min-width: 0; }
+    .wire i, .wire em { display: none; }
+    .timeline { flex-direction: column; }
+    .timeline::before { display: none; }
+    .eq.tight { flex-wrap: wrap; }
+    .steps4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .order { grid-template-columns: 1fr; }
+    .order .arrow { display: none; }
+    .hint { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="progress" id="progress"></div>
+
+<main class="deck" id="deck">
+
+  <!-- 1. Cover -->
+  <section class="slide">
+    <svg class="atom a pop" viewBox="-110 -110 220 220" aria-hidden="true">
+      <g class="spin">
+        <g>
+          <path class="orbit" d="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" />
+          <circle r="7" fill="#f472b6"><animateMotion dur="2.4s" repeatCount="indefinite" path="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" /></circle>
+        </g>
+        <g transform="rotate(60)">
+          <path class="orbit" d="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" />
+          <circle r="7" fill="#a78bfa"><animateMotion dur="3s" repeatCount="indefinite" path="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" /></circle>
+        </g>
+        <g transform="rotate(120)">
+          <path class="orbit" d="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" />
+          <circle r="7" fill="#9feaf9"><animateMotion dur="3.6s" repeatCount="indefinite" path="M -95 0 A 95 34 0 1 0 95 0 A 95 34 0 1 0 -95 0" /></circle>
+        </g>
+      </g>
+      <circle class="core" r="14" />
+    </svg>
+    <h1 class="a grad" style="--i:2">Electron</h1>
+    <p class="sub a" style="--i:3">Apps de escritorio con HTML, CSS y JavaScript</p>
+  </section>
+
+  <!-- 2. What is it -->
+  <section class="slide">
+    <span class="tag a">¿Qué es?</span>
+    <div class="eq">
+      <div class="chip a left" style="--i:1"><div class="big">🌐 Chromium</div><small>dibuja la interfaz</small></div>
+      <div class="op a pop" style="--i:2">+</div>
+      <div class="chip a right" style="--i:3"><div class="big">🟩 Node.js</div><small>habla con el sistema</small></div>
+      <div class="op a pop" style="--i:5">=</div>
+      <div class="chip hero a pop" style="--i:6"><div class="big grad">⚛ Electron</div><small>una app de escritorio real</small></div>
+    </div>
+    <p class="sub a" style="--i:8">Una página web… con superpoderes de escritorio 🦸</p>
+  </section>
+
+  <!-- 2b. Chromium -->
+  <section class="slide">
+    <span class="tag a">Pieza 1</span>
+    <h2 class="a" style="--i:1">¿Qué es <span class="grad">Chromium</span>?</h2>
+    <div class="chip hero a pop" style="--i:2"><div class="big">🧪 Chromium</div><small>navegador de código abierto creado por Google (2008)</small></div>
+    <div class="a" style="--i:3"><span class="bounce">↓</span></div>
+    <p class="sub a" style="--i:4">Muchos navegadores están construidos encima</p>
+    <div class="apps five">
+      <div class="app a pop" style="--i:5"><div class="ic" style="--c:#4285f4;--i:5">C</div><span>Chrome</span></div>
+      <div class="app a pop" style="--i:6"><div class="ic" style="--c:#0078d4;--i:6">E</div><span>Edge</span></div>
+      <div class="app a pop" style="--i:7"><div class="ic" style="--c:#fb542b;--i:7">B</div><span>Brave</span></div>
+      <div class="app a pop" style="--i:8"><div class="ic" style="--c:#ff1b2d;--i:8">O</div><span>Opera</span></div>
+      <div class="app a pop" style="--i:9"><div class="ic" style="--c:#ef3939;--i:9">V</div><span>Vivaldi</span></div>
+    </div>
+    <p class="note a" style="--i:11">Chrome = Chromium + extras de Google (sincronización, actualizaciones…)</p>
+  </section>
+
+  <!-- 2c. Node.js -->
+  <section class="slide">
+    <span class="tag a">Pieza 2</span>
+    <h2 class="a" style="--i:1">¿Qué es <span class="grad">Node.js</span>?</h2>
+    <div class="eq">
+      <div class="chip a left" style="--i:2"><div class="big">🌐 JS en el navegador</div><small>🔒 vive en una caja: no puede tocar tu computadora</small></div>
+      <div class="op a pop" style="--i:4">→</div>
+      <div class="chip hero a right" style="--i:5"><div class="big">🟩 JS con Node.js</div><small>🔓 lee archivos, abre programas, usa internet</small></div>
+    </div>
+    <p class="sub a" style="--i:7">Node.js = JavaScript <b style="color:var(--fg)">fuera del navegador</b></p>
+  </section>
+
+  <!-- 3. History -->
+  <section class="slide">
+    <span class="tag a">Un poco de historia</span>
+    <h2 class="a" style="--i:1">Nació en <span class="grad">GitHub</span></h2>
+    <div class="timeline">
+      <div class="tl a" style="--i:3"><b>2013</b><span>GitHub crea "Atom Shell" para su editor Atom</span></div>
+      <div class="tl a" style="--i:5"><b>2015</b><span>Se independiza: nace Electron ⚛</span></div>
+      <div class="tl a" style="--i:7"><b>2022</b><span>Atom cierra 🪦</span></div>
+      <div class="tl a" style="--i:9"><b>Hoy</b><span>VS Code, hecho con Electron, domina 👑</span></div>
+    </div>
+    <p class="sub a" style="--i:11">La herramienta sobrevivió a la app para la que nació</p>
+  </section>
+
+  <!-- 4. Famous apps -->
+  <section class="slide">
+    <span class="tag a">Seguro ya lo usaste</span>
+    <h2 class="a" style="--i:1">Apps hechas con Electron</h2>
+    <div class="apps">
+      <div class="app a pop" style="--i:2"><div class="ic" style="--c:#007acc;--i:2">VS</div><span>VS Code</span></div>
+      <div class="app star a pop" style="--i:3"><div class="ic" style="--c:#5865f2;--i:3">D</div><span>Discord ⭐</span></div>
+      <div class="app a pop" style="--i:4"><div class="ic" style="--c:#e01e5a;--i:4">S</div><span>Slack</span></div>
+      <div class="app a pop" style="--i:5"><div class="ic" style="--c:#f24e1e;--i:5">F</div><span>Figma</span></div>
+      <div class="app a pop" style="--i:6"><div class="ic" style="--c:#2f2f2f;--i:6">N</div><span>Notion</span></div>
+      <div class="app a pop" style="--i:7"><div class="ic" style="--c:#7c3aed;--i:7">O</div><span>Obsidian</span></div>
+      <div class="app a pop" style="--i:8"><div class="ic" style="--c:#ff6c37;--i:8">P</div><span>Postman</span></div>
+      <div class="app a pop" style="--i:9"><div class="ic" style="--c:#6e40c9;--i:9">GH</div><span>GitHub Desktop</span></div>
+      <div class="app a pop" style="--i:10"><div class="ic" style="--c:#3a76f0;--i:10">S</div><span>Signal</span></div>
+      <div class="app a pop" style="--i:11"><div class="ic" style="--c:#0572ec;--i:11">1P</div><span>1Password</span></div>
+    </div>
+  </section>
+
+  <!-- 5. Architecture -->
+  <section class="slide">
+    <span class="tag a">¿Cómo funciona?</span>
+    <h2 class="a" style="--i:1">Dos mundos que se hablan</h2>
+    <div class="arch">
+      <div class="box main a left" style="--i:2"><span class="emoji">🧠</span><h3>Main</h3><p>Node.js<br>ventanas, menús, archivos, notificaciones</p></div>
+      <div class="wire a" style="--i:4"><em>IPC</em><i></i><i></i><i></i></div>
+      <div class="box pre a pop" style="--i:5"><span class="emoji">🌉</span><h3>Preload</h3><p>el puente seguro<br><code>contextBridge</code></p></div>
+      <div class="wire a" style="--i:6"><i></i><i></i><i></i></div>
+      <div class="box ren a right" style="--i:7"><span class="emoji">🎨</span><h3>Renderer</h3><p>Chromium<br>HTML + CSS + JS (React, Vue…)</p></div>
+    </div>
+  </section>
+
+  <!-- 5b. Restaurant analogy -->
+  <section class="slide">
+    <span class="tag a">Sin código</span>
+    <h2 class="a" style="--i:1">Pensalo como un restaurante 🍽️</h2>
+    <div class="arch">
+      <div class="box ren a left" style="--i:2"><span class="emoji">🪑</span><h3>El salón</h3><p><b>Renderer</b><br>la pantalla que ves. Nunca entra a la cocina</p></div>
+      <div class="wire a" style="--i:4"><em>pedido</em><i></i><i></i><i></i></div>
+      <div class="box pre a pop" style="--i:5"><span class="emoji">🤵</span><h3>El mozo</h3><p><b>Preload</b><br>solo lleva lo que está en el menú</p></div>
+      <div class="wire a" style="--i:6"><i></i><i></i><i></i></div>
+      <div class="box main a right" style="--i:7"><span class="emoji">🍳</span><h3>La cocina</h3><p><b>Main</b><br>fuego y cuchillos: acceso total a la compu</p></div>
+    </div>
+    <p class="sub a" style="--i:9">El cliente <b style="color:var(--fg)">nunca</b> habla con la cocina. Siempre pasa por el mozo.</p>
+  </section>
+
+  <!-- 5c. Preload key idea: the menu -->
+  <section class="slide">
+    <span class="tag a">La clave del Preload</span>
+    <h2 class="a" style="--i:1">El mozo tiene un <span class="grad">menú cerrado</span> 📋</h2>
+    <div class="orders">
+      <div class="order">
+        <div class="bubble a left" style="--i:2">🪑 "Quiero enviar un mensaje"</div>
+        <span class="arrow a" style="--i:3">→</span>
+        <div class="verdict yes a pop" style="--i:4">🤵 ✅ Está en el menú<small>la cocina lo prepara</small></div>
+      </div>
+      <div class="order">
+        <div class="bubble a left" style="--i:5">🪑 "Mostrame una notificación"</div>
+        <span class="arrow a" style="--i:6">→</span>
+        <div class="verdict yes a pop" style="--i:7">🤵 ✅ Está en el menú<small>la cocina lo prepara</small></div>
+      </div>
+      <div class="order">
+        <div class="bubble a left" style="--i:8">🪑 "Dame todos los archivos de la PC"</div>
+        <span class="arrow a" style="--i:9">→</span>
+        <div class="verdict no a pop" style="--i:10">🤵 ❌ Eso no está en el menú<small>el pedido ni llega a la cocina</small></div>
+      </div>
+    </div>
+    <p class="sub a" style="--i:12">El Preload escribe el menú <b style="color:var(--fg)">antes</b> de abrir el restaurante.<br>Lo que no está en el menú, para la página <b style="color:var(--fg)">no existe</b>.</p>
+  </section>
+
+  <!-- 6. Discord inside -->
+  <section class="slide">
+    <span class="tag a">Caso de estudio</span>
+    <h2 class="a" style="--i:1">Discord por dentro 🔍</h2>
+    <div class="stack">
+      <div class="layer a right" style="--i:2;--lc:rgba(88,101,242,.55)"><span class="emoji">💬</span><div><b>Interfaz en React</b><span>canales, mensajes, servidores → Renderer</span></div></div>
+      <div class="layer a right" style="--i:3;--lc:rgba(71,132,143,.6)"><span class="emoji">⚛</span><div><b>Electron</b><span>ventana, bandeja, notificaciones, actualizaciones → Main</span></div></div>
+      <div class="layer a right" style="--i:4;--lc:rgba(244,114,182,.5)"><span class="emoji">🎙️</span><div><b>Módulos nativos</b><span>voz y video, donde JS no alcanza</span></div></div>
+    </div>
+    <p class="sub a" style="--i:6">El mismo código web corre en el navegador y en el escritorio</p>
+  </section>
+
+  <!-- 6b. Native modules -->
+  <section class="slide">
+    <span class="tag a">¿Y eso de "nativos"?</span>
+    <h2 class="a" style="--i:1">Módulos nativos 🏎️</h2>
+    <div class="eq">
+      <div class="chip a left" style="--i:2"><div class="big">🚗 JavaScript</div><small>cómodo, sirve para casi todo</small></div>
+      <div class="op a pop" style="--i:3">+</div>
+      <div class="chip hero a right" style="--i:4"><div class="big">🏎️ C++ / Rust</div><small>piezas ultra rápidas que se enchufan a la app</small></div>
+    </div>
+    <p class="sub a" style="--i:6">Se usan cuando JavaScript no alcanza</p>
+    <p class="note a" style="--i:7">En Discord: la voz en tiempo real 🎙️ (quitar eco, ruido y demora)</p>
+  </section>
+
+  <!-- 7. Pros -->
+  <section class="slide pros">
+    <span class="tag a">Ventajas</span>
+    <h2 class="a" style="--i:1">Lo que <span class="grad">enamora</span> ✅</h2>
+    <div class="cards">
+      <div class="card a flip" style="--i:2"><span class="emoji">🧑‍💻</span><b>Tecnología web</b><span>si sabés JS, ya sabés Electron</span></div>
+      <div class="card a flip" style="--i:3"><span class="emoji">🖥️</span><b>Multiplataforma</b><span>Windows, macOS y Linux con un solo código</span></div>
+      <div class="card a flip" style="--i:4"><span class="emoji">🔌</span><b>Acceso al sistema</b><span>archivos, menús, notificaciones, bandeja</span></div>
+      <div class="card a flip" style="--i:5"><span class="emoji">📦</span><b>Ecosistema npm</b><span>millones de paquetes listos</span></div>
+    </div>
+  </section>
+
+  <!-- 8. Cons -->
+  <section class="slide cons">
+    <span class="tag a">Desventajas</span>
+    <h2 class="a" style="--i:1">Lo que <span style="color:var(--red)">duele</span> ⚠️</h2>
+    <div class="cards">
+      <div class="card a flip" style="--i:2"><span class="emoji">🐘</span><b>Pesado</b><span>cada app trae su propio Chromium</span></div>
+      <div class="card a flip" style="--i:3"><span class="emoji">🔥</span><b>Consume RAM</b><span>más que una app nativa</span></div>
+      <div class="card a flip" style="--i:4"><span class="emoji">🔓</span><b>Seguridad</b><span>mal configurado, expone Node a la web</span></div>
+      <div class="card a flip" style="--i:5"><span class="emoji">🐢</span><b>Rendimiento</b><span>no llega al nivel de lo nativo</span></div>
+    </div>
+  </section>
+
+  <!-- 8b. How attacks happen -->
+  <section class="slide">
+    <span class="tag a">Seguridad</span>
+    <h2 class="a" style="--i:1">¿Cómo te hackean? 🕵️</h2>
+    <div class="eq tight">
+      <div class="chip a left" style="--i:2"><div class="big">🕳️ Un agujero</div><small>entra código trampa<br>(ej: un mensaje malicioso)</small></div>
+      <div class="op a pop" style="--i:3">+</div>
+      <div class="chip a right" style="--i:4"><div class="big">🧱 Una pared rota</div><small>la app está mal configurada</small></div>
+      <div class="op a pop" style="--i:6">=</div>
+      <div class="chip danger a pop" style="--i:7"><div class="big">💀 Controlan tu PC</div><small>ejecutan lo que quieran</small></div>
+    </div>
+    <p class="sub a" style="--i:9">Si falta una de las dos, el ataque <span class="ok">no llega</span> a tu computadora</p>
+  </section>
+
+  <!-- 8b2. Attack story example -->
+  <section class="slide">
+    <span class="tag a">Ejemplo</span>
+    <h2 class="a" style="--i:1">El meme trampa 😂💣</h2>
+    <div class="chat a pop" style="--i:2">
+      <div class="avatar">?</div>
+      <div>
+        <span class="name">Desconocido</span><span class="time">hoy a las 16:20</span>
+        <div class="msg">jajaja mirá este meme 😂 🖼️</div>
+        <div class="xray a" style="--i:4">🔍 escondido: "abrí la carpeta de contraseñas y mandala a mi servidor"</div>
+      </div>
+    </div>
+    <div class="steps4">
+      <div class="card a flip" style="--i:5"><span class="num">PASO 1</span><span class="emoji">💬</span><b>Llega el mensaje</b><span>parece un meme normal</span></div>
+      <div class="card a flip" style="--i:6"><span class="num">PASO 2</span><span class="emoji">👀</span><b>La app lo muestra</b><span>sin revisar lo que trae adentro</span></div>
+      <div class="card a flip" style="--i:7"><span class="num">PASO 3</span><span class="emoji">🧱</span><b>La pared está rota</b><span>el código llega a la cocina</span></div>
+      <div class="card bad a flip" style="--i:8"><span class="num">PASO 4</span><span class="emoji">💀</span><b>Tu PC obedece</b><span>roba contraseñas, instala un virus</span></div>
+    </div>
+    <p class="sub a" style="--i:10">No hiciste clic en nada. <b style="color:var(--red)">Solo lo miraste.</b></p>
+  </section>
+
+  <!-- 8c. Real case -->
+  <section class="slide">
+    <span class="tag a">Caso real</span>
+    <h2 class="a" style="--i:1">Discord, 2020 🚨</h2>
+    <p class="sub a" style="--i:2">Un investigador encontró una cadena de fallas que permitía ejecutar programas en la PC del usuario. Discord lo corrigió.</p>
+    <blockquote class="quote a pop" style="--i:4">En la web, un ataque te roba la sesión.<br>En un Electron mal configurado, <b>te roba la computadora.</b></blockquote>
+    <p class="sub a" style="--i:6"><span class="ok">✅ Hoy Electron viene seguro de fábrica.</span><br>El peligro: desactivarlo "porque no andaba"… o porque te lo sugirió una IA 🤖</p>
+  </section>
+
+  <!-- 9. vs Tauri -->
+  <section class="slide">
+    <span class="tag a">¿Y la competencia?</span>
+    <h2 class="a" style="--i:1">Electron vs Tauri</h2>
+    <div class="bars">
+      <div class="bar a" style="--i:2"><label><span>⚛ Electron</span><b>≈ 100 MB</b></label><div class="track"><div class="fill" style="--w:100%;--fc:#47848f;--i:0"></div></div></div>
+      <div class="bar a" style="--i:3"><label><span>🦀 Tauri (Rust + webview del sistema)</span><b>≈ 5 MB</b></label><div class="track"><div class="fill" style="--w:5%;--fc:#f472b6;--i:1"></div></div></div>
+    </div>
+    <p class="note a" style="--i:5">Tamaño aproximado de un "Hola mundo". Electron gana en madurez y ecosistema.</p>
+  </section>
+
+  <!-- 10. Install -->
+  <section class="slide" data-terminal>
+    <span class="tag a">Instalación</span>
+    <h2 class="a" style="--i:1">De cero a ventana en 1 minuto ⚡</h2>
+    <div class="term a" style="--i:2">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre id="term"></pre>
+    </div>
+    <p class="note a" style="--i:3">Requisito: Node.js LTS instalado · Alternativa todo-en-uno: <code>npm init electron-app@latest mi-app</code></p>
+  </section>
+
+  <!-- 11. Hello world -->
+  <section class="slide">
+    <span class="tag a">Hola mundo</span>
+    <h2 class="a" style="--i:1"><code>main.js</code></h2>
+    <div class="term code a" style="--i:2">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+<pre><span class="ln a" style="--i:3"><span class="cm">// 1. Traemos las herramientas de Electron</span></span>
+<span class="ln a" style="--i:3"><span class="kw">const</span> { app, BrowserWindow } = <span class="fn">require</span>(<span class="st">'electron'</span>)</span>
+<span class="ln a" style="--i:4"> </span>
+<span class="ln a" style="--i:5"><span class="cm">// 2. La "receta" para crear una ventana</span></span>
+<span class="ln a" style="--i:5"><span class="kw">function</span> <span class="fn">createWindow</span>() {</span>
+<span class="ln a" style="--i:6">  <span class="cm">// Una ventana de 800 x 600 píxeles</span></span>
+<span class="ln a" style="--i:6">  <span class="kw">const</span> win = <span class="kw">new</span> <span class="fn">BrowserWindow</span>({ width: <span class="st">800</span>, height: <span class="st">600</span> })</span>
+<span class="ln a" style="--i:7">  <span class="cm">// Adentro mostramos nuestra página web</span></span>
+<span class="ln a" style="--i:7">  win.<span class="fn">loadFile</span>(<span class="st">'index.html'</span>)</span>
+<span class="ln a" style="--i:8">}</span>
+<span class="ln a" style="--i:9"> </span>
+<span class="ln a" style="--i:10"><span class="cm">// 3. Cuando Electron termina de arrancar, creamos la ventana</span></span>
+<span class="ln a" style="--i:10">app.<span class="fn">whenReady</span>().<span class="fn">then</span>(createWindow)</span>
+<span class="ln a" style="--i:11"> </span>
+<span class="ln a" style="--i:12"><span class="cm">// 4. Si el usuario cierra todas las ventanas...</span></span>
+<span class="ln a" style="--i:12">app.<span class="fn">on</span>(<span class="st">'window-all-closed'</span>, () => {</span>
+<span class="ln a" style="--i:13">  <span class="cm">// ...cerramos la app, salvo en Mac ("darwin"), donde queda viva en el Dock</span></span>
+<span class="ln a" style="--i:13">  <span class="kw">if</span> (process.platform !== <span class="st">'darwin'</span>) app.<span class="fn">quit</span>()</span>
+<span class="ln a" style="--i:14">})</span></pre>
+    </div>
+  </section>
+
+  <!-- 12. Class plan -->
+  <section class="slide" data-confetti>
+    <div class="confetti" id="confetti"></div>
+    <span class="tag a">El plan de hoy</span>
+    <h2 class="a grad" style="--i:1">Armemos nuestro mini Discord</h2>
+    <div class="plan">
+      <div class="step a left" style="--i:2"><span class="emoji">✍️</span><b>1 · A mano</b><span>entendemos cada pieza</span></div>
+      <div class="step a right" style="--i:3"><span class="emoji">🤖</span><b>2 · Con IA</b><span>dirigimos, revisamos, mejoramos</span></div>
+    </div>
+    <p class="sub a" style="--i:5">La IA ejecuta. <b style="color:var(--fg)">Vos decidís.</b></p>
+  </section>
+
+</main>
+
+<div class="hint">← → / espacio · F pantalla completa</div>
+<div class="hud">
+  <button id="prev" aria-label="Anterior">‹</button>
+  <span id="count">1 / 1</span>
+  <button id="next" aria-label="Siguiente">›</button>
+</div>
+
+<script>
+(() => {
+  // ---------- Particle network background ----------
+  const canvas = document.getElementById('bg');
+  const ctx = canvas.getContext('2d');
+  let w, h, dots;
+  const resize = () => {
+    w = canvas.width = innerWidth * devicePixelRatio;
+    h = canvas.height = innerHeight * devicePixelRatio;
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    const n = Math.min(90, Math.floor(innerWidth * innerHeight / 16000));
+    dots = Array.from({ length: n }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - .5) * .5 * devicePixelRatio, vy: (Math.random() - .5) * .5 * devicePixelRatio,
+    }));
+  };
+  const link = 130 * devicePixelRatio;
+  const draw = () => {
+    ctx.clearRect(0, 0, w, h);
+    for (const d of dots) {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0 || d.x > w) d.vx *= -1;
+      if (d.y < 0 || d.y > h) d.vy *= -1;
+    }
+    for (let i = 0; i < dots.length; i++) {
+      const a = dots[i];
+      for (let j = i + 1; j < dots.length; j++) {
+        const b = dots[j];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (dist < link) {
+          ctx.strokeStyle = `rgba(159,234,249,${(1 - dist / link) * .25})`;
+          ctx.lineWidth = devicePixelRatio;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+      ctx.fillStyle = 'rgba(159,234,249,.6)';
+      ctx.beginPath(); ctx.arc(a.x, a.y, 1.6 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  };
+  addEventListener('resize', resize);
+  resize(); draw();
+
+  // ---------- Terminal typing ----------
+  const termLines = [
+    ['c', '# 1. Create the project'],
+    ['p', 'mkdir mi-discord && cd mi-discord'],
+    ['p', 'npm init -y'],
+    ['c', '# 2. Install Electron'],
+    ['p', 'npm install --save-dev electron'],
+    ['o', 'added 1 package ✔'],
+    ['c', '# 3. package.json → "main": "main.js", "start": "electron ."'],
+    ['p', 'npm start'],
+    ['o', '🚀 Window opened!'],
+  ];
+  let termRun = 0;
+  const typeTerminal = async () => {
+    const run = ++termRun;
+    const el = document.getElementById('term');
+    el.innerHTML = '';
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    await sleep(900);
+    for (const [kind, text] of termLines) {
+      if (run !== termRun) return;
+      const line = document.createElement('div');
+      line.className = kind;
+      el.appendChild(line);
+      const prefix = kind === 'p' ? '$ ' : '';
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      if (kind === 'o') { line.textContent = text; await sleep(350); continue; }
+      for (let i = 0; i <= text.length; i++) {
+        if (run !== termRun) return;
+        line.textContent = prefix + text.slice(0, i);
+        line.appendChild(cursor);
+        await sleep(kind === 'c' ? 14 : 38);
+      }
+      cursor.remove();
+      await sleep(250);
+    }
+    const last = document.createElement('div');
+    last.className = 'p';
+    last.innerHTML = '$ <span class="cursor"></span>';
+    el.appendChild(last);
+  };
+
+  // ---------- Confetti ----------
+  const confetti = () => {
+    const box = document.getElementById('confetti');
+    box.innerHTML = '';
+    const colors = ['#9feaf9', '#a78bfa', '#f472b6', '#4ade80', '#fbbf24', '#5865f2'];
+    for (let i = 0; i < 80; i++) {
+      const p = document.createElement('i');
+      p.style.left = Math.random() * 100 + '%';
+      p.style.background = colors[i % colors.length];
+      p.style.animationDuration = 2.5 + Math.random() * 2.5 + 's';
+      p.style.animationDelay = Math.random() * 1.2 + 's';
+      box.appendChild(p);
+    }
+  };
+
+  // ---------- Navigation ----------
+  const slides = [...document.querySelectorAll('.slide')];
+  const progress = document.getElementById('progress');
+  const count = document.getElementById('count');
+  let current = 0;
+
+  const go = n => {
+    current = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === current);
+      s.classList.toggle('past', i < current);
+    });
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+    count.textContent = `${current + 1} / ${slides.length}`;
+    const s = slides[current];
+    if (s.hasAttribute('data-terminal')) typeTerminal(); else termRun++;
+    if (s.hasAttribute('data-confetti')) confetti();
+    history.replaceState(null, '', '#' + (current + 1));
+  };
+
+  document.getElementById('next').onclick = () => go(current + 1);
+  document.getElementById('prev').onclick = () => go(current - 1);
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(current + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(current - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key.toLowerCase() === 'f') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+  let touchX = null;
+  addEventListener('touchstart', e => { touchX = e.touches[0].clientX; });
+  addEventListener('touchend', e => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) go(current + (dx < 0 ? 1 : -1));
+    touchX = null;
+  });
+
+  go((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
